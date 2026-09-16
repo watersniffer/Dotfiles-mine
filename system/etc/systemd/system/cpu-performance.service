@@ -1,0 +1,10 @@
+[Unit]
+Description=Force all CPU cores to performance governor on boot
+After=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'for c in /sys/devices/system/cpu/cpu[0-9]*; do echo performance > "$c/cpufreq/scaling_governor"; done'
+
+[Install]
+WantedBy=multi-user.target

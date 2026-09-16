@@ -1,0 +1,178 @@
+# Arch Linux packages (official repos)
+# System packages (base, base-devel, linux, linux-firmware, sudo, mkinitcpio) are
+# installed by default on Arch and are not included here.
+
+# --- Desktop / Window Manager ---
+hyprland
+hypridle
+hyprlock
+hyprpolkitagent
+hyprshot
+hyprsunset
+sddm
+waybar
+xdg-desktop-portal-hyprland
+xwayland-satellite
+wtype
+wl-clipboard
+cliphist
+swaybg
+nwg-displays
+nwg-dock-hyprland
+nwg-look
+xsettingsd
+gammastep
+geoclue
+
+# --- Terminal / Shell ---
+kitty
+zsh
+tmux
+starship
+fastfetch
+
+# --- Editor / IDE ---
+neovim
+vim
+nano
+
+# --- Launcher / Menus ---
+rofi
+rofi-emoji
+
+# --- Notification ---
+mako
+dunst
+swaync
+libnotify
+
+# --- File Manager ---
+thunar
+thunar-archive-plugin
+thunar-media-tags-plugin
+thunar-volman
+gvfs
+dolphin
+dolphin-plugins
+kdegraphics-thumbnailers
+kio-admin
+tumbler
+eza
+fzf
+fd
+yazi
+file-roller
+unrar
+unzip
+zip
+
+# --- Screenshot / Screen Recording ---
+grim
+slurp
+satty
+swappy
+flameshot
+
+# --- Media ---
+awww
+mpv-mpris
+cava
+chafa
+yt-dlp
+
+# --- Audio ---
+pipewire-alsa
+pipewire-audio
+pipewire-pulse
+wireplumber
+pamixer
+pavucontrol
+blueman
+
+# --- Bluetooth ---
+bluez
+bluez-utils
+
+# --- Hardware / System ---
+brightnessctl
+powertop
+nvtop
+btop
+htop
+mission-center
+smartmontools
+ddcutil
+zram-generator
+polkit-kde-agent
+networkmanager
+network-manager-applet
+wpa_supplicant
+flatpak
+stow
+pacman-contrib
+
+# --- GPU / Display ---
+vulkan-intel
+vulkan-nouveau
+vulkan-radeon
+xf86-video-amdgpu
+xf86-video-ati
+xf86-video-nouveau
+intel-media-driver
+libva-intel-driver
+xorg-server-xvfb
+xorg-xdpyinfo
+xorg-xwininfo
+
+# --- Qt / GTK Theming ---
+qt5-wayland
+qt6-wayland
+qt6-5compat
+qt5-graphicaleffects
+qt5-imageformats
+qt5-quickcontrols2
+qt6ct
+kvantum
+
+# --- Fonts ---
+ttf-jetbrains-mono-nerd
+ttf-cascadia-code-nerd
+ttf-hack-nerd
+ttf-iosevka-nerd
+ttf-mononoki-nerd
+ttf-nerd-fonts-symbols
+ttf-opensans
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+inter-font
+ttf-cascadia-code
+
+# --- Dev Tools ---
+git
+gcc
+make
+npm
+python
+matugen
+socat
+rclone
+
+# --- Apps ---
+obsidian
+mousepad
+zathura
+flowblade
+bc
+imagemagick
+ffmpegthumbnailer
+ffmpegthumbs
+xdg-utils
+xdg-user-dirs-gtk
+man-db
+time
+strace
+
+# --- Misc ---
+plymouth
+fuse2

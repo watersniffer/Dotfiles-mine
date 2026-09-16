@@ -1,0 +1,32 @@
+# Sweetwall configuration
+[general]
+directory = "~/Pictures/Wallpapers"
+backend = "sweetbg"
+
+[window]
+preview = true
+position = "center"
+background = "#0d0d0dcc"
+margin = 24
+radius = 16
+
+[grid]
+columns = 5
+spacing = 16
+radius = 8
+ring_width = 2
+visible_rows = 2
+
+[thumbnail]
+width = 240
+height = 400
+
+[colors]
+tile = "#1a1a1aff"
+ring = "#e8e8e8ff"
+spinner = "#6e6e6eff"
+
+[hooks]
+on_apply = [
+  "~/.config/matugen/apply.sh {path}",
+]

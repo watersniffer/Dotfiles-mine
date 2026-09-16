@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+PATTERN='*.png *.jpg *.jpeg *.webp'
+FILES=()
+for ext in png jpg jpeg webp; do
+    while IFS= read -r -d '' f; do
+        FILES+=("$f")
+    done < <(find "$WALLPAPER_DIR" -maxdepth 1 -iname "*.$ext" -print0 2>/dev/null)
+done
+if [ ${#FILES[@]} -eq 0 ]; then
+    notify-send "No wallpapers found" "Check $WALLPAPER_DIR" -i dialog-error
+    exit 1
+fi
+PICK="${FILES[RANDOM % ${#FILES[@]}]}"
+sweetbg img "$PICK" --persist || exit 1
+~/.config/matugen/apply.sh "$PICK"
+notify-send "Wallpaper" "$(basename "$PICK")" -i "$PICK"

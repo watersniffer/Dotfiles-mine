@@ -1,0 +1,3 @@
+com.ktechpit.whatsie
+org.kde.krita
+org.kde.okular

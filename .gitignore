@@ -1,0 +1,10 @@
+# Backup old configs during reinstall
+.dotfiles-backup/
+
+# Wallpapers are user-specific
+wallpapers/
+
+# Don't track OS-specific cache/stutter
+*.swp
+*~
+.DS_Store

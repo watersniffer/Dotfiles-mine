@@ -1,0 +1,90 @@
+@import url("colors.css");
+
+* {
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
+    font-weight: 800;
+    font-size: 10px;
+    color: @fg;
+}
+
+window#waybar {
+    background: @bg;
+    border-radius: 10px;
+    border: 0px;
+    margin: 0px;
+    padding: 2px 6px;
+    min-height: 26px;
+}
+
+/* WORKSPACES */
+
+#workspaces button {
+    padding: 0px 1px;
+    margin: 2px 1px;
+    border-radius: 0;
+    background: transparent;
+    color: @ws_inactive;
+}
+
+/* active workspace */
+#workspaces button.active {
+    border-bottom: 2px solid @ws_active;
+
+}
+
+/* hover */
+#workspaces button:hover {
+    background: @hover;
+}
+
+/* urgent */
+#workspaces button.urgent {
+    background: @urgent;
+}
+
+#mpris {
+    font-weight: 700;
+    padding: 0 3px;
+}
+
+/* RIGHT SIDE STATES */
+
+#battery.warning {
+    background: rgba(250, 240, 250, 0.12);
+    color: @battery_warn;
+    padding: 1px 3px;
+}
+
+#battery.critical {
+    background: rgba(255, 180, 170, 0.2);
+    color: @battery_crit;
+    padding: 1px 3px;
+}
+
+#wireplumber.muted {
+    opacity: 0.6;
+}
+
+/*  TOOLTIP  */
+
+tooltip {
+    background: @tooltip_bg;
+    border: 1px solid @tooltip_border;
+}
+
+tooltip label {
+    color: @fg;
+    font-size: 11px;
+}
+
+#custom-launcher {
+}
+
+#custom-cpucat {
+  font-family: "Waycat", monospace;
+  font-size: 17px;
+  font-weight: bold;
+  color: @cpucat;
+  padding-left: 4px;
+  padding-right: 6px;
+}

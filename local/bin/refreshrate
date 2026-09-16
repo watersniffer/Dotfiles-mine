@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Hyprland & mango only script. 
+# Sets given refresh rate for active monitor   
+
+if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 <refresh rate>"
+    exit 1
+fi
+
+if [[ $MANGO_INSTANCE_SIGNATURE ]]; then
+    read -r ACTIVE_MONITOR ACTIVE_WIDTH ACTIVE_HEIGHT < <(
+        mmsg get all-monitors |
+            jq -r '.monitors[]
+                | select(.active == true)
+                | [.name, .width, .height]
+                | @tsv'
+    )
+
+    mmsg dispatch setoption, monitorrule, \
+        "name:$ACTIVE_MONITOR, width:$ACTIVE_WIDTH, height:$ACTIVE_HEIGHT, refresh:$1"
+else
+    LUA="
+local monitor = hl.get_active_monitor()
+
+if not monitor.is_mirror then
+    hl.monitor({
+        output = monitor.name,
+        mode = monitor.width..'x'..monitor.height..'@$1'
+    })
+end"
+
+    hyprctl eval "$LUA"  
+fi
+

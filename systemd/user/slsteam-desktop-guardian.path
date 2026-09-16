@@ -1,0 +1,15 @@
+# X-SLSteamMoon-GuardianUnit=true
+[Unit]
+Description=Watch desktop launch sources for reconciliation
+
+[Path]
+PathChanged=/home/water/.local/share/applications
+PathChanged=/var/lib/flatpak/exports/share/applications
+PathChanged=/usr/share/applications
+PathChanged=/home/water/.config/autostart
+PathChanged=/etc/xdg/autostart
+PathChanged=/home/water/
+Unit=slsteam-desktop-guardian.service
+
+[Install]
+WantedBy=default.target

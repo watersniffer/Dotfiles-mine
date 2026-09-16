@@ -1,0 +1,80 @@
+#!/bin/bash
+shopt -s nullglob dotglob
+
+# Basically a simple script that will be used to switch between 
+# the dark and light theme. By it self just manages other scripts 
+# that switch theme for some apps. Such scripts are called units
+
+THEMESW_DIR="$HOME/.config/themesw/"
+THEMESW_CURRENT="$THEMESW_DIR/current"
+THEMESW_SCHEMES="$THEMESW_DIR/schemes" # A file with color schemes names separated by newlines
+
+if [[ ! -d "$THEMESW_DIR" ]]; then
+    mkdir -p $THEMESW_DIR
+    mkdir -p "$THEMESW_DIR/units"
+
+    notify-send --icon emblem-information \
+                --app-name $0 \
+                "themesw was not set up, please add units into" "$THEMESW_DIR/units"
+
+    exit 1
+fi
+
+if [[ ! -s "$THEMESW_CURRENT" ]]; then 
+    echo "dark" > $THEMESW_CURRENT
+fi
+
+if [[ ! -s "$THEMESW_SCHEMES" ]]; then 
+    echo "dark" > $THEMESW_SCHEMES
+    echo "light" > $THEMESW_SCHEMES
+fi
+
+CURRENT_SCHEME=$(< $THEMESW_CURRENT)
+mapfile -t SCHEMES < $THEMESW_SCHEMES
+
+for i in "${!SCHEMES[@]}"; do
+  if [[ "${SCHEMES[$i]}" == "$CURRENT_SCHEME" ]]; then
+    NEXT_SCHEME="${SCHEMES[$(( (i + 1) % ${#SCHEMES[@]} ))]}"
+    break
+  fi
+done
+
+if [[ $1 == "--current" ]]; then
+    echo $CURRENT_SCHEME
+    exit 0
+elif [[ -n $1 ]]; then
+    NEXT_SCHEME=$1
+fi
+
+echo "$NEXT_SCHEME" > $THEMESW_CURRENT
+
+for UNIT in "$THEMESW_DIR"/units/*; do
+    UNIT_NAME="${UNIT##*/}"
+
+    if [[ $UNIT_NAME =~ \.bak$ ]]; then
+        echo "Ignoring $UNIT_NAME"
+        continue
+    fi
+
+    if [[ -f "$UNIT" && -x "$UNIT" ]]; then 
+        "$UNIT" "$NEXT_SCHEME" >/dev/null 2>&1 &
+
+        PID=$!
+        wait "$PID"
+
+        if [[ $? -ne 0 ]]; then
+            notify-send --icon gtk-dialog-error \
+                        --app-name "$0" \
+                        'Unit failed!' "$UNIT"
+            exit 1
+        fi
+    fi
+
+    i+=1
+done
+
+if [[ $i == 0 ]]; then 
+    notify-send --icon emblem-information \
+                --app-name "$0" \
+                "No units, could not change theme" "$THEMESW_DIR/units"
+fi

@@ -1,0 +1,37 @@
+# Matugen configuration — wallpaper-driven theming
+# Generated colors from the active wallpaper for GTK, Qt, kitty, waybar, rofi
+
+[config]
+type = "scheme-tonal-spot"
+
+[templates.gtk-colors]
+input_path = "~/.config/matugen/templates/gtk-colors.css"
+output_path = "~/.config/gtk-4.0/colors.css"
+
+[templates.gtk3-colors]
+input_path = "~/.config/matugen/templates/gtk-colors.css"
+output_path = "~/.config/gtk-3.0/colors.css"
+
+[templates.kitty-theme]
+input_path = "~/.config/matugen/templates/kitty-theme.conf"
+output_path = "~/.config/kitty/current-theme.conf"
+
+[templates.qt-colors]
+input_path = "~/.config/matugen/templates/qt-colors.colors"
+output_path = "~/.local/share/color-schemes/Matugen.colors"
+
+[templates.waybar-colors]
+input_path = "~/.config/matugen/templates/waybar-colors.css"
+output_path = "~/.config/waybar/colors.css"
+
+[templates.rofi-colors]
+input_path = "~/.config/matugen/templates/rofi-colors.rasi"
+output_path = "~/.config/rofi/colors.rasi"
+
+[templates.obsidian-snippet]
+input_path = "~/.config/matugen/templates/obsidian-snippet.css"
+output_path = "~/Documents/Notes/.obsidian/snippets/matugen-snippet.css"
+
+[templates.sddm-theme]
+input_path = "~/.config/matugen/templates/sddm-theme.conf"
+output_path = "~/.cache/matugen-sddm/theme.conf"

@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import sys, argparse, os
+
+def get_words(cased: str):
+    if ' ' in cased: return cased.split(' ')
+    if '_' in cased: return cased.split('_')
+    if '-' in cased: return cased.split('-')
+    
+    # Camel case
+    words = []
+    word = ""
+
+    for char in cased:
+        if char.islower():
+            word += char
+            continue
+
+        words.append(word)
+        word = char.lower()
+    
+    words.append(word)
+    return words
+
+def convert(words: list[str], to_case: str):
+    if to_case == "space": 
+        return ' '.join(words)
+    if to_case == "snake": 
+        return '_'.join(words)
+    if to_case == "kebab": 
+        return '-'.join(words)
+
+    # Camel case
+    out = None
+
+    for word in words:
+        if out is None:
+            out = word
+        else:
+            out += word.capitalize()
+
+    return out
+
+def main(args: argparse.Namespace):
+    if not args.file:
+        words = get_words(args.cased)
+        converted = convert(words, args.case)
+        return print(converted)
+
+    if not os.path.exists(args.cased):
+        sys.stderr.write(f'File "{args.cased}" does not exist\n')
+        exit(1)
+
+    head, tail = os.path.split(args.cased)
+    filename, ext = os.path.splitext(tail)
+
+    words = get_words(filename)
+    converted = convert(words, args.case)
+
+    if ext:
+        converted += ext
+
+    final = os.path.join(head, converted)
+    os.rename(args.cased, final)
+    print(final)
+
+if __name__ == '__main__':
+    p = argparse.ArgumentParser(
+        description="Convert a string to different cases (snake_case kebab-case camelCase)"
+    )
+
+    p.add_argument("cased", metavar="STRING/FILE")
+    p.add_argument("-f", "--file", action="store_true", help="treat given argument as file path, rename file instead")
+    p.add_argument("-c", "--case", type=str, default="snake", choices=("snake", "kebab", "camel", "space"), help="case to convert to")
+
+    args = p.parse_args()
+    main(args)
