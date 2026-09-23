@@ -3,7 +3,7 @@
 # Dotfiles Installer - Arch Linux (Hyprland)
 # ============================================================================
 # Based on water's custom Hyprland setup with:
-#   Zsh + Powerlevel10k, Kitty, Neovim (lazy.nvim), Waybar,
+#   Bash + Starship, Kitty, Neovim (lazy.nvim), Waybar,
 #   Rofi, Mako, Matugen dynamic theming, tmux, and many utilities.
 #
 # Usage:
@@ -157,6 +157,11 @@ link_item() {
     local src="$1" dst="$2"
     mkdir -p "$(dirname "$dst")"
 
+    # Already linked to the right place? Leave it alone (idempotent re-runs).
+    if [[ -L "$dst" ]] && [[ "$(readlink -f "$dst" 2>/dev/null)" == "$(readlink -f "$src" 2>/dev/null)" ]]; then
+        return 0
+    fi
+
     # Backup if exists
     if [[ -e "$dst" || -L "$dst" ]]; then
         mkdir -p "$BACKUP_DIR"
@@ -171,21 +176,22 @@ link_item() {
 
 symlink_dotfiles() {
     log "Symlinking dotfiles..."
-    mkdir -p "$BACKUP_DIR" 2>/dev/null || true
 
     # --- Home dotfiles ---
-    for f in .tmux.conf .bashrc .bash_profile .bash_logout; do
+    for f in .tmux.conf .bashrc .bash_profile .bash_logout .vimrc; do
         link_item "$DOTFILES_DIR/home/$f" "$HOME/$f"
     done
+    # ~/.vim holds only colorschemes - safe to link wholesale.
+    link_item "$DOTFILES_DIR/home/.vim" "$HOME/.vim"
 
-    # --- Config directories (as self-contained copies) ---
+    # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"
-    # nvim is deliberately absent: it must be a real dir (see setup_nvim), not a symlink
-    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall npm xdg-desktop-portal gtk-3.0 gtk-4.0; do
+    # nvim is deliberately absent: it must be a real dir (see setup_nvim).
+    # spicetify is absent too: it writes Data/ + backup/ caches in place
+    # (see setup_spicetify).
+    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall npm \
+                xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum qt6ct xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
-            # Remove old symlinks to lyne-dots if present
-            [[ -L "$HOME/.config/$name" ]] && rm -f "$HOME/.config/$name"
-            mkdir -p "$HOME/.config/$name"
             link_item "$conf_dir/$name" "$HOME/.config/$name"
         fi
     done
@@ -195,11 +201,16 @@ symlink_dotfiles() {
         [[ -f "$conf_dir/$f" ]] && link_item "$conf_dir/$f" "$HOME/.config/$f"
     done
 
-    # --- Custom scripts ---
+    # --- Custom scripts (merge, never wipe: ~/.local/bin also holds
+    # machine-local tools - uv, tree-sitter, uv-tool shims - that must survive) ---
     mkdir -p "$HOME/.local/bin"
     if [[ -d "$DOTFILES_DIR/local/bin" ]]; then
-        rm -rf "$HOME/.local/bin"
-        cp -a "$DOTFILES_DIR/local/bin" "$HOME/.local/bin"
+        cp -a "$DOTFILES_DIR/local/bin/." "$HOME/.local/bin/"
+        # startup/ is fully repo-managed: mirror it exactly so retired scripts
+        # (e.g. post_install.sh) stop running instead of merging forever.
+        rm -rf "$HOME/.local/bin/startup"
+        cp -a "$DOTFILES_DIR/local/bin/startup" "$HOME/.local/bin/startup"
+        rm -rf "$HOME/.local/bin/__pycache__"
         find "$HOME/.local/bin" -type f -exec chmod +x {} +
     fi
 
@@ -232,6 +243,23 @@ apply_system_configs() {
         sudo cp "$DOTFILES_DIR/system/etc/sddm.conf.d/"* /etc/sddm.conf.d/
         ok "SDDM configs applied."
     }
+
+    # SDDM theme: GitHub-only (NOT in AUR). matugen/apply.sh publishes
+    # theme.conf + wallpaper into this dir as the login user, hence the chown.
+    if [[ ! -d /usr/share/sddm/themes/gruvbox-minimal-sddm ]]; then
+        log "Installing gruvbox-minimal-sddm theme..."
+        local tmp_sddm
+        tmp_sddm=$(mktemp -d)
+        if git clone --depth 1 https://github.com/scientiac/gruvbox-minimal-sddm "$tmp_sddm/theme"; then
+            sudo mkdir -p /usr/share/sddm/themes
+            sudo cp -a "$tmp_sddm/theme" /usr/share/sddm/themes/gruvbox-minimal-sddm
+            sudo chown -R "$USER" /usr/share/sddm/themes/gruvbox-minimal-sddm
+            ok "SDDM theme installed."
+        else
+            warn "Could not fetch gruvbox-minimal-sddm - clone it manually (see post-install)."
+        fi
+        rm -rf "$tmp_sddm"
+    fi
 
     # Zram
     [[ -f "$DOTFILES_DIR/system/etc/zram-generator.conf" ]] && {
@@ -303,18 +331,64 @@ setup_nvim() {
 
     mkdir -p "$dst"
 
-    # Ensure theme file exists
+    # Ensure theme file exists (theme-loader falls back to this)
     if [[ ! -f "$dst/current-theme.txt" ]]; then
-        echo "tokyonight" > "$dst/current-theme.txt"
+        echo "gruvbox" > "$dst/current-theme.txt"
     fi
 
     ok "Neovim ready. Plugins install on first launch."
 }
 
 # ============================================================================
+# SPICETIFY (Spotify theming) - real dir, copy-if-missing
+# ============================================================================
+setup_spicetify() {
+    local src="$DOTFILES_DIR/config/spicetify"
+    local dst="$HOME/.config/spicetify"
+    [[ -d "$src" ]] || return 0
+
+    # Real dir: spicetify writes Data/ and backup/ caches inside its config.
+    # cp -n fills gaps without ever overwriting local changes.
+    mkdir -p "$dst"
+    cp -an "$src/." "$dst/" 2>/dev/null || true
+
+    # The seed records /home/water paths; rewrite them for this user.
+    if [[ -f "$dst/config-xpui.ini" ]]; then
+        sed -i "s|/home/water|$HOME|g" "$dst/config-xpui.ini" 2>/dev/null || true
+    fi
+
+    ok "Spicetify config ready (theme: gruvbox)."
+}
+
+# ============================================================================
+# GTK / ICON THEME VIA DCONF (GNOME + Cinnamon apps, e.g. Nemo)
+# ============================================================================
+setup_gtk_dconf() {
+    command -v gsettings &>/dev/null || { warn "gsettings missing, skipping dconf theming."; return 0; }
+    if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+        warn "No session bus - dconf theming skipped (run again from a login session)."
+        return 0
+    fi
+    gsettings set org.gnome.desktop.interface gtk-theme Colloid-Orange-Dark-Gruvbox 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme Gruvbox-Plus-Dark 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Ice 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface font-name 'Inter 11' 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface gtk-theme Colloid-Orange-Dark-Gruvbox 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface icon-theme Gruvbox-Plus-Dark 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface cursor-theme Bibata-Modern-Ice 2>/dev/null || true
+    ok "GTK/icon/cursor theme set in dconf (GNOME + Cinnamon)."
+}
+
+# ============================================================================
 # 11. MISC
 # ============================================================================
 setup_misc() {
+    # GTK2 legacy settings file: seed once if absent (nwg-look may rewrite it
+    # in place afterwards - fine, it regenerates from the same dconf values).
+    if [[ ! -f "$HOME/.gtkrc-2.0" && -f "$DOTFILES_DIR/home/.gtkrc-2.0" ]]; then
+        cp "$DOTFILES_DIR/home/.gtkrc-2.0" "$HOME/.gtkrc-2.0"
+    fi
+
     # Create custom XDG dirs from our user-dirs.dirs without overwriting it
     if [[ -f "$HOME/.config/user-dirs.dirs" ]]; then
         local dirs
@@ -348,7 +422,7 @@ main() {
     echo ""
     echo -e "${CYAN}========================================${NC}"
     echo -e "${CYAN}  Dotfiles Installer — Arch Linux       ${NC}"
-    echo -e "${CYAN}  Hyprland + Zsh + Kitty + Neovim        ${NC}"
+    echo -e "${CYAN}  Hyprland + Bash + Kitty + Neovim      ${NC}"
     echo -e "${CYAN}========================================${NC}"
     echo ""
 
@@ -364,9 +438,11 @@ main() {
     install_tpm
     symlink_dotfiles
     setup_nvim
+    setup_spicetify
     apply_system_configs
     setup_user_services
     setup_misc
+    setup_gtk_dconf
 
     echo ""
     echo -e "${GREEN}========================================${NC}"
@@ -375,13 +451,12 @@ main() {
     echo ""
     echo -e "  What to do next:"
     echo -e "    1. Log out and back in (for bash + wayland)"
-    echo -e "    2. Put wallpapers in ~/Pictures/Wallpapers/"
+    echo -e "    2. Put wallpapers in ~/Pictures/Wallpapers/ then Super+W (Matuwall)"
     echo -e "    3. Open kitty - nvim plugins install on first launch"
-    echo -e "    4. SDDM theme: gruvbox-minimal-sddm is GitHub-only (NOT in AUR):"
-    echo -e "       git clone https://github.com/scientiac/gruvbox-minimal-sddm"
-    echo -e "       sudo cp -a gruvbox-minimal-sddm /usr/share/sddm/themes/"
-    echo -e "       Font it needs: sudo pacman -S ttf-fantasque-nerd"
-    echo -e "    5. Run 'p10k configure' to reconfigure the prompt if needed"
+    echo -e "    4. SDDM theme (gruvbox-minimal-sddm) installs automatically;"
+    echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish colors"
+    echo -e "    5. Binds: Super+E yazi | Super+, emoji | Super+C clipboard | Super+P menu"
+    echo -e "       Machine-local extras (uv tools, tree-sitter) - see README"
     echo ""
 }
 

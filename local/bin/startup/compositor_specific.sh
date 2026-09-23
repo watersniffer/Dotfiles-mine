@@ -11,7 +11,13 @@ fi
 cd ~/.config/waybar
 
 if [[ $IS_MANGO == 1 ]]; then
-    ln -fs modules.mango.jsonc modules.jsonc
+    TARGET="modules.mango.jsonc"
 else
-    ln -fs modules.hyprland.jsonc modules.jsonc
+    TARGET="modules.hyprland.jsonc"
+fi
+
+# Only link when the module file actually exists: this repo ships a single
+# config.jsonc, and a dangling modules.jsonc would just be cruft.
+if [[ -f "$TARGET" ]]; then
+    ln -fs "$TARGET" modules.jsonc
 fi

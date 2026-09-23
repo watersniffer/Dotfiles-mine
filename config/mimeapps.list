@@ -24,6 +24,7 @@ application/json=mousepad.desktop
 application/pdf=org.pwmt.zathura.desktop
 x-scheme-handler/about=zen.desktop
 x-scheme-handler/unknown=zen.desktop
+x-scheme-handler/mailspring=Mailspring.desktop
 
 [Added Associations]
 x-scheme-handler/mailto=userapp-Thunderbird-GCOJV3.desktop;

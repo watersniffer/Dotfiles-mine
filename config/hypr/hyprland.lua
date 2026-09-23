@@ -63,6 +63,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("mako")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
     hl.exec_cmd("waybar")
+    -- Runs ~/.local/bin/startup/*.sh once per login (auto_caffeine, bluetooth
+    -- reconnect, keyboard backlight, waybar module layout). flock-guarded.
+    hl.exec_cmd("at_startup")
     -- Wallpaper daemon for Matuwall: must be running before a wallpaper can
     -- be set. Started here because nothing activates graphical-session.target.
     hl.exec_cmd("awww-daemon")

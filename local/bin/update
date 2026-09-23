@@ -50,7 +50,9 @@ i_dont_need_those=(
 
 for path in "${i_dont_need_those[@]}"; do
     if [[ -e "$path" ]]; then
-        rm -rf "$path"
+        # Root-owned, and every app update restores these .desktop files -
+        # that's why this cleanup lives in the updater. Needs sudo to work.
+        sudo rm -rf "$path"
         echo "Removed trash: $path"
     fi
 done

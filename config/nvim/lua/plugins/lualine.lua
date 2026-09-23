@@ -2,25 +2,38 @@ return {
 	"nvim-lualine/lualine.nvim",
 	dependencies = { "nvim-tree/nvim-web-devicons" },
 	config = function()
-		-- 1. Import Tokyo Night colors
-		-- We load the palette to use it in your custom configuration
-		local colors = require("tokyonight.colors").setup()
+		-- 1. Gruvbox Dark palette (desktop accent: orange #fe8019)
+		local colors = {
+			base = "#282828",
+			mantle = "#1d2021",
+			crust = "#1d2021",
+			surface0 = "#32302f",
+			overlay0 = "#665c54",
+			text = "#ebdbb2",
+			subtext0 = "#a89984",
+			accent = "#fe8019",
+			green = "#b8bb26",
+			orange = "#d65d0e",
+			yellow = "#fabd2f",
+			red = "#fb4934",
+			blue = "#83a598",
+		}
 
-		-- 2. Map Tokyo Night colors to your 'p' variable
+		-- 2. Map Gruvbox colours to the 'p' variable
 		local p = {
-			bg = colors.bg,
-			bg_dark = colors.bg_dark,
-			bg_float = colors.bg_highlight, -- Lighter background
-			fg = colors.fg,
-			fg_dim = colors.comment, -- Dimmed text (gray)
-			func = colors.blue,
+			bg = colors.base,
+			bg_dark = colors.mantle,
+			bg_float = colors.surface0, -- Lighter background
+			fg = colors.text,
+			fg_dim = colors.overlay0, -- Dimmed text (grey)
+			func = colors.accent, -- orange: primary/normal-mode accent
 			string = colors.green,
 			class = colors.orange,
 			error = colors.red,
 			number = colors.yellow,
-			diag_err = colors.error,
-			diag_warn = colors.warning,
-			diag_info = colors.info,
+			diag_err = colors.red,
+			diag_warn = colors.yellow,
+			diag_info = colors.blue,
 		}
 
 		-- 3. Define your Custom Theme using the mapped colors

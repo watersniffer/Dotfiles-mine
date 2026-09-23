@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles and setup with **Hyprland** (Wayland), **Zsh + Powerlevel10k**, **Kitty**, **Neovim**, **Waybar**, **Rofi**, **Mako** and **Matugen** dynamic theming.
+My personal Arch Linux dotfiles: **Hyprland** (Wayland, Lua config), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Gruvbox Dark** (accent `#fe8019`) with a static palette that never changes with the wallpaper.
 
 ## Contents
 
@@ -11,22 +11,25 @@ My personal Arch Linux dotfiles and setup with **Hyprland** (Wayland), **Zsh + P
 ├── packages-aur.txt              # AUR packages (via yay)
 ├── packages-flatpak.txt          # Flatpak apps
 ├── home/                         # Dotfiles linked to $HOME
-│   ├── .bashrc
-│   ├── .tmux.conf
 │   ├── .bashrc / .bash_profile / .bash_logout
-├── config/                       # Configs for ~/.config/
-│   ├── hypr/                     # Hyprland (Lua config)
+│   ├── .tmux.conf  .vimrc
+│   └── .vim/                     # colorschemes (gruvbox)
+├── config/                       # Configs for ~/.config/ (symlinked)
+│   ├── hypr/                     # Hyprland (Lua config + HyprMod gui lua)
 │   ├── kitty/                    # Terminal
-│   ├── waybar/                   # Status bar (+ Waycat/Skulltype cat/skull fonts)
-│   ├── nvim/                     # Neovim (lazy.nvim)
+│   ├── waybar/                   # Status bar (+ Waycat/Skulltype fonts)
+│   ├── nvim/                     # Neovim (real dir, copy-if-missing)
 │   ├── rofi/                     # Launcher
 │   ├── mako/                     # Notifications
 │   ├── fastfetch/                # System fetch
-│   ├── matugen/                  # Material You theming (wallpaper-driven)
-│   ├── matuwall/                 # Wallpaper picker (Matuwall, no theming hooks)
-│   ├── gtk-3.0/ gtk-4.0/         # GTK theme settings
+│   ├── matugen/                  # Theming (pinned to Gruvbox hex)
+│   ├── matuwall/                 # Wallpaper picker (no theming hooks)
+│   ├── gtk-3.0/ gtk-4.0/         # GTK theme settings (Colloid-Orange)
+│   ├── btop/ Kvantum/ qt6ct/     # App themes
+│   ├── xsettingsd/               # GTK icon/theme propagation
+│   ├── spicetify/                # Spotify Gruvbox theme (real dir)
 │   └── ...
-├── local/bin/                    # Custom scripts (volume, screenshot, powermenu, ...)
+├── local/bin/                    # Custom scripts (startup/, powermenu, ...)
 ├── systemd/user/                 # User systemd units
 └── system/etc/                   # System-wide configs (SDDM, cpu-performance)
 ```
@@ -53,28 +56,59 @@ chmod +x install.sh
 
 1. **Enables multilib** in pacman.conf
 2. **Installs official packages** from `packages.txt` via `pacman -S --needed`
-3. **Installs yay** (AUR helper) from source if missing
-4. **Installs AUR packages** from `packages-aur.txt` via `yay`
+3. **Installs yay** (AUR helper) if missing
+4. **Installs AUR packages** from `packages-aur.txt` (Gruvbox GTK/icons/Kvantum, smile, spotify, ...)
 5. **Installs Flatpak apps** from `packages-flatpak.txt` (adds Flathub)
 6. **Installs TPM** (tmux plugin manager)
-7. **Links / copies** all configs (old files backed up to `~/.dotfiles-backup/`)
-8. **Applies system configs** (SDDM, cpu-performance.service) and enables services
+7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim and
+   spicetify stay real dirs (copy-if-missing); `local/bin` is **merged**, never
+   wiped, so machine-local tools (uv, tree-sitter, uv shims) survive
+8. **Applies system configs** (SDDM conf + auto-clones `gruvbox-minimal-sddm`,
+   cpu-performance.service, zram) and enables services
 9. **Sets up user services** (pipewire, wireplumber, SLSsteam guardian optional)
-10. **Sets bash as default shell**
+10. **Sets the GTK/icon/cursor theme in dconf** (GNOME + Cinnamon/Nemo:
+    Colloid-Orange-Dark-Gruvbox / Gruvbox-Plus-Dark / Bibata-Modern-Ice)
+11. **Sets bash as default shell**
+
+Re-running the installer is safe: already-correct symlinks are left untouched.
 
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. Drop wallpapers into `~/Pictures/Wallpapers/`, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper.
+2. Drop wallpapers into `~/Pictures/Wallpapers/`, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes colors (SDDM, Obsidian, ...) manually.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
-4. Kitty multi-open a terminal and run `starship config` to tweak the prompt.
-5. SDDM will use the gruvbox-minimal theme if `gruvbox-minimal-sddm` is installed; otherwise the default theme is used.
-6. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
+4. `starship config` tweaks the prompt.
+5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
+6. SDDM theme `gruvbox-minimal-sddm` (GitHub-only, not in AUR) is cloned automatically; the font it needs (`ttf-fantasque-nerd`) comes from `packages.txt`.
+
+### Not managed by the installer (machine-local)
+
+- **uv** (`curl -LsSf https://astral.sh/uv/install.sh | sh`) and its tools:
+  `uv tool install hyprmod`, `uv tool install terminal-velocity`
+  (HyprMod regenerates `config/hypr/hyprland-gui.lua` from its GUI — if you
+  change opacity there, keep it in sync with `hyprland.lua`)
+- **tree-sitter CLI** at `~/.local/bin/tree-sitter`
+- Browser profiles (Zen `zen-themes.json` + Transparent Zen mod + Zen Internet,
+  Firefox): themed in place on this machine, not shipped in the repo
+- The Spotify client itself (AUR `spotify` is in `packages-aur.txt`, but
+  `spicetify apply` must be re-run after Spotify/Spicetify updates)
+
+## Keybinds (extra)
+
+| Bind | Action |
+|------|--------|
+| `Super+E` | yazi file manager in kitty |
+| `Super+D` | nemo |
+| `Super+,` | smile emoji picker (floating, centered) |
+| `Super+C` | clipboard history via rofi (cliphist) |
+| `Super+W` | matuwall wallpaper picker |
+| `Super+P` | powermenu |
+| `Super+Space` | rofi launcher |
 
 ## Day-to-day
 
-- `all-update` — update pacman + AUR + flatpak
-- `update` — pacman update + orphan cleanup + reboot prompt
-- `rand-wallpaper` / `Sweetwall` (`SUPER+N`) — change wallpaper, re-themes everything
-- `powermenu` (`SUPER+P`) — shutdown/reboot/lock/suspend/logout
-- `themesw` — toggle dark/light theme
+- `update` — pacman update + stale desktop-file cleanup + orphan removal + reboot prompt
+- `all-update` — pacman + AUR (yay) + flatpak in one go
+- `powermenu` (`Super+P`) — shutdown/reboot/lock/suspend/logout
+- Startup scripts run once per login via `at_startup`
+  (`~/.local/bin/startup/*.sh`: auto-caffeine, bluetooth reconnect, keyboard backlight, …)

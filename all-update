@@ -1,0 +1,16 @@
+#!/bin/bash
+# Full system update: official repos + AUR (yay) + Flatpak.
+# For stale .desktop cleanup + orphan removal + reboot prompt, run `update`.
+set -uo pipefail
+
+sudo pacman -Syu
+
+if command -v yay >/dev/null 2>&1; then
+    yay -Sua
+fi
+
+if command -v flatpak >/dev/null 2>&1; then
+    flatpak update -y
+fi
+
+echo "all-update: pacman + AUR + flatpak done. Run 'update' for orphan cleanup."

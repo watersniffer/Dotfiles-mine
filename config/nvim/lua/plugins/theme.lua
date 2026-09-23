@@ -9,7 +9,7 @@ local function get_colorscheme()
 			return vim.trim(name)
 		end
 	end
-	return "tokyonight"
+	return "gruvbox"
 end
 
 -- ============================================================================
@@ -188,13 +188,17 @@ return {
 		name = "catppuccin",
 		lazy = true,
 		priority = 1000,
-		opts = { flavour = "mocha" },
+		opts = {
+			flavour = "mocha",
+			transparent_background = false,
+			term_colors = true,
+		},
 	},
 	{
 		"ellisonleao/gruvbox.nvim",
 		lazy = true,
 		priority = 1000,
-		opts = { contrast = "hard" },
+		opts = {},
 	},
 	{
 		"Mofiqul/dracula.nvim",

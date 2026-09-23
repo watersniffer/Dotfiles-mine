@@ -4,7 +4,20 @@
 # Wallpapers are user-specific
 wallpapers/
 
-# Don't track OS-specific cache/stutter
+# Editor/OS noise
 *.swp
+*.save
 *~
 .DS_Store
+
+# Python bytecode from local/bin helpers
+__pycache__/
+*.pyc
+
+# Machine-local caches that must not be committed
+config/btop/btop.log
+config/spicetify/Data/
+config/spicetify/backup/
+
+# Ad-hoc backups (*.bak-store-base, *.bak-handwritten, ...)
+*.bak-*

@@ -1,4 +1,3 @@
-nemo
 # Arch Linux packages (official repos)
 # System packages (base, base-devel, linux, linux-firmware, sudo, mkinitcpio) are
 # installed by default on Arch and are not included here.
@@ -46,6 +45,7 @@ swaync
 libnotify
 
 # --- File Manager ---
+nemo
 gvfs
 tumbler
 eza
@@ -67,6 +67,7 @@ flameshot
 # --- Media ---
 awww
 mpv-mpris
+playerctl
 cava
 chafa
 yt-dlp
@@ -87,6 +88,7 @@ bluez-utils
 # --- Hardware / System ---
 brightnessctl
 powertop
+power-profiles-daemon
 btop
 smartmontools
 ddcutil
@@ -122,6 +124,7 @@ kvantum
 ttf-jetbrains-mono-nerd
 ttf-cascadia-code-nerd
 ttf-hack-nerd
+ttf-fantasque-nerd
 ttf-iosevka-nerd
 ttf-mononoki-nerd
 ttf-nerd-fonts-symbols
@@ -144,6 +147,7 @@ rclone
 
 # --- Apps ---
 obsidian
+spicetify-cli
 zathura
 bc
 imagemagick
