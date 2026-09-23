@@ -4,8 +4,8 @@ configuration {
 }
 
 window {
-    background-color: #101418;
-    border-color: #a0cafd;
+    background-color: #282828;
+    border-color: #fe8019;
     border: 2px;
     border-radius: 8px;
     width: 240px;
@@ -28,19 +28,12 @@ listview {
 
 element {
     background-color: transparent;
-    text-color: #e1e2e8;
+    text-color: #ebdbb2;
     padding: 8px 16px;
     border-radius: 4px;
 }
 
 element selected.normal {
-    background-color: #1d2024;
-    text-color: #e1e2e8;
-}
-
-element-text {
-    background-color: transparent;
-    text-color: #e1e2e8;
-    expand: true;
-    vertical-align: 0.5;
+    background-color: #32302f;
+    text-color: #ebdbb2;
 }

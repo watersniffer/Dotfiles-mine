@@ -5,8 +5,24 @@
 --------------------
 
 local terminal    = "kitty"
-local fileManager = "thunar"
+-- yazi is a TUI: it must run inside a terminal, not exec bare.
+local fileManager = "kitty --class yazi -e yazi"
 local menu        = "rofi -show drun"
+
+--------------------
+---- WINDOW RULES --
+--------------------
+-- Rules use the structured hl.window_rule{} API (hl.config{windowrulev2=...} and
+-- array-style rules are silently ignored by the Lua parser; stayfocused is now
+-- stay_focused, and match conditions live under match{}).
+hl.window_rule({
+    name         = "smile-emoji-picker-float",
+    match        = { class = "^it\\.mijorus\\.smile$" },
+    float        = true,
+    size         = "500 400",
+    center       = true,
+    stay_focused = true,
+})
 
 --------------------
 ---- MONITORS -------
@@ -16,7 +32,7 @@ hl.monitor({
     output = "",                  -- Keeps this rule active for any monitor plugged in
     mode = "1366x768@60",         -- Explicitly sets your native resolution at 60Hz
     position = "0x0",             -- Keeps the workspace anchored at the coordinates origin
-    scale = 1.0,                  -- Force scale to 1 to make things smaller and crisp
+    scale = 1,                    -- Force scale to 1 to make things smaller and crisp
 })
 
 
@@ -32,6 +48,12 @@ hl.env("XCURSOR_THEME", "Bibata-Material-Noir")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 hl.env("QT_STYLE_OVERRIDE", "kvantum")
+hl.env("QT_SCALE_FACTOR", "0.92")   -- Qt apps: 92% interface scale (matches GTK)
+
+-- SDDM starts Hyprland directly, so .bashrc never runs and ~/.local/bin is
+-- missing from PATH. Without this every script bind (powermenu, matuwall,
+-- screenshot, ...) fails with "command not found".
+hl.env("PATH", "/home/water/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin")
 
 --------------------
 ---- AUTOSTART ------
@@ -41,7 +63,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("mako")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
     hl.exec_cmd("waybar")
-    hl.exec_cmd("sweetbgd")
+    -- Wallpaper daemon for Matuwall: must be running before a wallpaper can
+    -- be set. Started here because nothing activates graphical-session.target.
+    hl.exec_cmd("awww-daemon")
     hl.exec_cmd("nm-applet &")
     hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd(terminal)
@@ -53,14 +77,14 @@ end)
 
 hl.config({
     general = {
-        gaps_in  = 4,
-        gaps_out = 8,
+        gaps_in  = 5,
+        gaps_out = 5,
 
         border_size = 0,
 
         col = {
-            active_border   = { colors = { "rgba(eaeaeaff)" }, angle = 0 },
-            inactive_border = "rgba(2b2b2bff)",
+            active_border   = { colors = { "rgba(fe8019ff)" }, angle = 0 },
+            inactive_border = "rgba(3c3836ff)",
         },
 
         resize_on_border = false,
@@ -181,6 +205,7 @@ hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("nemo"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
@@ -189,11 +214,10 @@ hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
 hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
 hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(menu))
-hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("rofi -modi emoji -show emoji"))
- hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"))
- hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("sweetwall"))
- hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("random-wallpaper"))
- hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("powermenu"))
+hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("smile"))
+hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"))
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("matuwall"))
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("powermenu"))
 
 -- Switch workspaces with mainMod + [0-9]
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]
@@ -229,3 +253,6 @@ hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
+
+-- HyprMod managed settings
+require("hyprland-gui")

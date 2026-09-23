@@ -1,3 +1,4 @@
+nemo
 # Arch Linux packages (official repos)
 # System packages (base, base-devel, linux, linux-firmware, sudo, mkinitcpio) are
 # installed by default on Arch and are not included here.
@@ -21,12 +22,10 @@ nwg-displays
 nwg-dock-hyprland
 nwg-look
 xsettingsd
-gammastep
 geoclue
 
 # --- Terminal / Shell ---
 kitty
-zsh
 tmux
 starship
 fastfetch
@@ -47,15 +46,7 @@ swaync
 libnotify
 
 # --- File Manager ---
-thunar
-thunar-archive-plugin
-thunar-media-tags-plugin
-thunar-volman
 gvfs
-dolphin
-dolphin-plugins
-kdegraphics-thumbnailers
-kio-admin
 tumbler
 eza
 fzf
@@ -96,10 +87,7 @@ bluez-utils
 # --- Hardware / System ---
 brightnessctl
 powertop
-nvtop
 btop
-htop
-mission-center
 smartmontools
 ddcutil
 zram-generator
@@ -125,12 +113,8 @@ xorg-xdpyinfo
 xorg-xwininfo
 
 # --- Qt / GTK Theming ---
-qt5-wayland
 qt6-wayland
 qt6-5compat
-qt5-graphicaleffects
-qt5-imageformats
-qt5-quickcontrols2
 qt6ct
 kvantum
 
@@ -160,13 +144,10 @@ rclone
 
 # --- Apps ---
 obsidian
-mousepad
 zathura
-flowblade
 bc
 imagemagick
 ffmpegthumbnailer
-ffmpegthumbs
 xdg-utils
 xdg-user-dirs-gtk
 man-db

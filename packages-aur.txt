@@ -5,7 +5,6 @@ alarm-clock-applet
 ani-cli
 bibata-cursor-theme-bin
 graphite-gtk-theme
-helium-browser-bin
 kripton-theme-git
 numix-white-icons
 pacseek
@@ -13,7 +12,7 @@ papirus-folders-git
 qview
 shell-color-scripts-git
 spotx-git
-sweetbg-bin
+matuwall-bin
 tokyonight-gtk-theme-git
 xcursor-simp1e-gruvbox-dark
 zen-browser-bin

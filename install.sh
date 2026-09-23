@@ -50,7 +50,13 @@ preflight() {
     if [[ "$EUID" -eq 0 ]]; then
         err "Do not run as root. It uses sudo when needed."; exit 1
     fi
-    sudo -v 2>/dev/null || { err "Need sudo access. Run 'sudo -v' first."; exit 1; }
+    # -n first: reuse an already-cached timestamp (works with no TTY, e.g. when
+    # run from a script/CI). Falls back to interactive -v so a normal terminal
+    # run still prompts the user for their password.
+    if ! sudo -n -v 2>/dev/null && ! sudo -v 2>/dev/null; then
+        err "Need sudo access. Run 'sudo -v' first."
+        exit 1
+    fi
     ok "Pre-flight checks passed."
 }
 
@@ -136,41 +142,7 @@ install_flatpak_packages() {
 }
 
 # ============================================================================
-# 5. OH MY ZSH + PLUGINS + POWERLEVEL10K
-# ============================================================================
-install_oh_my_zsh() {
-    local ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-
-    if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-        log "Installing Oh My Zsh..."
-        RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    else
-        ok "Oh My Zsh already installed."
-    fi
-
-    local plugins=(
-        "zsh-autosuggestions|https://github.com/zsh-users/zsh-autosuggestions"
-        "zsh-syntax-highlighting|https://github.com/zsh-users/zsh-syntax-highlighting"
-        "zsh-vi-mode|https://github.com/jeffreytse/zsh-vi-mode"
-    )
-    for entry in "${plugins[@]}"; do
-        local name="${entry%%|*}" url="${entry##*|}"
-        if [[ ! -d "$ZSH_CUSTOM/plugins/$name" ]]; then
-            log "Installing $name..."
-            git clone --depth=1 "$url" "$ZSH_CUSTOM/plugins/$name"
-        fi
-    done
-
-    if [[ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]]; then
-        log "Installing Powerlevel10k..."
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
-    fi
-
-    ok "Oh My Zsh, plugins, and Powerlevel10k ready."
-}
-
-# ============================================================================
-# 6. TMUX PLUGIN MANAGER (TPM)
+# 5. TMUX PLUGIN MANAGER (TPM)
 # ============================================================================
 install_tpm() {
     if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then ok "TPM already installed."; return; fi
@@ -202,13 +174,14 @@ symlink_dotfiles() {
     mkdir -p "$BACKUP_DIR" 2>/dev/null || true
 
     # --- Home dotfiles ---
-    for f in .zshrc .p10k.zsh .tmux.conf .bashrc .bash_profile .bash_logout; do
+    for f in .tmux.conf .bashrc .bash_profile .bash_logout; do
         link_item "$DOTFILES_DIR/home/$f" "$HOME/$f"
     done
 
     # --- Config directories (as self-contained copies) ---
     local conf_dir="$DOTFILES_DIR/config"
-    for name in hypr kitty waybar rofi mako fastfetch matugen nvim sweetbg sweetwall npm xdg-desktop-portal gtk-3.0 gtk-4.0; do
+    # nvim is deliberately absent: it must be a real dir (see setup_nvim), not a symlink
+    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall npm xdg-desktop-portal gtk-3.0 gtk-4.0; do
         if [[ -d "$conf_dir/$name" ]]; then
             # Remove old symlinks to lyne-dots if present
             [[ -L "$HOME/.config/$name" ]] && rm -f "$HOME/.config/$name"
@@ -260,6 +233,13 @@ apply_system_configs() {
         ok "SDDM configs applied."
     }
 
+    # Zram
+    [[ -f "$DOTFILES_DIR/system/etc/zram-generator.conf" ]] && {
+        sudo mkdir -p /etc/systemd
+        sudo cp "$DOTFILES_DIR/system/etc/zram-generator.conf" /etc/systemd/zram-generator.conf
+        ok "zram config applied."
+    }
+
     # Enable key system services
     sudo systemctl enable sddm.service 2>/dev/null || true
     sudo systemctl enable NetworkManager.service 2>/dev/null || true
@@ -274,9 +254,23 @@ setup_user_services() {
     log "Setting up user systemd services..."
 
     mkdir -p "$HOME/.config/systemd/user"
-    cp -f "$DOTFILES_DIR/systemd/user/"*.service "$HOME/.config/systemd/user/" 2>/dev/null || true
-    cp -f "$DOTFILES_DIR/systemd/user/"*.path   "$HOME/.config/systemd/user/" 2>/dev/null || true
-    cp -f "$DOTFILES_DIR/systemd/user/"*.timer   "$HOME/.config/systemd/user/" 2>/dev/null || true
+
+    # NB: systemd/user/pipewire-session-manager.service is byte-identical to the
+    # stock /usr/lib/systemd/user/wireplumber.service but under a different unit
+    # name. Copying it makes systemd run TWO wireplumber instances that fight over
+    # the PipeWire core, which hangs wpctl/pwcli and breaks audio. Skip it.
+    local SKIP_UNITS="pipewire-session-manager.service"
+    local f base
+    for f in "$DOTFILES_DIR/systemd/user/"*.service "$DOTFILES_DIR/systemd/user/"*.path \
+             "$DOTFILES_DIR/systemd/user/"*.timer; do
+        [[ -f "$f" ]] || continue
+        base="$(basename "$f")"
+        if [[ " $SKIP_UNITS " == *" $base "* ]]; then
+            log "Skipping $base (duplicate of stock wireplumber.service)."
+            continue
+        fi
+        cp -f "$f" "$HOME/.config/systemd/user/"
+    done
 
     systemctl --user enable pipewire.service 2>/dev/null || true
     systemctl --user enable pipewire-pulse.service 2>/dev/null || true
@@ -294,12 +288,24 @@ setup_user_services() {
 # 10. NVIM SETUP
 # ============================================================================
 setup_nvim() {
-    # Ensure nvim config dir is a real dir, not a symlink
-    [[ -L "$HOME/.config/nvim" ]] && rm -f "$HOME/.config/nvim"
+    local src="$DOTFILES_DIR/config/nvim"
+    local dst="$HOME/.config/nvim"
+
+    # nvim must be a REAL dir (it writes current-theme.txt / lazy-lock.json),
+    # so materialise a copy instead of leaving a symlink.
+    if [[ -L "$dst" ]]; then
+        rm -f "$dst"                    # drop the symlink only (target stays in repo)
+    fi
+    if [[ ! -d "$dst" && -d "$src" ]]; then
+        mkdir -p "$(dirname "$dst")"
+        cp -a "$src" "$dst"
+    fi
+
+    mkdir -p "$dst"
 
     # Ensure theme file exists
-    if [[ ! -f "$HOME/.config/nvim/current-theme.txt" ]]; then
-        echo "tokyonight" > "$HOME/.config/nvim/current-theme.txt"
+    if [[ ! -f "$dst/current-theme.txt" ]]; then
+        echo "tokyonight" > "$dst/current-theme.txt"
     fi
 
     ok "Neovim ready. Plugins install on first launch."
@@ -324,9 +330,14 @@ setup_misc() {
 
     local current_shell
     current_shell=$(getent passwd "$USER" | cut -d: -f7)
-    if [[ "$current_shell" != *"zsh"* ]]; then
-        log "Setting zsh as default shell..."
-        chsh -s "$(which zsh)"
+    if [[ "$current_shell" != *"bash"* ]]; then
+        log "Setting bash as default shell..."
+        # chsh prompts on the TTY (unavailable when run from scripts), so fall
+        # back to usermod, which authenticates via sudo instead.
+        if ! chsh -s /usr/bin/bash </dev/tty >/dev/null 2>&1; then
+            sudo usermod -s /usr/bin/bash "$USER"
+        fi
+        ok "Default shell set to bash."
     fi
 }
 
@@ -350,7 +361,6 @@ main() {
         install_flatpak_packages
     fi
 
-    install_oh_my_zsh
     install_tpm
     symlink_dotfiles
     setup_nvim
@@ -364,10 +374,13 @@ main() {
     echo -e "${GREEN}========================================${NC}"
     echo ""
     echo -e "  What to do next:"
-    echo -e "    1. Log out and back in (for zsh + wayland)"
+    echo -e "    1. Log out and back in (for bash + wayland)"
     echo -e "    2. Put wallpapers in ~/Pictures/Wallpapers/"
     echo -e "    3. Open kitty - nvim plugins install on first launch"
-    echo -e "    4. To use SDDM theme, install gruvbox-minimal-sddm from AUR"
+    echo -e "    4. SDDM theme: gruvbox-minimal-sddm is GitHub-only (NOT in AUR):"
+    echo -e "       git clone https://github.com/scientiac/gruvbox-minimal-sddm"
+    echo -e "       sudo cp -a gruvbox-minimal-sddm /usr/share/sddm/themes/"
+    echo -e "       Font it needs: sudo pacman -S ttf-fantasque-nerd"
     echo -e "    5. Run 'p10k configure' to reconfigure the prompt if needed"
     echo ""
 }

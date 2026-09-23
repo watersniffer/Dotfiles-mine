@@ -30,8 +30,6 @@ pacman $pacman_args -Syu
 i_dont_need_those=(
     "/usr/share/applications/lstopo.desktop"
     "/usr/share/applications/electron37.desktop"
-    "/usr/share/applications/thunar-settings.desktop"
-    "/usr/share/applications/thunar-bulk-rename.desktop"
     "/usr/share/applications/qt6ct.desktop"
     "/usr/share/applications/assistant.desktop"
     "/usr/share/applications/qdbusviewer.desktop"
@@ -44,11 +42,9 @@ i_dont_need_those=(
     "/usr/share/applications/rofi.desktop"
     "/usr/share/applications/rofi-theme-selector.desktop"
     "/usr/share/applications/org.flameshot.Flameshot.desktop"
-    "/usr/share/applications/cmake-gui.desktop"
     "/usr/share/applications/avahi-discover.desktop"
     "/usr/share/applications/bssh.desktop"
     "/usr/share/applications/bvnc.desktop"
-    "/usr/share/applications/gammastep-indicator.desktop"
     "/usr/share/applications/kvantummanager.desktop"
 )
 

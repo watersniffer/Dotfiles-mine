@@ -2,14 +2,14 @@ configuration {
     modes: "drun";
     sorting-method: "normal";
     show-icons: true;
-    icon-theme: "papirus";
+    icon-theme: "Gruvbox-Plus-Dark";
     matching: "regex";
     drun-match-fields: "name";
     display-run: "menu:";
     display-drun: "Launch:";
 }
 
-@theme "tokyo"
+@theme "gruvbox"
 
 @import "colors.rasi"
 
@@ -31,23 +31,23 @@ window {
 
     border-radius: 0px;
     border: 2px;
-    border-color: #333333;
+    border-color: #3c3836;
 
-    background-color: rgba(13, 13, 13, 0.94);
+    background-color: rgba(40 40 40 / 0.94);
 }
 
 /* ===== Main container ===== */
 mainbox {
     padding: 0px;
-    background-color: #121212;
+    background-color: #282828;
 }
 
 /* ===== Input bar ===== */
 inputbar {
-    background-color: #1a1a1a;
+    background-color: #32302f;
     border-radius: 1px;
     border: 1px;
-    border-color: rgba(60, 60, 60, 0.8);
+    border-color: rgba(60 56 54 / 0.8);
 
     padding: 8px 16px;
     spacing: 8px;
@@ -67,7 +67,7 @@ entry {
 
 /* ===== List ===== */
 listview {
-    background-color: #121212;
+    background-color: #282828;
     margin: 10px 0 0;
 
     columns: 1;
@@ -81,7 +81,7 @@ element {
     spacing: 6px;
     border-radius: 1px;
 
-    background-color: #121212;
+    background-color: #282828;
 }
 
 element normal urgent {
@@ -94,7 +94,7 @@ element normal active {
 
 element selected normal,
 element selected active {
-    background-color: rgba(140, 140, 140, 0.18);
+    background-color: rgba(254 128 25 / 0.18);
 }
 
 /* ===== Icons & text ===== */
@@ -113,12 +113,12 @@ message {
     margin: 12px 0 0;
     border-radius: 12px;
     border: 1px;
-    border-color: rgba(60, 60, 60, 0.8);
+    border-color: rgba(60 56 54 / 0.8);
 
-    background-color: rgba(10, 10, 10, 0.92);
+    background-color: rgba(29 32 33 / 0.92);
 }
 
 textbox {
     padding: 8px 24px;
-    background-color: rgba(10, 10, 10, 0.92);
+    background-color: rgba(29 32 33 / 0.92);
 }

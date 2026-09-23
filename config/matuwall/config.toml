@@ -1,0 +1,46 @@
+# Matuwall configuration — static Gruvbox Dark desktop.
+#
+# Deliberately has NO [hooks] section: the OS palette does NOT follow the
+# wallpaper. Changing the wallpaper only swaps the background image.
+
+[general]
+directory = "~/Pictures/Wallpapers"
+backend = "awww"
+
+[window]
+preview = false
+close_on_focus_loss = false
+position = "center"
+background = "#282828"
+margin = 34
+edge_margin = 24
+radius = 24
+
+[input]
+mouse = true
+
+[animation]
+navigation_ms = 200
+zoom_percent = 6
+
+[grid]
+columns = 5
+spacing = 14
+radius = 12
+border_width = 1
+shadow_width = 0
+ring_width = 2
+visible_rows = 2
+carousel = false
+edge_peek = false
+
+[thumbnail]
+width = 260
+height = 146
+
+[colors]
+tile = "#32302fff"
+border = "#3c3836ff"
+shadow = "#00000066"
+ring = "#fe8019ff"
+spinner = "#8ec07cff"
