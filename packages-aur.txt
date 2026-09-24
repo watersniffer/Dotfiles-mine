@@ -5,6 +5,7 @@ alarm-clock-applet
 ani-cli
 bibata-cursor-theme-bin
 graphite-gtk-theme
+helium-browser-bin
 kripton-theme-git
 matuwall-bin
 pacseek

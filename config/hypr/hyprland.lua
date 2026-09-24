@@ -197,6 +197,7 @@ hl.gesture({
 local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
+hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("helium-browser"))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
@@ -212,6 +213,7 @@ hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("smile"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("matuwall"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("toggle-waybar"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("wlogout"))
 
 -- Switch workspaces with mainMod + [0-9]

@@ -94,10 +94,12 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 | Bind | Action |
 |------|--------|
 | `Super+E` | yazi file manager in kitty |
+| `Super+B` | Helium browser |
 | `Super+D` | nemo |
 | `Super+,` | smile emoji picker (floating, centered) |
 | `Super+C` | clipboard history via rofi (cliphist) |
 | `Super+W` | matuwall wallpaper picker |
+| `Super+Shift+W` | hide/show Waybar |
 | `Super+P` | wlogout |
 | `Super+Space` | rofi launcher |
 
