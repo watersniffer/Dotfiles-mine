@@ -1,32 +1,51 @@
 #!/bin/bash
 
 if pgrep -x "wf-recorder" > /dev/null; then
-    pkill wf-recorder
-    notify-send --app-name $0 \
+    pkill -x wf-recorder
+    notify-send --app-name "$0" \
                 --icon view-list-video-symbolic \
                 "Finished recording" "wf-recorder"
     exit 0
 fi
 
-FILE=$XDG_VIDEOS_DIR/'record-'"$(date +"%Y-%m-%d_%H-%M-%S")"'.mp4'
+VIDEOS_DIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
+mkdir -p "$VIDEOS_DIR"
+FILE="$VIDEOS_DIR/record-$(date +"%Y-%m-%d_%H-%M-%S").mp4"
 
-MONITOR_SOURCES=$(pactl list sources | grep Name | grep '\.monitor' | cut -d' ' -f2)
-BLUEZ_SOURCE=$(echo "$MONITOR_SOURCES" | grep bluez_output)
+mapfile -t MONITOR_SOURCES < <(
+    pactl list sources 2>/dev/null \
+        | sed -n 's/^[[:space:]]*Name:[[:space:]]*//p' \
+        | grep '\.monitor$'
+)
 
-if [[ -n "$BLUEZ_SOURCE" ]]; then
-    AUDIO_SOURCE=$BLUEZ_SOURCE
+AUDIO_SOURCE=""
+for source in "${MONITOR_SOURCES[@]}"; do
+    if [[ "$source" == bluez_output.* ]]; then
+        AUDIO_SOURCE="$source"
+        break
+    fi
+done
+if [[ -z "$AUDIO_SOURCE" ]]; then
+    for source in "${MONITOR_SOURCES[@]}"; do
+        if [[ "$source" == alsa_output.* ]]; then
+            AUDIO_SOURCE="$source"
+            break
+        fi
+    done
+fi
+
+if [[ "${1:-}" == "--select" ]]; then
+    AREA_ARGS=(-g "$(slurp)")
 else
-    AUDIO_SOURCE=$(echo $MONITOR_SOURCES | grep alsa_output)
+    AREA_ARGS=()
 fi
 
-if [[ "$1" == "--select" ]]; then 
-    AREA='-g '"$(slurp)"
-else 
-    AREA=''
-fi
-
-notify-send --app-name $0 \
+notify-send --app-name "$0" \
             --icon view-list-video-symbolic \
             "Recording..." "wf-recorder"
 
-wf-recorder "$AREA" --audio="$AUDIO_SOURCE" -D --file $FILE -c libx264rgb
+WF_ARGS=(-D --file "$FILE" -c libx264 -x libx264rgb)
+if [[ -n "$AUDIO_SOURCE" ]]; then
+    WF_ARGS+=(--audio="$AUDIO_SOURCE")
+fi
+wf-recorder "${AREA_ARGS[@]}" "${WF_ARGS[@]}"

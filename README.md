@@ -48,7 +48,7 @@ git clone https://github.com/watersniffer/Dotfiles-mine.git && cd Dotfiles-mine
 
 chmod +x install.sh
 ./install.sh               # Full install (packages + configs)
-./install.sh --skip-pkgs   # Only link configs, skip package installation
+./install.sh --skip-pkgs   # Skip packages; still apply configs/system settings
 ```
 
 ## What the installer does
@@ -59,13 +59,13 @@ chmod +x install.sh
 4. **Installs AUR packages** from `packages-aur.txt` (Graphite GTK, Kripton, Kvantum, smile, ...)
 5. **Installs Flatpak apps** from `packages-flatpak.txt` (adds Flathub)
 6. **Installs TPM** (tmux plugin manager)
-7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim stays a real dir (copy-if-missing); `local/bin` is **merged**, never
+7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim and qt6ct stay real dirs (copy-if-missing); `local/bin` is **merged**, never
    wiped, so machine-local tools (uv, tree-sitter, uv shims) survive
 8. **Applies system configs** (SDDM conf + auto-clones `gruvbox-minimal-sddm`,
    cpu-performance.service, zram) and enables services
 9. **Sets up user services** (pipewire, wireplumber)
 10. **Sets the GTK/icon/cursor theme in dconf** (GNOME + Cinnamon/Nemo:
-    Graphite-Dark / Papirus / Bibata-Modern-Classic)
+    Kripton / Papirus / Bibata-Modern-Classic)
 11. **Sets bash as default shell**
 
 Re-running the installer is safe: already-correct symlinks are left untouched.
@@ -73,7 +73,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. Drop wallpapers into `~/Pictures/Wallpapers/`, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes colors (SDDM, etc.) manually.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes colors (SDDM, etc.) manually.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).

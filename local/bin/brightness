@@ -23,6 +23,6 @@ else
 fi
 
 # Send notification
-notify-send --app-name $0 --icon $ICON \
-            "Brightness changed": "Current brightness: $BR_PERCENT%" \
+notify-send --app-name "$0" --icon "$ICON" \
+            "Brightness changed" "Current brightness: $BR_PERCENT%" \
             -h "string:x-canonical-private-synchronous:$0"

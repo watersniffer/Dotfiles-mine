@@ -9,7 +9,7 @@
 # Usage:
 #   chmod +x install.sh
 #   ./install.sh              # Full install
-#   ./install.sh --skip-pkgs  # Skip package installation (only symlink configs)
+#   ./install.sh --skip-pkgs  # Skip packages; still apply configs/system settings
 #   ./install.sh --help
 # ============================================================================
 
@@ -66,12 +66,33 @@ preflight() {
 install_pacman_packages() {
     log "Installing pacman packages..."
 
-    # Enable multilib if missing
-    if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+    # Enable multilib if missing. Handle both commented and absent sections.
+    local pacman_conf_changed=0
+    if ! grep -qE '^[[:space:]]*\[multilib\][[:space:]]*$' /etc/pacman.conf; then
         log "Enabling [multilib] repository..."
-        sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
-        sudo pacman -Sy
+        if grep -qE '^[[:space:]]*#[[:space:]]*\[multilib\]' /etc/pacman.conf; then
+            sudo sed -i \
+                '/^[[:space:]]*#[[:space:]]*\[multilib\]/,/^[[:space:]]*#[[:space:]]*Include/s/^[[:space:]]*#[[:space:]]*//' \
+                /etc/pacman.conf
+        else
+            printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' \
+                | sudo tee -a /etc/pacman.conf >/dev/null
+        fi
+        pacman_conf_changed=1
     fi
+
+    # Ensure the section has the standard mirror Include line.
+    if ! awk '
+        /^[[:space:]]*\[multilib\][[:space:]]*$/ { in_section=1; next }
+        /^[[:space:]]*\[/ { in_section=0 }
+        in_section && /^[[:space:]]*Include[[:space:]]*=[[:space:]]*\/etc\/pacman\.d\/mirrorlist[[:space:]]*$/ { found=1 }
+        END { exit(found ? 0 : 1) }
+    ' /etc/pacman.conf; then
+        sudo sed -i '/^[[:space:]]*\[multilib\][[:space:]]*$/a Include = /etc/pacman.d/mirrorlist' /etc/pacman.conf
+        pacman_conf_changed=1
+    fi
+
+    [[ "$pacman_conf_changed" -eq 1 ]] && sudo pacman -Sy
 
     local packages=()
     while IFS= read -r line; do
@@ -147,6 +168,7 @@ install_flatpak_packages() {
 install_tpm() {
     if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then ok "TPM already installed."; return; fi
     log "Installing TPM..."
+    mkdir -p "$HOME/.tmux/plugins"
     git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
 }
 
@@ -186,9 +208,10 @@ symlink_dotfiles() {
 
     # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"
-    # nvim is deliberately absent: it must be a real dir (see setup_nvim).
+    # nvim and qt6ct are deliberately absent: applications write state into them
+    # (see setup_nvim and setup_qt6ct).
     for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout npm \
-                xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum qt6ct xsettingsd; do
+                xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
         fi
@@ -220,6 +243,9 @@ symlink_dotfiles() {
 
     # --- Wallpaper directory ---
     mkdir -p "$HOME/Pictures/Wallpapers"
+    if [[ -d "$DOTFILES_DIR/wallpapers" ]]; then
+        cp -an "$DOTFILES_DIR/wallpapers/." "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
+    fi
 
     ok "Dotfiles linked."
 }
@@ -244,22 +270,31 @@ apply_system_configs() {
 
     # SDDM theme: GitHub-only (NOT in AUR). matugen/apply.sh publishes
     # theme.conf + wallpaper into this dir as the login user, hence the chown.
-    if [[ ! -d /usr/share/sddm/themes/gruvbox-minimal-sddm ]]; then
+    local sddm_theme_dir="/usr/share/sddm/themes/gruvbox-minimal-sddm"
+    if [[ ! -d "$sddm_theme_dir" ]]; then
         log "Installing gruvbox-minimal-sddm theme..."
         local tmp_sddm
         tmp_sddm=$(mktemp -d)
         if git clone --depth 1 https://github.com/scientiac/gruvbox-minimal-sddm "$tmp_sddm/theme"; then
             sudo mkdir -p /usr/share/sddm/themes
-            sudo cp -a "$tmp_sddm/theme" /usr/share/sddm/themes/gruvbox-minimal-sddm
-            sudo chown -R "$USER" /usr/share/sddm/themes/gruvbox-minimal-sddm
-            # Qt 5.15 uses the QtGraphicalEffects module for FastBlur.
-            sed -i 's/^import Qt5Compat\.GraphicalEffects$/import QtGraphicalEffects 1.0/' \
-                /usr/share/sddm/themes/gruvbox-minimal-sddm/Main.qml 2>/dev/null || true
+            sudo cp -a "$tmp_sddm/theme" "$sddm_theme_dir"
             ok "SDDM theme installed."
         else
             warn "Could not fetch gruvbox-minimal-sddm - clone it manually (see post-install)."
         fi
         rm -rf "$tmp_sddm"
+    fi
+
+    # Qt 5.15 uses QtGraphicalEffects for FastBlur. Patch both freshly cloned
+    # and pre-existing themes so re-runs also repair older installations.
+    if [[ -f "$sddm_theme_dir/Main.qml" ]] && \
+       sudo grep -q '^import Qt5Compat\.GraphicalEffects$' "$sddm_theme_dir/Main.qml"; then
+        sudo sed -i 's/^import Qt5Compat\.GraphicalEffects$/import QtGraphicalEffects 1.0/' \
+            "$sddm_theme_dir/Main.qml"
+        ok "SDDM Qt5 import patched."
+    fi
+    if [[ -d "$sddm_theme_dir" ]]; then
+        sudo chown -R "$USER" "$sddm_theme_dir"
     fi
 
     # Zram
@@ -329,10 +364,32 @@ setup_nvim() {
 
     # Ensure theme file exists (theme-loader falls back to this)
     if [[ ! -f "$dst/current-theme.txt" ]]; then
-        echo "gruvbox" > "$dst/current-theme.txt"
+        echo "monochrome" > "$dst/current-theme.txt"
     fi
 
     ok "Neovim ready. Plugins install on first launch."
+}
+
+# ============================================================================
+# QT6CT SETUP
+# ============================================================================
+setup_qt6ct() {
+    local src="$DOTFILES_DIR/config/qt6ct"
+    local dst="$HOME/.config/qt6ct"
+
+    # qt6ct rewrites qt6ct.conf and its colour settings when launched, so keep
+    # it as a real directory rather than letting those writes dirty the repo.
+    if [[ -L "$dst" ]]; then
+        local tmp_dst
+        tmp_dst=$(mktemp -d "$HOME/.config/.qt6ct.XXXXXX")
+        cp -a "$src/." "$tmp_dst/"
+        rm -f "$dst"
+        mv "$tmp_dst" "$dst"
+    elif [[ ! -d "$dst" && -d "$src" ]]; then
+        cp -a "$src" "$dst"
+    fi
+
+    ok "qt6ct configuration ready."
 }
 
 # ============================================================================
@@ -366,7 +423,7 @@ setup_misc() {
     # GTK2 legacy settings file: seed once if absent (nwg-look may rewrite it
     # in place afterwards - fine, it regenerates from the same dconf values).
     if [[ ! -f "$HOME/.gtkrc-2.0" && -f "$DOTFILES_DIR/home/.gtkrc-2.0" ]]; then
-        cp "$DOTFILES_DIR/home/.gtkrc-2.0" "$HOME/.gtkrc-2.0"
+        sed "s|@HOME@|$HOME|g" "$DOTFILES_DIR/home/.gtkrc-2.0" > "$HOME/.gtkrc-2.0"
     fi
 
     # Create custom XDG dirs from our user-dirs.dirs without overwriting it
@@ -418,6 +475,7 @@ main() {
     install_tpm
     symlink_dotfiles
     setup_nvim
+    setup_qt6ct
     apply_system_configs
     setup_user_services
     setup_misc
@@ -430,11 +488,11 @@ main() {
     echo ""
     echo -e "  What to do next:"
     echo -e "    1. Log out and back in (for bash + wayland)"
-    echo -e "    2. Put wallpapers in ~/Pictures/Wallpapers/ then Super+W (Matuwall)"
+    echo -e "    2. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
     echo -e "    3. Open kitty - nvim plugins install on first launch"
     echo -e "    4. SDDM theme (gruvbox-minimal-sddm) installs automatically;"
     echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish colors"
-    echo -e "    5. Binds: Super+E yazi | Super+, emoji | Super+C clipboard | Super+P menu"
+    echo -e "    5. Binds: Super+E yazi | Super+, smile | Super+C clipboard | Super+P menu"
     echo -e "       Machine-local extras (uv tools, tree-sitter) - see README"
     echo ""
 }

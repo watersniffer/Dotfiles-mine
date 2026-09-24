@@ -9,11 +9,17 @@ fi
 PREVIOUS_PROFILE=$(powerprofilesctl get)
 PROFILE_CHANGED=0
 
-if [ "$PREVIOUS_PROFILE" != "performance" ]; then
-    if [ "$(cat /sys/class/power_supply/BAT0/status)" != "Discharging" ]; then
-        powerprofilesctl set performance
-        PROFILE_CHANGED=1
+ON_BATTERY=false
+for status_file in /sys/class/power_supply/BAT*/status; do
+    if [[ -r "$status_file" && "$(<"$status_file")" == "Discharging" ]]; then
+        ON_BATTERY=true
+        break
     fi
+done
+
+if [[ "$PREVIOUS_PROFILE" != "performance" && "$ON_BATTERY" != true ]]; then
+    powerprofilesctl set performance
+    PROFILE_CHANGED=1
 fi
 
 systemd-inhibit --what=idle -- "$@"

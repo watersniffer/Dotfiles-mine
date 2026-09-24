@@ -5,9 +5,18 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-VALUE=$1
+VALUE=${1%\%}
+if ! [[ "$VALUE" =~ ^[+-]?[0-9]+$ ]]; then
+    echo "Error: volume change must be an integer percentage."
+    exit 1
+fi
 
-CURRENT_VOL=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}' | tr -d '%')
+CURRENT_VOL=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null \
+    | sed -n 's/.*[[:space:]]\([0-9]\+\)%.*/\1/p' | head -n 1)
+if [[ -z "$CURRENT_VOL" ]]; then
+    echo "Error: could not read the current sink volume."
+    exit 1
+fi
 NEW_VOL=$((CURRENT_VOL + VALUE))
 
 if [ "$NEW_VOL" -gt 200 ]; then
@@ -16,7 +25,7 @@ elif [ "$NEW_VOL" -lt 0 ]; then
     NEW_VOL=0
 fi
 
-pactl set-sink-volume @DEFAULT_SINK@ ${NEW_VOL}%
+pactl set-sink-volume @DEFAULT_SINK@ "${NEW_VOL}%"
 
 if [ "$NEW_VOL" -gt 70 ]; then
     ICON="notification-audio-volume-high"

@@ -66,6 +66,7 @@ slurp
 satty
 swappy
 flameshot
+wf-recorder
 
 # --- Media ---
 awww
@@ -150,7 +151,6 @@ socat
 rclone
 
 # --- Apps ---
-wlogout
 bc
 imagemagick
 ffmpegthumbnailer

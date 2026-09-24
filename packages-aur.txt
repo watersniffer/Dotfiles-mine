@@ -11,4 +11,5 @@ pacseek
 qview
 shell-color-scripts-git
 smile
+wlogout
 zen-browser-bin

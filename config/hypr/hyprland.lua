@@ -30,7 +30,7 @@ hl.window_rule({
 
 hl.monitor({
     output = "",                  -- Keeps this rule active for any monitor plugged in
-    mode = "1366x768@60",         -- Explicitly sets your native resolution at 60Hz
+    mode = "preferred",           -- Use the monitor's preferred mode on each display
     position = "0x0",             -- Keeps the workspace anchored at the coordinates origin
     scale = 1,                    -- Force scale to 1 to make things smaller and crisp
 })
@@ -44,7 +44,7 @@ hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 hl.env("GDK_BACKEND", "wayland")
 hl.env("XCURSOR_SIZE", "24")
-hl.env("XCURSOR_THEME", "Bibata-Material-Noir")
+hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 hl.env("QT_STYLE_OVERRIDE", "kvantum")
@@ -53,7 +53,10 @@ hl.env("QT_SCALE_FACTOR", "0.92")   -- Qt apps: 92% interface scale (matches GTK
 -- SDDM starts Hyprland directly, so .bashrc never runs and ~/.local/bin is
 -- missing from PATH. Without this every script bind (powermenu, matuwall,
 -- screenshot, ...) fails with "command not found".
-hl.env("PATH", "/home/water/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin")
+local home = os.getenv("HOME") or ""
+local user_path = home .. "/.local/bin"
+local system_path = "/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
+hl.env("PATH", user_path .. ":" .. system_path)
 
 --------------------
 ---- AUTOSTART ------
@@ -206,7 +209,7 @@ local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
-hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("nemo"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))

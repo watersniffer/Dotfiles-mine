@@ -6,9 +6,12 @@ if [[ $# == 0 ]]; then
     exit 1
 fi
 
-$@
+"$@"
+status=$?
 
 notify-send --icon="emblem-information" \
             --app-name="$0" -u critical \
             "Command finished" \
-            "Execution of $* is done"
+            "Execution of $* exited with status $status"
+
+exit "$status"

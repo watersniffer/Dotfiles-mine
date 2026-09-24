@@ -54,4 +54,5 @@ else:
             
         device_mac = get_device_mac(out_lines[0])
 
-    os.system(f"bluetoothctl connect {device_mac}")
+    if device_mac:
+        subprocess.run(["bluetoothctl", "connect", device_mac.strip()], check=False)

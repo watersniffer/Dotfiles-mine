@@ -1,8 +1,9 @@
 # DO NOT EDIT! This file will be overwritten by nwg-look.
 # Any customization should be done in ~/.gtkrc-2.0.mine instead.
+# The installer expands @HOME@ when copying this file.
 
-include "/home/water/.gtkrc-2.0.mine"
-gtk-theme-name="Graphite-Dark"
+include "@HOME@/.gtkrc-2.0.mine"
+gtk-theme-name="Kripton"
 gtk-icon-theme-name="Papirus"
 gtk-font-name="JetBrainsMono Nerd Font 11"
 gtk-cursor-theme-name="Bibata-Modern-Classic"
