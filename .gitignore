@@ -1,9 +1,6 @@
 # Backup old configs during reinstall
 .dotfiles-backup/
 
-# Wallpapers are user-specific
-wallpapers/
-
 # Editor/OS noise
 *.swp
 *.save
