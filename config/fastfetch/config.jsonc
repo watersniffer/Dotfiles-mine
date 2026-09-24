@@ -4,7 +4,7 @@
     "type": "small",
     "source": "arch",
     "color": {
-      "1": "#fe8019"
+      "1": "#ffffff"
     },
     "padding": {
       "top": 2,
@@ -21,70 +21,70 @@
     {
       "type": "title",
       "keyWidth": 10,
-      "color": "#fe8019"
+      "color": "#ffffff"
     },
     "break",
     {
       "type": "os",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "host",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "shell",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "terminal",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "wm",
       "format": "{} (wayland)",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "cpu",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "gpu",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "memory",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2",
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0",
       "format": "{} {}"
     },
     {
       "type": "disk",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     {
       "type": "uptime",
       "key": " ",
-      "keyColor": "#fe8019",
-      "color": "#ebdbb2"
+      "keyColor": "#ffffff",
+      "color": "#f0f0f0"
     },
     "break",
     "break",

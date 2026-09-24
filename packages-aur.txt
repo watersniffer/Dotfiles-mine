@@ -4,15 +4,11 @@
 alarm-clock-applet
 ani-cli
 bibata-cursor-theme-bin
-colloid-gruvbox-gtk-theme-git
-gruvbox-plus-icon-theme
-kvantum-theme-gruvbox-git
+graphite-gtk-theme
+kripton-theme-git
 matuwall-bin
 pacseek
 qview
 shell-color-scripts-git
 smile
-spotify
-spotx-git
-xcursor-simp1e-gruvbox-dark
 zen-browser-bin

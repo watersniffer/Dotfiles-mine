@@ -2,14 +2,14 @@ configuration {
     modes: "drun";
     sorting-method: "normal";
     show-icons: true;
-    icon-theme: "Gruvbox-Plus-Dark";
+    icon-theme: "Papirus";
     matching: "regex";
     drun-match-fields: "name";
     display-run: "menu:";
     display-drun: "Launch:";
 }
 
-@theme "gruvbox"
+@theme "tokyo"
 
 @import "colors.rasi"
 
@@ -31,23 +31,23 @@ window {
 
     border-radius: 0px;
     border: 2px;
-    border-color: #3c3836;
+    border-color: #2a2a2a;
 
-    background-color: rgba(40 40 40 / 0.94);
+    background-color: rgba(22 22 22 / 0.94);
 }
 
 /* ===== Main container ===== */
 mainbox {
     padding: 0px;
-    background-color: #282828;
+    background-color: #161616;
 }
 
 /* ===== Input bar ===== */
 inputbar {
-    background-color: #32302f;
-    border-radius: 1px;
+    background-color: #1e1e1e;
+    border-radius: 0px;
     border: 1px;
-    border-color: rgba(60 56 54 / 0.8);
+    border-color: rgba(42 42 42 / 0.8);
 
     padding: 8px 16px;
     spacing: 8px;
@@ -67,7 +67,7 @@ entry {
 
 /* ===== List ===== */
 listview {
-    background-color: #282828;
+    background-color: #161616;
     margin: 10px 0 0;
 
     columns: 1;
@@ -79,22 +79,38 @@ listview {
 element {
     padding: 10px 6px;
     spacing: 6px;
-    border-radius: 1px;
+    border-radius: 0px;
 
-    background-color: #282828;
+    background-color: #161616;
 }
 
-element normal urgent {
-    text-color: @red;
+element normal.normal,
+element alternate.normal {
+    background-color: #161616;
+    text-color: #f0f0f0;
 }
 
-element normal active {
-    text-color: @blue;
+element normal.active,
+element alternate.active {
+    background-color: #161616;
+    text-color: #ffffff;
 }
 
-element selected normal,
-element selected active {
-    background-color: rgba(254 128 25 / 0.18);
+element normal.urgent,
+element alternate.urgent {
+    background-color: #1e1e1e;
+    text-color: #f0f0f0;
+}
+
+element selected.normal,
+element selected.active {
+    background-color: #484848;
+    text-color: #ffffff;
+}
+
+element selected.urgent {
+    background-color: #2a2a2a;
+    text-color: #f0f0f0;
 }
 
 /* ===== Icons & text ===== */
@@ -111,14 +127,14 @@ element-text {
 /* ===== Message box ===== */
 message {
     margin: 12px 0 0;
-    border-radius: 12px;
+    border-radius: 0px;
     border: 1px;
-    border-color: rgba(60 56 54 / 0.8);
+    border-color: rgba(42 42 42 / 0.8);
 
-    background-color: rgba(29 32 33 / 0.92);
+    background-color: rgba(16 16 16 / 0.92);
 }
 
 textbox {
     padding: 8px 24px;
-    background-color: rgba(29 32 33 / 0.92);
+    background-color: rgba(16 16 16 / 0.92);
 }

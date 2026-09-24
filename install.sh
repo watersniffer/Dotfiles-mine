@@ -4,7 +4,7 @@
 # ============================================================================
 # Based on water's custom Hyprland setup with:
 #   Bash + Starship, Kitty, Neovim (lazy.nvim), Waybar,
-#   Rofi, Mako, Matugen dynamic theming, tmux, and many utilities.
+#   Rofi, Mako, optional Matugen theming, tmux, and many utilities.
 #
 # Usage:
 #   chmod +x install.sh
@@ -187,9 +187,7 @@ symlink_dotfiles() {
     # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"
     # nvim is deliberately absent: it must be a real dir (see setup_nvim).
-    # spicetify is absent too: it writes Data/ + backup/ caches in place
-    # (see setup_spicetify).
-    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall npm \
+    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout npm \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum qt6ct xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -254,6 +252,9 @@ apply_system_configs() {
             sudo mkdir -p /usr/share/sddm/themes
             sudo cp -a "$tmp_sddm/theme" /usr/share/sddm/themes/gruvbox-minimal-sddm
             sudo chown -R "$USER" /usr/share/sddm/themes/gruvbox-minimal-sddm
+            # Qt 5.15 uses the QtGraphicalEffects module for FastBlur.
+            sed -i 's/^import Qt5Compat\.GraphicalEffects$/import QtGraphicalEffects 1.0/' \
+                /usr/share/sddm/themes/gruvbox-minimal-sddm/Main.qml 2>/dev/null || true
             ok "SDDM theme installed."
         else
             warn "Could not fetch gruvbox-minimal-sddm - clone it manually (see post-install)."
@@ -304,11 +305,6 @@ setup_user_services() {
     systemctl --user enable pipewire-pulse.service 2>/dev/null || true
     systemctl --user enable wireplumber.service 2>/dev/null || true
 
-    [[ -d "$HOME/.local/share/SLSsteam" ]] && {
-        systemctl --user enable slsteam-desktop-guardian.path 2>/dev/null || true
-        systemctl --user enable slsteam-desktop-guardian.timer 2>/dev/null || true
-    }
-
     ok "User services configured."
 }
 
@@ -340,27 +336,6 @@ setup_nvim() {
 }
 
 # ============================================================================
-# SPICETIFY (Spotify theming) - real dir, copy-if-missing
-# ============================================================================
-setup_spicetify() {
-    local src="$DOTFILES_DIR/config/spicetify"
-    local dst="$HOME/.config/spicetify"
-    [[ -d "$src" ]] || return 0
-
-    # Real dir: spicetify writes Data/ and backup/ caches inside its config.
-    # cp -n fills gaps without ever overwriting local changes.
-    mkdir -p "$dst"
-    cp -an "$src/." "$dst/" 2>/dev/null || true
-
-    # The seed records /home/water paths; rewrite them for this user.
-    if [[ -f "$dst/config-xpui.ini" ]]; then
-        sed -i "s|/home/water|$HOME|g" "$dst/config-xpui.ini" 2>/dev/null || true
-    fi
-
-    ok "Spicetify config ready (theme: gruvbox)."
-}
-
-# ============================================================================
 # GTK / ICON THEME VIA DCONF (GNOME + Cinnamon apps, e.g. Nemo)
 # ============================================================================
 setup_gtk_dconf() {
@@ -369,13 +344,18 @@ setup_gtk_dconf() {
         warn "No session bus - dconf theming skipped (run again from a login session)."
         return 0
     fi
-    gsettings set org.gnome.desktop.interface gtk-theme Colloid-Orange-Dark-Gruvbox 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface icon-theme Gruvbox-Plus-Dark 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Ice 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface font-name 'Inter 11' 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface gtk-theme Colloid-Orange-Dark-Gruvbox 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface icon-theme Gruvbox-Plus-Dark 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface cursor-theme Bibata-Modern-Ice 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface gtk-theme Kripton 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme Papirus 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font Mono 11' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface document-font-name 'JetBrainsMono Nerd Font 12' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface accent-color slate 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface gtk-theme Kripton 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface icon-theme Papirus 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface font-name 'JetBrainsMono Nerd Font 9' 2>/dev/null || true
     ok "GTK/icon/cursor theme set in dconf (GNOME + Cinnamon)."
 }
 
@@ -438,7 +418,6 @@ main() {
     install_tpm
     symlink_dotfiles
     setup_nvim
-    setup_spicetify
     apply_system_configs
     setup_user_services
     setup_misc

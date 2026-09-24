@@ -2,24 +2,24 @@ return {
 	"nvim-lualine/lualine.nvim",
 	dependencies = { "nvim-tree/nvim-web-devicons" },
 	config = function()
-		-- 1. Gruvbox Dark palette (desktop accent: orange #fe8019)
+		-- 1. Monochrome palette (desktop accent: white #ffffff)
 		local colors = {
-			base = "#282828",
-			mantle = "#1d2021",
-			crust = "#1d2021",
-			surface0 = "#32302f",
-			overlay0 = "#665c54",
-			text = "#ebdbb2",
-			subtext0 = "#a89984",
-			accent = "#fe8019",
-			green = "#b8bb26",
-			orange = "#d65d0e",
-			yellow = "#fabd2f",
-			red = "#fb4934",
-			blue = "#83a598",
+			base = "#161616",
+			mantle = "#101010",
+			crust = "#101010",
+			surface0 = "#1e1e1e",
+			overlay0 = "#606060",
+			text = "#f0f0f0",
+			subtext0 = "#a0a0a0",
+			accent = "#ffffff",
+			green = "#a9a9a9",
+			orange = "#787878",
+			yellow = "#e0e0e0",
+			red = "#d0d0d0",
+			blue = "#999999",
 		}
 
-		-- 2. Map Gruvbox colours to the 'p' variable
+		-- 2. Map Monochrome colours to the 'p' variable
 		local p = {
 			bg = colors.base,
 			bg_dark = colors.mantle,

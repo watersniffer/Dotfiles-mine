@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate the theme from a wallpaper and reload waybar.
+# Optionally regenerate the manual theme from a wallpaper and reload Waybar.
 # MANUAL ONLY: nothing calls this automatically anymore (Matuwall has no hooks).
 # Usage: apply.sh <path>
 set -uo pipefail

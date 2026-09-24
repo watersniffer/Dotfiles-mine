@@ -30,7 +30,6 @@ else
     export EDITOR='nvim'
 fi
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="$PATH:$HOME/.spicetify"
 
 # === ALIASES ===
 alias ws='cd ~/facu-workspace/'

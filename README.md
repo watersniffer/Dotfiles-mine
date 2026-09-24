@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Hyprland** (Wayland, Lua config), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Gruvbox Dark** (accent `#fe8019`) with a static palette that never changes with the wallpaper.
+My personal Arch Linux dotfiles: **Hyprland** (Wayland, Lua config), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
 
 ## Contents
 
@@ -13,21 +13,20 @@ My personal Arch Linux dotfiles: **Hyprland** (Wayland, Lua config), **Bash + St
 ├── home/                         # Dotfiles linked to $HOME
 │   ├── .bashrc / .bash_profile / .bash_logout
 │   ├── .tmux.conf  .vimrc
-│   └── .vim/                     # colorschemes (gruvbox)
+│   └── .vim/                     # colorschemes (monochrome)
 ├── config/                       # Configs for ~/.config/ (symlinked)
 │   ├── hypr/                     # Hyprland (Lua config + HyprMod gui lua)
 │   ├── kitty/                    # Terminal
-│   ├── waybar/                   # Status bar (+ Waycat/Skulltype fonts)
+│   ├── waybar/                   # Status bar (+ Waycat/Skulltype cat/skull fonts)
 │   ├── nvim/                     # Neovim (real dir, copy-if-missing)
 │   ├── rofi/                     # Launcher
 │   ├── mako/                     # Notifications
 │   ├── fastfetch/                # System fetch
-│   ├── matugen/                  # Theming (pinned to Gruvbox hex)
+│   ├── matugen/                  # Theming (pinned to Monochrome hex)
 │   ├── matuwall/                 # Wallpaper picker (no theming hooks)
-│   ├── gtk-3.0/ gtk-4.0/         # GTK theme settings (Colloid-Orange)
+│   ├── gtk-3.0/ gtk-4.0/         # GTK theme settings (Kripton)
 │   ├── btop/ Kvantum/ qt6ct/     # App themes
 │   ├── xsettingsd/               # GTK icon/theme propagation
-│   ├── spicetify/                # Spotify Gruvbox theme (real dir)
 │   └── ...
 ├── local/bin/                    # Custom scripts (startup/, powermenu, ...)
 ├── systemd/user/                 # User systemd units
@@ -56,18 +55,17 @@ chmod +x install.sh
 
 1. **Enables multilib** in pacman.conf
 2. **Installs official packages** from `packages.txt` via `pacman -S --needed`
-3. **Installs yay** (AUR helper) if missing
-4. **Installs AUR packages** from `packages-aur.txt` (Gruvbox GTK/icons/Kvantum, smile, spotify, ...)
+3. **Installs yay** from source if missing
+4. **Installs AUR packages** from `packages-aur.txt` (Graphite GTK, Kripton, Kvantum, smile, ...)
 5. **Installs Flatpak apps** from `packages-flatpak.txt` (adds Flathub)
 6. **Installs TPM** (tmux plugin manager)
-7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim and
-   spicetify stay real dirs (copy-if-missing); `local/bin` is **merged**, never
+7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim stays a real dir (copy-if-missing); `local/bin` is **merged**, never
    wiped, so machine-local tools (uv, tree-sitter, uv shims) survive
 8. **Applies system configs** (SDDM conf + auto-clones `gruvbox-minimal-sddm`,
    cpu-performance.service, zram) and enables services
-9. **Sets up user services** (pipewire, wireplumber, SLSsteam guardian optional)
+9. **Sets up user services** (pipewire, wireplumber)
 10. **Sets the GTK/icon/cursor theme in dconf** (GNOME + Cinnamon/Nemo:
-    Colloid-Orange-Dark-Gruvbox / Gruvbox-Plus-Dark / Bibata-Modern-Ice)
+    Graphite-Dark / Papirus / Bibata-Modern-Classic)
 11. **Sets bash as default shell**
 
 Re-running the installer is safe: already-correct symlinks are left untouched.
@@ -75,7 +73,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. Drop wallpapers into `~/Pictures/Wallpapers/`, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes colors (SDDM, Obsidian, ...) manually.
+2. Drop wallpapers into `~/Pictures/Wallpapers/`, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes colors (SDDM, etc.) manually.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
@@ -90,8 +88,6 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 - **tree-sitter CLI** at `~/.local/bin/tree-sitter`
 - Browser profiles (Zen `zen-themes.json` + Transparent Zen mod + Zen Internet,
   Firefox): themed in place on this machine, not shipped in the repo
-- The Spotify client itself (AUR `spotify` is in `packages-aur.txt`, but
-  `spicetify apply` must be re-run after Spotify/Spicetify updates)
 
 ## Keybinds (extra)
 
@@ -102,13 +98,13 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 | `Super+,` | smile emoji picker (floating, centered) |
 | `Super+C` | clipboard history via rofi (cliphist) |
 | `Super+W` | matuwall wallpaper picker |
-| `Super+P` | powermenu |
+| `Super+P` | wlogout |
 | `Super+Space` | rofi launcher |
 
 ## Day-to-day
 
 - `update` — pacman update + stale desktop-file cleanup + orphan removal + reboot prompt
 - `all-update` — pacman + AUR (yay) + flatpak in one go
-- `powermenu` (`Super+P`) — shutdown/reboot/lock/suspend/logout
+- `wlogout` (`Super+P`) — shutdown/reboot/lock/suspend/logout
 - Startup scripts run once per login via `at_startup`
   (`~/.local/bin/startup/*.sh`: auto-caffeine, bluetooth reconnect, keyboard backlight, …)

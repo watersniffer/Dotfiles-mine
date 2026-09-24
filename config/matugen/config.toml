@@ -1,5 +1,5 @@
-# Matugen configuration — wallpaper-driven theming
-# Generated colors from the active wallpaper for GTK, Qt, kitty, waybar, rofi
+# Matugen configuration — optional manual theme generation.
+# Matuwall has no hooks, so wallpaper changes do not alter the desktop palette.
 
 [config]
 type = "scheme-tonal-spot"
@@ -18,7 +18,7 @@ output_path = "~/.config/kitty/current-theme.conf"
 
 [templates.qt-colors]
 input_path = "~/.config/matugen/templates/qt-colors.colors"
-output_path = "~/.local/share/color-schemes/GruvboxDark.colors"
+output_path = "~/.local/share/color-schemes/Monochrome.colors"
 
 [templates.waybar-colors]
 input_path = "~/.config/matugen/templates/waybar-colors.css"
@@ -27,10 +27,6 @@ output_path = "~/.config/waybar/colors.css"
 [templates.rofi-colors]
 input_path = "~/.config/matugen/templates/rofi-colors.rasi"
 output_path = "~/.config/rofi/colors.rasi"
-
-[templates.obsidian-snippet]
-input_path = "~/.config/matugen/templates/obsidian-snippet.css"
-output_path = "~/Documents/Notes/.obsidian/snippets/matugen-snippet.css"
 
 [templates.sddm-theme]
 input_path = "~/.config/matugen/templates/sddm-theme.conf"

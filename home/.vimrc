@@ -23,11 +23,11 @@ set lazyredraw
 set ttyfast
 
 " Colours (ships with vim 9.x)
-silent! colorscheme gruvbox
+silent! colorscheme monochrome
 
 " Statusline
 set statusline=%#TabLineSel#\ %{mode()}\ %\ %#TabLine#\ %f\ %h%m%r\ %=\
-\ %#TabLine#\ %{&filetype}\ %{&fileencoding?&fileencoding:&encoding}\ %l:%c\ %P\
+    \ %#TabLine#\ %{&filetype}\ %{&fileencoding?&fileencoding:&encoding}\ %l:%c\ %P\
 
 " Selection / search with Mocha accents
 set hlsearch

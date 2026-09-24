@@ -9,7 +9,7 @@ local function get_colorscheme()
 			return vim.trim(name)
 		end
 	end
-	return "gruvbox"
+	return "monochrome"
 end
 
 -- ============================================================================

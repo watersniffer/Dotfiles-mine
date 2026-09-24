@@ -86,8 +86,8 @@ hl.config({
         border_size = 0,
 
         col = {
-            active_border   = { colors = { "rgba(fe8019ff)" }, angle = 0 },
-            inactive_border = "rgba(3c3836ff)",
+            active_border   = { colors = { "rgba(eaeaeaff)" }, angle = 0 },
+            inactive_border = "rgba(2b2b2bff)",
         },
 
         resize_on_border = false,
@@ -96,7 +96,7 @@ hl.config({
     },
 
     decoration = {
-        rounding       = 10,
+        rounding       = 0,
         rounding_power = 2.0,
 
         active_opacity   = 0.90,
@@ -220,7 +220,7 @@ hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("smile"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("matuwall"))
-hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("powermenu"))
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("wlogout"))
 
 -- Switch workspaces with mainMod + [0-9]
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]

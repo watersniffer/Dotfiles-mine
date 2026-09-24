@@ -1,1 +1,11 @@
-/usr/share/themes/Colloid-Orange-Dark-Gruvbox/gtk-4.0/gtk.css
+/* Kripton structure with a fixed dark monochrome palette. */
+@import url("file:///usr/share/themes/Kripton/gtk-4.0/gtk-dark.css");
+@import url("colors.css");
+
+:root {
+    --window-bg-color: #161616;
+    --window-fg-color: #f0f0f0;
+    --accent-bg-color: #f0f0f0;
+    --accent-color: #f0f0f0;
+    --accent-fg-color: #161616;
+}
