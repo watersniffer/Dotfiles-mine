@@ -158,6 +158,7 @@ socat
 rclone
 
 # --- Apps ---
+obsidian
 bc
 imagemagick
 ffmpegthumbnailer
