@@ -1,6 +1,7 @@
 [Unit]
 Description=Force all CPU cores to performance governor on boot
 After=sysinit.target
+ConditionPathExistsGlob=/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_governor
 
 [Service]
 Type=oneshot

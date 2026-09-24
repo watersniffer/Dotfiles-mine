@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 do_reboot=false
 do_not_reboot=false
-pacman_args=""
+declare -a pacman_args=()
 
 while (( "$#" )); do
   case "$1" in
@@ -14,7 +16,7 @@ while (( "$#" )); do
       shift
       ;;
     -nc|--noconfirm)
-      pacman_args+="--noconfirm "
+      pacman_args+=(--noconfirm)
       shift
       ;;
     *)
@@ -25,9 +27,9 @@ while (( "$#" )); do
   esac
 done
 
-pacman $pacman_args -Syu
+sudo pacman "${pacman_args[@]}" -Syu
 
-i_dont_need_those=(
+unwanted_desktop_files=(
     "/usr/share/applications/lstopo.desktop"
     "/usr/share/applications/electron37.desktop"
     "/usr/share/applications/qt6ct.desktop"
@@ -38,7 +40,6 @@ i_dont_need_those=(
     "/usr/share/applications/xgps.desktop"
     "/usr/share/applications/xgpsspeed.desktop"
     "/usr/share/applications/qvidcap.desktop"
-    "/usr/share/applications/qv4l2.desktop"
     "/usr/share/applications/rofi.desktop"
     "/usr/share/applications/rofi-theme-selector.desktop"
     "/usr/share/applications/org.flameshot.Flameshot.desktop"
@@ -48,27 +49,25 @@ i_dont_need_those=(
     "/usr/share/applications/kvantummanager.desktop"
 )
 
-for path in "${i_dont_need_those[@]}"; do
+for path in "${unwanted_desktop_files[@]}"; do
     if [[ -e "$path" ]]; then
-        # Root-owned, and every app update restores these .desktop files -
-        # that's why this cleanup lives in the updater. Needs sudo to work.
-        sudo rm -rf "$path"
+        sudo rm -f "$path"
         echo "Removed trash: $path"
     fi
 done
 
-orphaned_packages=$(pacman -Qdtq)
-
-if [[ -n "$orphaned_packages" ]]; then
+mapfile -t orphaned_packages < <(pacman -Qdtq)
+if ((${#orphaned_packages[@]} > 0)); then
     echo "Removing orphaned packages..."
-    pacman $pacman_args -Rns $orphaned_packages
+    sudo pacman "${pacman_args[@]}" -Rns "${orphaned_packages[@]}"
 fi
 
-if [[ "$do_reboot" = true ]]; then
-    reboot
-elif [[ "$do_not_reboot" = false ]]; then
-    read -r -p "Reboot? [Y/n] " response
-    if ! [[ "$response" =~ ^([nN][oO]|[nN])$ ]]; then
-        reboot
+if [[ "$do_reboot" == true ]]; then
+    sudo systemctl reboot
+elif [[ "$do_not_reboot" == false ]]; then
+    if read -r -p "Reboot? [Y/n] " response; then
+        if [[ ! "$response" =~ ^([nN][oO]|[nN])$ ]]; then
+            sudo systemctl reboot
+        fi
     fi
 fi

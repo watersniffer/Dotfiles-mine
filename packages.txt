@@ -59,6 +59,8 @@ file-roller
 unrar
 unzip
 zip
+7zip
+openssh
 
 # --- Screenshot / Screen Recording ---
 grim
@@ -97,6 +99,7 @@ btop
 smartmontools
 ddcutil
 zram-generator
+polkit
 polkit-kde-agent
 networkmanager
 network-manager-applet
@@ -117,6 +120,8 @@ libva-intel-driver
 xorg-server-xvfb
 xorg-xdpyinfo
 xorg-xwininfo
+nvtop
+gammastep
 
 # --- Qt / GTK Theming ---
 qt6-wayland
@@ -147,6 +152,8 @@ make
 npm
 python
 matugen
+jq
+tree-sitter-cli
 socat
 rclone
 

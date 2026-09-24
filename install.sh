@@ -66,34 +66,8 @@ preflight() {
 install_pacman_packages() {
     log "Installing pacman packages..."
 
-    # Enable multilib if missing. Handle both commented and absent sections.
-    local pacman_conf_changed=0
-    if ! grep -qE '^[[:space:]]*\[multilib\][[:space:]]*$' /etc/pacman.conf; then
-        log "Enabling [multilib] repository..."
-        if grep -qE '^[[:space:]]*#[[:space:]]*\[multilib\]' /etc/pacman.conf; then
-            sudo sed -i \
-                '/^[[:space:]]*#[[:space:]]*\[multilib\]/,/^[[:space:]]*#[[:space:]]*Include/s/^[[:space:]]*#[[:space:]]*//' \
-                /etc/pacman.conf
-        else
-            printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' \
-                | sudo tee -a /etc/pacman.conf >/dev/null
-        fi
-        pacman_conf_changed=1
-    fi
-
-    # Ensure the section has the standard mirror Include line.
-    if ! awk '
-        /^[[:space:]]*\[multilib\][[:space:]]*$/ { in_section=1; next }
-        /^[[:space:]]*\[/ { in_section=0 }
-        in_section && /^[[:space:]]*Include[[:space:]]*=[[:space:]]*\/etc\/pacman\.d\/mirrorlist[[:space:]]*$/ { found=1 }
-        END { exit(found ? 0 : 1) }
-    ' /etc/pacman.conf; then
-        sudo sed -i '/^[[:space:]]*\[multilib\][[:space:]]*$/a Include = /etc/pacman.d/mirrorlist' /etc/pacman.conf
-        pacman_conf_changed=1
-    fi
-
-    [[ "$pacman_conf_changed" -eq 1 ]] && sudo pacman -Sy
-
+    # This manifest does not contain multilib-only packages. Avoid changing
+    # pacman.conf and avoid the partial-upgrade hazard of `pacman -Sy`.
     local packages=()
     while IFS= read -r line; do
         line="${line%%#*}"; line="$(echo "$line" | xargs)"
@@ -166,10 +140,23 @@ install_flatpak_packages() {
 # 5. TMUX PLUGIN MANAGER (TPM)
 # ============================================================================
 install_tpm() {
-    if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then ok "TPM already installed."; return; fi
+    local tpm_dir="$HOME/.tmux/plugins/tpm"
+    if [[ -x "$tpm_dir/tpm" ]]; then
+        ok "TPM already installed."
+        return
+    fi
+    if [[ -d "$tpm_dir" ]]; then
+        warn "Incomplete TPM directory found; leaving it untouched."
+        return
+    fi
+    if ! command -v git >/dev/null 2>&1; then
+        warn "git is required for TPM; skipping TPM installation."
+        return
+    fi
+
     log "Installing TPM..."
     mkdir -p "$HOME/.tmux/plugins"
-    git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+    git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
 }
 
 # ============================================================================
@@ -189,8 +176,14 @@ link_item() {
         mkdir -p "$BACKUP_DIR"
         local backup_name
         backup_name=$(echo "$dst" | sed "s|$HOME/||" | tr '/' '_')
-        cp -a "$dst" "$BACKUP_DIR/$backup_name" 2>/dev/null || true
-        rm -rf "$dst"
+        if ! cp -a "$dst" "$BACKUP_DIR/$backup_name"; then
+            err "Could not back up $dst; aborting instead of deleting it."
+            return 1
+        fi
+        if ! rm -rf "$dst"; then
+            err "Could not remove $dst after backup; aborting."
+            return 1
+        fi
     fi
 
     ln -sf "$src" "$dst"
@@ -210,7 +203,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout npm \
+    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -221,18 +214,37 @@ symlink_dotfiles() {
     for f in starship.toml electron-flags.conf powermenu.rasi mimeapps.list user-dirs.dirs; do
         [[ -f "$conf_dir/$f" ]] && link_item "$conf_dir/$f" "$HOME/.config/$f"
     done
+    [[ -f "$conf_dir/npm/npmrc" ]] && link_item "$conf_dir/npm/npmrc" "$HOME/.npmrc"
 
     # --- Custom scripts (merge, never wipe: ~/.local/bin also holds
     # machine-local tools - uv, tree-sitter, uv-tool shims - that must survive) ---
     mkdir -p "$HOME/.local/bin"
     if [[ -d "$DOTFILES_DIR/local/bin" ]]; then
+        if [[ -d "$HOME/.local/bin" ]]; then
+            mkdir -p "$BACKUP_DIR/local-bin"
+            if ! cp -a "$HOME/.local/bin/." "$BACKUP_DIR/local-bin/"; then
+                err "Could not back up ~/.local/bin; aborting before copying scripts."
+                return 1
+            fi
+        fi
+
         cp -a "$DOTFILES_DIR/local/bin/." "$HOME/.local/bin/"
         # startup/ is fully repo-managed: mirror it exactly so retired scripts
-        # (e.g. post_install.sh) stop running instead of merging forever.
+        # stop running instead of merging forever. The full backup above makes
+        # this replacement recoverable.
         rm -rf "$HOME/.local/bin/startup"
         cp -a "$DOTFILES_DIR/local/bin/startup" "$HOME/.local/bin/startup"
         rm -rf "$HOME/.local/bin/__pycache__"
-        find "$HOME/.local/bin" -type f -exec chmod +x {} +
+
+        # Preserve the executable bits of repo-managed helpers without
+        # changing permissions on unrelated machine-local tools.
+        while IFS= read -r -d '' src; do
+            local rel dest
+            rel="${src#"$DOTFILES_DIR/local/bin/"}"
+            [[ "$rel" == "README.md" || "$rel" == */README.md ]] && continue
+            dest="$HOME/.local/bin/$rel"
+            [[ -f "$dest" ]] && chmod +x "$dest"
+        done < <(find "$DOTFILES_DIR/local/bin" -type f -perm -u+x -print0)
     fi
 
     # --- Custom fonts ---
@@ -244,7 +256,9 @@ symlink_dotfiles() {
     # --- Wallpaper directory ---
     mkdir -p "$HOME/Pictures/Wallpapers"
     if [[ -d "$DOTFILES_DIR/wallpapers" ]]; then
-        cp -an "$DOTFILES_DIR/wallpapers/." "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
+        if ! cp -an "$DOTFILES_DIR/wallpapers/." "$HOME/Pictures/Wallpapers/" 2>/dev/null; then
+            warn "Some wallpapers could not be copied; check free space and permissions."
+        fi
     fi
 
     ok "Dotfiles linked."
@@ -255,6 +269,12 @@ symlink_dotfiles() {
 # ============================================================================
 apply_system_configs() {
     log "Applying system-wide configs..."
+
+    if [[ -f "$DOTFILES_DIR/system/usr/local/sbin/dotfiles-powersave" ]]; then
+        sudo install -D -o root -g root -m 0755 \
+            "$DOTFILES_DIR/system/usr/local/sbin/dotfiles-powersave" \
+            /usr/local/sbin/dotfiles-powersave
+    fi
 
     [[ -f "$DOTFILES_DIR/system/etc/systemd/system/cpu-performance.service" ]] && {
         sudo cp "$DOTFILES_DIR/system/etc/systemd/system/cpu-performance.service" /etc/systemd/system/
@@ -268,34 +288,64 @@ apply_system_configs() {
         ok "SDDM configs applied."
     }
 
-    # SDDM theme: GitHub-only (NOT in AUR). matugen/apply.sh publishes
-    # theme.conf + wallpaper into this dir as the login user, hence the chown.
+    # SDDM theme: GitHub-only (NOT in AUR). Keep the QML tree root-owned;
+    # application themes must never be writable by the login user.
     local sddm_theme_dir="/usr/share/sddm/themes/gruvbox-minimal-sddm"
+    local sddm_theme_repo="https://github.com/scientiac/gruvbox-minimal-sddm.git"
+    local sddm_theme_commit="a6523840d76f4e45f89fc14549501e600112a6aa"
     if [[ ! -d "$sddm_theme_dir" ]]; then
         log "Installing gruvbox-minimal-sddm theme..."
         local tmp_sddm
         tmp_sddm=$(mktemp -d)
-        if git clone --depth 1 https://github.com/scientiac/gruvbox-minimal-sddm "$tmp_sddm/theme"; then
+        if git clone --depth 1 "$sddm_theme_repo" "$tmp_sddm/theme"; then
+            local cloned_commit
+            cloned_commit=$(git -C "$tmp_sddm/theme" rev-parse HEAD)
+            if [[ "$cloned_commit" != "$sddm_theme_commit" ]]; then
+                err "The SDDM theme revision changed; refusing an unpinned install."
+                rm -rf "$tmp_sddm"
+                return 1
+            fi
             sudo mkdir -p /usr/share/sddm/themes
             sudo cp -a "$tmp_sddm/theme" "$sddm_theme_dir"
             ok "SDDM theme installed."
         else
-            warn "Could not fetch gruvbox-minimal-sddm - clone it manually (see post-install)."
+            err "Could not fetch the pinned SDDM theme; refusing to continue."
+            rm -rf "$tmp_sddm"
+            return 1
         fi
         rm -rf "$tmp_sddm"
     fi
 
-    # Qt 5.15 uses QtGraphicalEffects for FastBlur. Patch both freshly cloned
-    # and pre-existing themes so re-runs also repair older installations.
-    if [[ -f "$sddm_theme_dir/Main.qml" ]] && \
-       sudo grep -q '^import Qt5Compat\.GraphicalEffects$' "$sddm_theme_dir/Main.qml"; then
-        sudo sed -i 's/^import Qt5Compat\.GraphicalEffects$/import QtGraphicalEffects 1.0/' \
-            "$sddm_theme_dir/Main.qml"
-        ok "SDDM Qt5 import patched."
+    if [[ ! -f "$sddm_theme_dir/Main.qml" || ! -f "$sddm_theme_dir/metadata.desktop" ]]; then
+        err "The SDDM theme is incomplete: $sddm_theme_dir"
+        return 1
     fi
-    if [[ -d "$sddm_theme_dir" ]]; then
-        sudo chown -R "$USER" "$sddm_theme_dir"
+
+    # The default Arch sddm-greeter is Qt5 on this setup, while Arch also
+    # ships a Qt6 greeter. Keep the QML import compatible with the selected
+    # default binary instead of applying a Qt5-only rewrite unconditionally.
+    local greeter_bin greeter_libs
+    greeter_bin=$(command -v sddm-greeter || true)
+    greeter_libs=""
+    if [[ -n "$greeter_bin" ]]; then
+        greeter_libs=$(ldd "$greeter_bin" 2>/dev/null || true)
     fi
+    if [[ "$greeter_libs" == *libQt5Quick* ]]; then
+        if sudo grep -q '^import Qt5Compat\.GraphicalEffects$' "$sddm_theme_dir/Main.qml"; then
+            sudo sed -i 's/^import Qt5Compat\.GraphicalEffects$/import QtGraphicalEffects 1.0/' \
+                "$sddm_theme_dir/Main.qml"
+            ok "SDDM Qt5 import patched."
+        fi
+    elif [[ "$greeter_libs" == *libQt6Quick* ]]; then
+        if sudo grep -q '^import QtGraphicalEffects 1\.0$' "$sddm_theme_dir/Main.qml"; then
+            sudo sed -i 's/^import QtGraphicalEffects 1\.0$/import Qt5Compat.GraphicalEffects/' \
+                "$sddm_theme_dir/Main.qml"
+            ok "SDDM Qt6 import patched."
+        fi
+    else
+        warn "Could not determine the SDDM greeter Qt version; leaving the theme import unchanged."
+    fi
+    sudo chown -R root:root "$sddm_theme_dir"
 
     # Zram
     [[ -f "$DOTFILES_DIR/system/etc/zram-generator.conf" ]] && {
@@ -491,7 +541,7 @@ main() {
     echo -e "    2. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
     echo -e "    3. Open kitty - nvim plugins install on first launch"
     echo -e "    4. SDDM theme (gruvbox-minimal-sddm) installs automatically;"
-    echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish colors"
+    echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish application colors"
     echo -e "    5. Binds: Super+E yazi | Super+, smile | Super+C clipboard | Super+P menu"
     echo -e "       Machine-local extras (uv tools, tree-sitter) - see README"
     echo ""

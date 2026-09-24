@@ -14,4 +14,4 @@ $DOCK \
     -d -w 5 -ml 5 \
     -l top -hl bottom \
     -i 38 \
-    -c "$HOME/.local/bin/toggle_rofi $HOME/.config/rofi/bin/drun --alternative" $@
+    -c "$HOME/.local/bin/toggle_rofi rofi -show drun --alternative" "$@"

@@ -1,0 +1,16 @@
+#!/bin/sh
+# Root-owned helper for the optional desktop power-saving action.
+set -eu
+
+ASPM_POLICY=/sys/module/pcie_aspm/parameters/policy
+if [ -w "$ASPM_POLICY" ]; then
+    printf '%s\n' powersupersave > "$ASPM_POLICY"
+else
+    echo "PCIe ASPM policy is not writable; skipping." >&2
+fi
+
+if command -v powertop >/dev/null 2>&1; then
+    powertop --auto-tune
+else
+    echo "powertop is not installed; skipping its tuning pass." >&2
+fi

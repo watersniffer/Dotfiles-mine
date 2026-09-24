@@ -24,18 +24,6 @@ hl.window_rule({
     stay_focused = true,
 })
 
---------------------
----- MONITORS -------
---------------------
-
-hl.monitor({
-    output = "",                  -- Keeps this rule active for any monitor plugged in
-    mode = "preferred",           -- Use the monitor's preferred mode on each display
-    position = "0x0",             -- Keeps the workspace anchored at the coordinates origin
-    scale = 1,                    -- Force scale to 1 to make things smaller and crisp
-})
-
-
 ------------------------
 ---- ENVIRONMENT --------
 ------------------------
@@ -54,9 +42,10 @@ hl.env("QT_SCALE_FACTOR", "0.92")   -- Qt apps: 92% interface scale (matches GTK
 -- missing from PATH. Without this every script bind (powermenu, matuwall,
 -- screenshot, ...) fails with "command not found".
 local home = os.getenv("HOME") or ""
-local user_path = home .. "/.local/bin"
+local inherited_path = os.getenv("PATH") or ""
+local user_path = home .. "/.local/bin:" .. home .. "/.local/share/flatpak/exports/bin"
 local system_path = "/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
-hl.env("PATH", user_path .. ":" .. system_path)
+hl.env("PATH", user_path .. ":" .. inherited_path .. ":" .. system_path)
 
 --------------------
 ---- AUTOSTART ------

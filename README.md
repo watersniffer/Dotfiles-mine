@@ -53,7 +53,7 @@ chmod +x install.sh
 
 ## What the installer does
 
-1. **Enables multilib** in pacman.conf
+1. **Leaves multilib configuration unchanged** (no multilib-only packages are required)
 2. **Installs official packages** from `packages.txt` via `pacman -S --needed`
 3. **Installs yay** from source if missing
 4. **Installs AUR packages** from `packages-aur.txt` (Graphite GTK, Kripton, Kvantum, smile, ...)
@@ -61,7 +61,7 @@ chmod +x install.sh
 6. **Installs TPM** (tmux plugin manager)
 7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim and qt6ct stay real dirs (copy-if-missing); `local/bin` is **merged**, never
    wiped, so machine-local tools (uv, tree-sitter, uv shims) survive
-8. **Applies system configs** (SDDM conf + auto-clones `gruvbox-minimal-sddm`,
+8. **Applies system configs** (SDDM conf + a pinned, root-owned `gruvbox-minimal-sddm` clone,
    cpu-performance.service, zram) and enables services
 9. **Sets up user services** (pipewire, wireplumber)
 10. **Sets the GTK/icon/cursor theme in dconf** (GNOME + Cinnamon/Nemo:
@@ -73,16 +73,16 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes colors (SDDM, etc.) manually.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
-6. SDDM theme `gruvbox-minimal-sddm` (GitHub-only, not in AUR) is cloned automatically; the font it needs (`ttf-fantasque-nerd`) comes from `packages.txt`.
+6. SDDM theme `gruvbox-minimal-sddm` (GitHub-only, not in AUR) is pinned and installed root-owned automatically; the font it needs (`ttf-fantasque-nerd`) comes from `packages.txt`.
 
 ### Not managed by the installer (machine-local)
 
 - **uv** (`curl -LsSf https://astral.sh/uv/install.sh | sh`) and its tools:
-  `uv tool install hyprmod`, `uv tool install terminal-velocity`
+  `uv tool install hyprmod`
   (HyprMod regenerates `config/hypr/hyprland-gui.lua` from its GUI — if you
   change opacity there, keep it in sync with `hyprland.lua`)
 - **tree-sitter CLI** at `~/.local/bin/tree-sitter`

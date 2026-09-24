@@ -1,4 +1,4 @@
-Scripts used on my system. `startup` is a directory with scripts that are executed at startup. This directory is added to `$PATH` so you can call them from your terminal.
+Scripts used on my system. `startup` is a directory of scripts executed at session startup; `~/.local/bin` is added to `$PATH` so you can call the helpers from your terminal.
 
 ## Full list
 
@@ -13,7 +13,7 @@ Scripts used on my system. `startup` is a directory with scripts that are execut
 | `genid`                    | "you give me a string, I give you md5sum hash of it"                                                                                                                                                                                              |
 | `perforun`                 | `powerprofilesctl` based tool. Executes provided aruments to in performance mode, inhibits sleep and when finished restores previous power profile. I use it for games                                                                      |
 | `playerctl_volume`         | Increase / decrease volume for the current active player (not the system sound), for example if a media player is active, running `playerctl_volume 0.1+` will increase its volume by 10%                                                           |
-| `powersafe`                | Turn on extra powersafe mode (still WIP)                                                                                                                                                                                                          |
+| `powersafe`                | Applies optional desktop power-saving settings through a root-owned helper (`/usr/local/sbin/dotfiles-powersave`)                                                                                                                                 |
 | `ppjson`                   | pretty prints raw json strings.                                                                                                                                                                                                                   |
 | `refreshrate`              | Sets given refresh rate for active monitor (Hyprland only)  |
 | `scase`                    | covnerts given file name or string to given case (by default to snake case), used from nemo. example: `scase -f "file with spaces"` will rename `./file\ with\ spaces` to `./file_with_spaces`. Also can set to kebab case or camel case (experimental) |

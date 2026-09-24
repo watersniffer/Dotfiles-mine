@@ -27,7 +27,3 @@ output_path = "~/.config/waybar/colors.css"
 [templates.rofi-colors]
 input_path = "~/.config/matugen/templates/rofi-colors.rasi"
 output_path = "~/.config/rofi/colors.rasi"
-
-[templates.sddm-theme]
-input_path = "~/.config/matugen/templates/sddm-theme.conf"
-output_path = "~/.cache/matugen-sddm/theme.conf"

@@ -14,8 +14,7 @@
     "wireplumber",
     "backlight",
     "battery",
-    "clock",
-    "custom/power"
+    "clock"
   ],
   "hyprland/workspaces": {
     "format": "{name}",
