@@ -354,6 +354,16 @@ apply_system_configs() {
         ok "zram config applied."
     }
 
+    if [[ -d "$DOTFILES_DIR/system/etc/systemd/logind.conf.d" ]]; then
+        sudo install -d -m 0755 /etc/systemd/logind.conf.d
+        sudo cp -a "$DOTFILES_DIR/system/etc/systemd/logind.conf.d/." /etc/systemd/logind.conf.d/
+        if sudo systemctl kill --kill-whom=main --signal=SIGHUP systemd-logind; then
+            ok "Power-button handling configured."
+        else
+            warn "Power-button config was written; logind will apply it after reboot."
+        fi
+    fi
+
     # Enable key system services
     sudo systemctl enable sddm.service 2>/dev/null || true
     sudo systemctl enable NetworkManager.service 2>/dev/null || true
