@@ -19,10 +19,16 @@ if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
             exit 1
         }
 
-        nohup wlsunset -t 4000 -T 4000 >/dev/null 2>&1 &
+        # wlsunset requires a high temperature greater than its low
+        # temperature. Start it with a valid range, then force the low (4000K)
+        # mode explicitly instead of relying on a location/sunrise schedule.
+        nohup wlsunset -t 4000 -T 6500 >/dev/null 2>&1 &
         pid=$!
         sleep 0.2
         if kill -0 "$pid" 2>/dev/null; then
+            kill -USR1 "$pid" 2>/dev/null || true
+            sleep 0.05
+            kill -USR1 "$pid" 2>/dev/null || true
             printf '%s\n' "$pid" > "$state_file"
         else
             echo "wlsunset could not adjust the display gamma." >&2
