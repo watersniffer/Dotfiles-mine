@@ -3,6 +3,7 @@
 # installed by default on Arch and are not included here.
 
 # --- Desktop / Window Manager ---
+firefox
 hyprland
 hypridle
 hyprlock

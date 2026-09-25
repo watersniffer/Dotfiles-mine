@@ -118,7 +118,7 @@ command exists.
 | Bind | Action |
 |------|--------|
 | `Super+E` | yazi file manager in kitty |
-| `Super+B` | Helium browser |
+| `Super+B` | Firefox |
 | `Super+D` | nemo |
 | `Super+,` | smile emoji picker (floating, centered) |
 | `Super+C` | clipboard history via rofi (cliphist) |
