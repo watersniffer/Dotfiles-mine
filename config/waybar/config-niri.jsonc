@@ -7,7 +7,7 @@
   "margin-left": 4,
   "margin-right": 4,
 
-  "modules-left": ["sway/workspaces", "custom/cpucat"],
+  "modules-left": ["niri/workspaces", "custom/cpucat"],
   "modules-center": ["mpris"],
   "modules-right": [
     "tray",
@@ -16,8 +16,8 @@
     "battery",
     "clock"
   ],
-  "sway/workspaces": {
-    "format": "{name}"
+  "niri/workspaces": {
+    "format": "{value}"
   },
 
   "mpris": {

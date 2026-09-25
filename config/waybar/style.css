@@ -52,8 +52,14 @@ window#waybar {
     background: @urgent;
 }
 
-/* Keep Sway's named equivalent of Hyprland's special workspace hidden. */
-#sway-workspace-magic {
+/* Niri exposes the focused workspace separately from the active one. */
+#workspaces button.active,
+#workspaces button.focused {
+    border-bottom: 2px solid @ws_active;
+}
+
+/* Keep Niri's named equivalent of Hyprland's special workspace hidden. */
+#niri-workspace-magic {
     opacity: 0;
 }
 

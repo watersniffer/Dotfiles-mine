@@ -2,7 +2,7 @@
 set -euo pipefail
 
 desktop=${XDG_CURRENT_DESKTOP:-}
-if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
+if [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
     state_file="${XDG_RUNTIME_DIR:-/tmp}/night-light-${UID}.state"
 
     was_active=0
@@ -19,7 +19,7 @@ if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
 
     if [[ "$was_active" -eq 0 ]]; then
         command -v wlsunset >/dev/null 2>&1 || {
-            echo "wlsunset is required for the Sway night light." >&2
+            echo "wlsunset is required for the Niri night light." >&2
             exit 1
         }
 

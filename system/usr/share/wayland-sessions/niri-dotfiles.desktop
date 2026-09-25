@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Niri (Dotfiles)
+Comment=Monochrome Niri session matching the Hyprland dotfiles
+Exec=/home/water/.local/bin/start-niri
+TryExec=/home/water/.local/bin/start-niri
+Type=Application
+DesktopNames=niri
+Keywords=tiling;wayland;compositor;scrollable;

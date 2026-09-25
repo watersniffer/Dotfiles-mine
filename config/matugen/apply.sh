@@ -25,8 +25,8 @@ if pgrep -x waybar >/dev/null 2>&1; then
 fi
 
 desktop=${XDG_CURRENT_DESKTOP:-}
-if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
-    waybar_config="$HOME/.config/waybar/config-sway.jsonc"
+if [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
+    waybar_config="$HOME/.config/waybar/config-niri.jsonc"
 else
     waybar_config="$HOME/.config/waybar/config.jsonc"
 fi

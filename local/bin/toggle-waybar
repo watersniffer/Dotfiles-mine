@@ -7,8 +7,8 @@ else
     desktop=${XDG_CURRENT_DESKTOP:-}
     if [[ -n "${WAYBAR_CONFIG:-}" ]]; then
         waybar_config=$WAYBAR_CONFIG
-    elif [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
-        waybar_config="$HOME/.config/waybar/config-sway.jsonc"
+    elif [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
+        waybar_config="$HOME/.config/waybar/config-niri.jsonc"
     else
         waybar_config="$HOME/.config/waybar/config.jsonc"
     fi

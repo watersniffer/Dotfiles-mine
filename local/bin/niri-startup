@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+socket_name=${NIRI_SOCKET:-}
+if [[ -z "$socket_name" ]]; then
+    socket_name=$(pgrep -n -x niri 2>/dev/null || true)
+fi
+socket_name=${socket_name##*/}
+marker="${XDG_RUNTIME_DIR:-/tmp}/niri-startup-${socket_name:-unknown}.done"
+
+if [[ -e "$marker" ]]; then
+    exit 0
+fi
+: > "$marker"
+
+# Keep startup work guarded so a config reload does not duplicate daemons.
+if ! pgrep -x mako >/dev/null 2>&1; then
+    mako >/dev/null 2>&1 &
+fi
+
+systemctl --user restart xdg-desktop-portal.service >/dev/null 2>&1 || true
+waybar -c "$HOME/.config/waybar/config-niri.jsonc" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
+"$HOME/.local/bin/at_startup" >/dev/null 2>&1 &
+
+if ! pgrep -x awww-daemon >/dev/null 2>&1; then
+    awww-daemon >/dev/null 2>&1 &
+fi
+(
+    for _ in {1..10}; do
+        awww restore >/dev/null 2>&1 && exit 0
+        sleep 0.2
+    done
+) &
+
+if ! pgrep -x nm-applet >/dev/null 2>&1; then
+    nm-applet >/dev/null 2>&1 &
+fi
+wl-paste --watch cliphist store >/dev/null 2>&1 &
+if [[ -x /usr/lib/polkit-kde-authentication-agent-1 ]]; then
+    /usr/lib/polkit-kde-authentication-agent-1 >/dev/null 2>&1 &
+fi
+if command -v kitty >/dev/null 2>&1; then
+    kitty >/dev/null 2>&1 &
+fi

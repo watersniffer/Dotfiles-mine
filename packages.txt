@@ -9,21 +9,22 @@ hyprlock
 hyprpolkitagent
 hyprshot
 hyprsunset
-sway
-swayidle
+niri
+# Standalone lock utility used by Niri's Wlogout integration.
 swaylock
 sddm
 qt5-declarative
 qt5-quickcontrols2
 qt5-graphicaleffects
 waybar
+xdg-desktop-portal-gnome
+xdg-desktop-portal-gtk
 xdg-desktop-portal-hyprland
-xdg-desktop-portal-wlr
+gnome-keyring
 xwayland-satellite
 wtype
 wl-clipboard
 cliphist
-swaybg
 nwg-displays
 nwg-dock-hyprland
 nwg-look
@@ -48,7 +49,6 @@ rofi-emoji
 # --- Notification ---
 mako
 dunst
-swaync
 libnotify
 
 # --- File Manager ---
