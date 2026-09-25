@@ -298,28 +298,41 @@ apply_system_configs() {
         ok "Sway (Dotfiles) session installed."
     fi
 
-    # SDDM theme: GitHub-only (NOT in AUR). Keep the QML tree root-owned;
-    # application themes must never be writable by the login user.
-    local sddm_theme_dir="/usr/share/sddm/themes/gruvbox-minimal-sddm"
-    local sddm_theme_repo="https://github.com/scientiac/gruvbox-minimal-sddm.git"
-    local sddm_theme_commit="a6523840d76f4e45f89fc14549501e600112a6aa"
-    if [[ ! -d "$sddm_theme_dir" ]]; then
-        log "Installing gruvbox-minimal-sddm theme..."
+    # SDDM theme: pinned GitHub source, installed root-owned. The theme is
+    # Qt6-only and relies on the virtualkeyboard QML module.
+    local sddm_theme_dir="/usr/share/sddm/themes/hyprsddm"
+    local sddm_theme_repo="https://github.com/adior-enigmac/hypr-sddm.git"
+    local sddm_theme_commit="52fd4a538fabea2331d9b9f956c2497ff5f9102c"
+    local sddm_theme_marker="$sddm_theme_dir/.dotfiles-commit"
+    local installed_theme_commit=""
+    [[ -f "$sddm_theme_marker" ]] && installed_theme_commit=$(sudo cat "$sddm_theme_marker" 2>/dev/null || true)
+
+    if [[ "$installed_theme_commit" != "$sddm_theme_commit" ]]; then
+        log "Installing pinned Hypr SDDM theme..."
         local tmp_sddm
         tmp_sddm=$(mktemp -d)
         if git clone --depth 1 "$sddm_theme_repo" "$tmp_sddm/theme"; then
             local cloned_commit
             cloned_commit=$(git -C "$tmp_sddm/theme" rev-parse HEAD)
             if [[ "$cloned_commit" != "$sddm_theme_commit" ]]; then
-                err "The SDDM theme revision changed; refusing an unpinned install."
+                err "The Hypr SDDM revision changed; refusing an unpinned install."
                 rm -rf "$tmp_sddm"
                 return 1
             fi
-            sudo mkdir -p /usr/share/sddm/themes
-            sudo cp -a "$tmp_sddm/theme" "$sddm_theme_dir"
-            ok "SDDM theme installed."
+            sudo rm -rf "$sddm_theme_dir"
+            sudo mkdir -p "$sddm_theme_dir"
+            sudo cp -a \
+                "$tmp_sddm/theme/assets" \
+                "$tmp_sddm/theme/components" \
+                "$tmp_sddm/theme/Main.qml" \
+                "$tmp_sddm/theme/metadata.desktop" \
+                "$tmp_sddm/theme/theme.conf" \
+                "$tmp_sddm/theme/LICENSE" \
+                "$sddm_theme_dir/"
+            printf '%s\n' "$sddm_theme_commit" | sudo tee "$sddm_theme_marker" >/dev/null
+            ok "Hypr SDDM theme installed."
         else
-            err "Could not fetch the pinned SDDM theme; refusing to continue."
+            err "Could not fetch the pinned Hypr SDDM theme; refusing to continue."
             rm -rf "$tmp_sddm"
             return 1
         fi
@@ -327,35 +340,12 @@ apply_system_configs() {
     fi
 
     if [[ ! -f "$sddm_theme_dir/Main.qml" || ! -f "$sddm_theme_dir/metadata.desktop" ]]; then
-        err "The SDDM theme is incomplete: $sddm_theme_dir"
+        err "The Hypr SDDM theme is incomplete: $sddm_theme_dir"
         return 1
     fi
-
-    # The default Arch sddm-greeter is Qt5 on this setup, while Arch also
-    # ships a Qt6 greeter. Keep the QML import compatible with the selected
-    # default binary instead of applying a Qt5-only rewrite unconditionally.
-    local greeter_bin greeter_libs
-    greeter_bin=$(command -v sddm-greeter || true)
-    greeter_libs=""
-    if [[ -n "$greeter_bin" ]]; then
-        greeter_libs=$(ldd "$greeter_bin" 2>/dev/null || true)
-    fi
-    if [[ "$greeter_libs" == *libQt5Quick* ]]; then
-        if sudo grep -q '^import Qt5Compat\.GraphicalEffects$' "$sddm_theme_dir/Main.qml"; then
-            sudo sed -i 's/^import Qt5Compat\.GraphicalEffects$/import QtGraphicalEffects 1.0/' \
-                "$sddm_theme_dir/Main.qml"
-            ok "SDDM Qt5 import patched."
-        fi
-    elif [[ "$greeter_libs" == *libQt6Quick* ]]; then
-        if sudo grep -q '^import QtGraphicalEffects 1\.0$' "$sddm_theme_dir/Main.qml"; then
-            sudo sed -i 's/^import QtGraphicalEffects 1\.0$/import Qt5Compat.GraphicalEffects/' \
-                "$sddm_theme_dir/Main.qml"
-            ok "SDDM Qt6 import patched."
-        fi
-    else
-        warn "Could not determine the SDDM greeter Qt version; leaving the theme import unchanged."
-    fi
     sudo chown -R root:root "$sddm_theme_dir"
+    sudo find "$sddm_theme_dir" -type d -exec chmod 755 {} +
+    sudo find "$sddm_theme_dir" -type f -exec chmod 644 {} +
 
     # Zram
     [[ -f "$DOTFILES_DIR/system/etc/zram-generator.conf" ]] && {
@@ -561,7 +551,7 @@ main() {
     echo -e "    2. Choose Hyprland or 'Sway (Dotfiles)' at the SDDM login screen"
     echo -e "    3. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
     echo -e "    4. Open kitty - nvim plugins install on first launch"
-    echo -e "    5. SDDM theme (gruvbox-minimal-sddm) installs automatically;"
+    echo -e "    5. SDDM theme (Hypr SDDM) installs automatically;"
     echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish application colors"
     echo -e "    6. Binds: Super+E yazi | Super+, smile | Super+C clipboard | Super+P menu"
     echo -e "       Machine-local extras (uv tools, tree-sitter) - see README"

@@ -63,7 +63,7 @@ chmod +x install.sh
 6. **Installs TPM** (tmux plugin manager)
 7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim and qt6ct stay real dirs (copy-if-missing); `local/bin` is **merged**, never
    wiped, so machine-local tools (uv, tree-sitter, uv shims) survive
-8. **Applies system configs** (SDDM conf + a pinned, root-owned `gruvbox-minimal-sddm` clone,
+8. **Applies system configs** (SDDM conf + a pinned, root-owned `hypr-sddm` clone,
    cpu-performance.service, zram) and enables services
 9. **Sets up user services** (pipewire, wireplumber)
 10. **Sets the GTK/icon/cursor theme in dconf** (GNOME + Cinnamon/Nemo:
@@ -79,7 +79,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
-6. SDDM theme `gruvbox-minimal-sddm` (GitHub-only, not in AUR) is pinned and installed root-owned automatically; the font it needs (`ttf-fantasque-nerd`) comes from `packages.txt`.
+6. SDDM theme `hypr-sddm` (GitHub-only, not in AUR) is pinned and installed root-owned automatically; its Qt6 virtual keyboard dependencies come from `packages.txt`.
 
 ### Not managed by the installer (machine-local)
 
