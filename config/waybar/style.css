@@ -58,11 +58,6 @@ window#waybar {
     border-bottom: 2px solid @ws_active;
 }
 
-/* Keep Niri's named equivalent of Hyprland's special workspace hidden. */
-#niri-workspace-magic {
-    opacity: 0;
-}
-
 #mpris {
     font-weight: 700;
 }

@@ -38,10 +38,6 @@ debug {
     render-drm-device "/dev/dri/renderD128"
 }
 
-// Keep the Hyprland special:magic workspace as a hidden named workspace.
-workspace "magic" {
-}
-
 // logind already suspends on lid close; lock before the session sleeps.
 switch-events {
     lid-close { spawn "sh" "-c" "swaylock -C ~/.config/niri/lock.conf -f"; }
@@ -189,11 +185,8 @@ binds {
     Mod+Shift+9 repeat=false { move-window-to-workspace 9; }
     Mod+Shift+0 repeat=false { move-window-to-workspace 10; }
 
-    // Niri's closest equivalent to Hyprland's special:magic workspace.
-    Mod+S repeat=false { focus-workspace "magic"; }
-    Mod+Shift+S repeat=false {
-        move-window-to-workspace "magic" focus=false
-    }
+    // Niri has no special workspace; overview is the closest equivalent.
+    Mod+S repeat=false { toggle-overview; }
 
     Mod+WheelScrollDown cooldown-ms=150 repeat=false { focus-workspace-down; }
     Mod+WheelScrollUp cooldown-ms=150 repeat=false { focus-workspace-up; }

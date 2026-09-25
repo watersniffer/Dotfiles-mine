@@ -106,9 +106,9 @@ equivalent of the Hyprland 4000K Night Light toggle. The standalone
 compositor itself is not installed. Niri's native lid-close event starts the
 lock screen, while the system logind policy handles suspend.
 
-Niri's layout is scrollable and its workspace model is dynamic, so a few
-Hyprland-only concepts (special workspaces and exact animation curves) are
-approximated with Niri's named workspaces and animation system.
+Niri's layout is scrollable and its workspace model is dynamic. It has no
+native Hyprland-style special workspace, so `Super+S` opens Niri's overview
+instead; numbered workspaces remain dynamic and start at 1.
 
 ## Keybinds (extra)
 
