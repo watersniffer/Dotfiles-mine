@@ -1,4 +1,4 @@
-// Niri port of the monochrome Hyprland desktop.
+// Niri configuration for the monochrome desktop.
 // Shared themes and Waybar styling live in the sibling config directories.
 
 environment {
@@ -74,7 +74,7 @@ layout {
     // Niri struts here would create a second gap.
 }
 
-// Match Hyprland's 5px rounded, blurred, shadowed client appearance.
+// Match the desktop's 5px rounded, blurred, shadowed client appearance.
 prefer-no-csd
 
 blur {
@@ -174,7 +174,7 @@ binds {
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
     Mod+P repeat=false { spawn "wlogout"; }
 
-    // Workspace switching, matching the Hyprland Super+1..0 bindings.
+    // Workspace switching for the numbered dynamic workspaces.
     Mod+1 repeat=false { focus-workspace 1; }
     Mod+2 repeat=false { focus-workspace 2; }
     Mod+3 repeat=false { focus-workspace 3; }

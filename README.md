@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Hyprland** and **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
+My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
 
 ## Contents
 
@@ -15,8 +15,7 @@ My personal Arch Linux dotfiles: **Hyprland** and **Niri** (Wayland), **Bash + S
 │   ├── .tmux.conf  .vimrc
 │   └── .vim/                     # colorschemes (monochrome)
 ├── config/                       # Configs for ~/.config/ (symlinked)
-│   ├── hypr/                     # Hyprland (Lua config + HyprMod gui lua)
-│   ├── niri/                     # Niri session (matching monochrome port)
+│   ├── niri/                     # Niri session (KDL config + lock screen)
 │   ├── kitty/                    # Terminal
 │   ├── waybar/                   # Status bar (+ Waycat/Skulltype cat/skull fonts)
 │   ├── nvim/                     # Neovim (real dir, copy-if-missing)
@@ -74,46 +73,45 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned. At login, choose either **Hyprland** or **Niri (Dotfiles)**.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned. At login, choose **Niri (Dotfiles)**.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
-6. SDDM theme `hypr-sddm` (GitHub-only, not in AUR) is pinned and installed root-owned automatically; its Qt6 virtual keyboard dependencies come from `packages.txt`.
+6. The SDDM login theme `hypr-sddm` (a theme name, not a compositor session; GitHub-only, not in AUR) is pinned and installed root-owned automatically; its Qt6 virtual keyboard dependencies come from `packages.txt`.
 
 ### Not managed by the installer (machine-local)
 
-- **uv** (`curl -LsSf https://astral.sh/uv/install.sh | sh`) and its tools:
-  `uv tool install hyprmod`
-  (HyprMod regenerates `config/hypr/hyprland-gui.lua` from its GUI — if you
-  change opacity there, keep it in sync with `hyprland.lua`)
+- **uv** (`curl -LsSf https://astral.sh/uv/install.sh | sh`) and its tools
 - **tree-sitter CLI** at `~/.local/bin/tree-sitter`
 - Browser profiles (Zen `zen-themes.json` + Transparent Zen mod + Zen Internet,
   Firefox): themed in place on this machine, not shipped in the repo
 
 ## Niri session
 
-The installer keeps Hyprland as the default compositor and adds a second SDDM
-entry named **Niri (Dotfiles)**. Select it at login to use the Niri port.
+Niri is the only desktop session managed by this repository. The installer
+keeps the stock Niri session available and installs **Niri (Dotfiles)** as the
+default SDDM entry.
 
-The Niri session reuses the same Kitty terminal, Rofi launcher, monochrome
-Waybar stylesheet, Mako notifications, Matuwall/awww wallpaper picker, Wlogout
-theme, application themes, gaps, cursor, and primary keybinds. Niri's native
-window effects are configured for the same 5px rounded corners, x-ray blur,
-shadows, and spring animations. Its Waybar configuration uses Niri's workspace
-module while preserving the Hyprland layout. `wlsunset` provides the Niri
-equivalent of the Hyprland 4000K Night Light toggle. The standalone
-`swaylock` utility is retained only as Niri's lock-screen backend; the Sway
-compositor itself is not installed. Niri's native lid-close event starts the
-lock screen, while the system logind policy handles suspend.
+The session reuses the monochrome Waybar stylesheet, Kitty terminal, Rofi
+launcher, Mako notifications, Matuwall/awww wallpaper picker, Wlogout theme,
+application themes, gaps, cursor, and primary keybinds. Niri's native window
+effects provide 5px rounded corners, x-ray blur, shadows, and spring
+animations. `wlsunset` provides the 4000K Night Light toggle, and the
+standalone `swaylock` utility provides the lock screen through Wlogout and the
+lid-close event. Systemd-logind handles suspend and power-button policy.
 
-Niri's layout is scrollable and its workspace model is dynamic. It has no
-native Hyprland-style special workspace, so `Super+S` opens Niri's overview
-instead; numbered workspaces remain dynamic and start at 1.
+Niri's layout is scrollable and its workspace model is dynamic. `Super+S`
+opens the overview; numbered workspaces begin at 1 and are shown in Waybar.
+
+### Hyprland backup
+
+The previous Hyprland setup is preserved on the remote branch
+[`backup/hyprland-setup`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/hyprland-setup).
+It is intentionally not installed or linked by this repository anymore.
 
 ## Keybinds (extra)
 
-The binds below are mirrored in the Niri session where the equivalent Niri
-command exists.
+The binds below are the custom shortcuts layered on top of Niri's defaults.
 
 | Bind | Action |
 |------|--------|
@@ -127,6 +125,8 @@ command exists.
 | `XF86MonBrightnessUp/Down` | adjust screen brightness |
 | Waybar backlight module | toggle Night Light |
 | `Super+P` | wlogout |
+| `Super+S` | Niri overview |
+| `Super+M` | exit Niri |
 | `Super+Space` | rofi launcher |
 
 ## Day-to-day

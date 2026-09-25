@@ -8,7 +8,7 @@ chosen=$(printf '%s\n' "${options[@]}" | rofi -dmenu -p "Power" -theme "$theme")
 case "$chosen" in
     "Shutdown") systemctl poweroff ;;
     "Reboot")   systemctl reboot ;;
-    "Lock")     hyprlock 2>/dev/null || loginctl lock-session ;;
+    "Lock")     "$HOME/.local/bin/dotfiles-lock" || loginctl lock-session ;;
     "Suspend")  systemctl suspend ;;
-    "Logout")   hyprctl dispatch exit ;;
+    "Logout")   loginctl terminate-user "$USER" ;;
 esac
