@@ -384,6 +384,22 @@ apply_system_configs() {
         fi
     fi
 
+    # Flatpak polkit authentication: a polkit agent must register with
+    # xdg-desktop-portal, which reads /proc/<agent>/root. Yama's
+    # ptrace_scope=1 blocks that read, so grant cap_sys_ptrace to the portal
+    # binary only -- much narrower than lowering ptrace_scope system-wide --
+    # and keep it across portal updates with a pacman hook.
+    if [[ -f "$DOTFILES_DIR/system/etc/pacman.d/hooks/xdg-desktop-portal-ptrace.hook" ]] &&
+       [[ -x /usr/lib/xdg-desktop-portal ]]; then
+        sudo install -d -m 0755 /etc/pacman.d/hooks
+        sudo install -m 0644 \
+            "$DOTFILES_DIR/system/etc/pacman.d/hooks/xdg-desktop-portal-ptrace.hook" \
+            /etc/pacman.d/hooks/xdg-desktop-portal-ptrace.hook
+        sudo setcap cap_sys_ptrace=ep /usr/lib/xdg-desktop-portal
+        systemctl --user restart xdg-desktop-portal.service 2>/dev/null || true
+        ok "Flatpak polkit authentication enabled for xdg-desktop-portal."
+    fi
+
     # Enable key system services
     sudo systemctl enable sddm.service 2>/dev/null || true
     sudo systemctl enable NetworkManager.service 2>/dev/null || true

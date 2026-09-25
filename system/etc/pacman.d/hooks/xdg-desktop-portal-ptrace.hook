@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = xdg-desktop-portal
+
+[Action]
+Description = Re-apply cap_sys_ptrace to xdg-desktop-portal for Flatpak polkit auth
+When = PostTransaction
+Exec = /usr/bin/setcap cap_sys_ptrace=ep /usr/lib/xdg-desktop-portal
