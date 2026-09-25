@@ -49,6 +49,7 @@
   },
 
   "backlight": {
+    "on-click": "toggle-night-light",
     "format": " {icon} {percent}% ",
     "format-icons": ["󰃞", "󰃟", "󰃠"]
   },

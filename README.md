@@ -100,8 +100,8 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 | `Super+C` | clipboard history via rofi (cliphist) |
 | `Super+W` | matuwall wallpaper picker |
 | `Super+Shift+W` | hide/show Waybar |
-| `XF86MonBrightnessUp/Down` | toggle Night Light |
-| `Super+XF86MonBrightnessUp/Down` | adjust screen brightness |
+| `XF86MonBrightnessUp/Down` | adjust screen brightness |
+| Waybar backlight module | toggle Night Light |
 | `Super+P` | wlogout |
 | `Super+Space` | rofi launcher |
 

@@ -4,5 +4,7 @@ set -euo pipefail
 if systemctl --user is-active --quiet hyprsunset.service; then
     systemctl --user stop hyprsunset.service
 else
+    # A previous interrupted start can leave systemd's start-limit counter set.
+    systemctl --user reset-failed hyprsunset.service >/dev/null 2>&1 || true
     systemctl --user start hyprsunset.service
 fi
