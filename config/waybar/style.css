@@ -52,6 +52,11 @@ window#waybar {
     background: @urgent;
 }
 
+/* Keep Sway's named equivalent of Hyprland's special workspace hidden. */
+#sway-workspace-magic {
+    opacity: 0;
+}
+
 #mpris {
     font-weight: 700;
 }

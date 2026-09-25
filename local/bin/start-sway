@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SDDM starts the desktop entry directly, so provide the same environment that
+# the Hyprland Lua config sets before handing control to Sway.
+export XDG_CURRENT_DESKTOP=Sway
+export XDG_SESSION_DESKTOP=sway
+export GDK_BACKEND=wayland
+export XCURSOR_SIZE=24
+export XCURSOR_THEME=Bibata-Modern-Classic
+export QT_QPA_PLATFORMTHEME=qt6ct
+export QT_STYLE_OVERRIDE=kvantum
+export QT_SCALE_FACTOR=0.92
+export PATH="$HOME/.local/bin:$HOME/.local/share/flatpak/exports/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
+
+exec /usr/bin/sway "$@"

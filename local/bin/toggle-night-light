@@ -1,10 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if systemctl --user is-active --quiet hyprsunset.service; then
-    systemctl --user stop hyprsunset.service
+desktop=${XDG_CURRENT_DESKTOP:-}
+if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
+    state_file="${XDG_RUNTIME_DIR:-/tmp}/night-light-${UID}.state"
+
+    if [[ -s "$state_file" ]]; then
+        pid=$(<"$state_file")
+        if [[ "$pid" =~ ^[0-9]+$ ]] && \
+           [[ "$(ps -p "$pid" -o comm= 2>/dev/null || true)" == wlsunset ]] && \
+           kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+        fi
+        rm -f "$state_file"
+    else
+        command -v wlsunset >/dev/null 2>&1 || {
+            echo "wlsunset is required for the Sway night light." >&2
+            exit 1
+        }
+
+        nohup wlsunset -t 4000 -T 4000 >/dev/null 2>&1 &
+        pid=$!
+        sleep 0.2
+        if kill -0 "$pid" 2>/dev/null; then
+            printf '%s\n' "$pid" > "$state_file"
+        else
+            echo "wlsunset could not adjust the display gamma." >&2
+            exit 1
+        fi
+    fi
 else
-    # A previous interrupted start can leave systemd's start-limit counter set.
-    systemctl --user reset-failed hyprsunset.service >/dev/null 2>&1 || true
-    systemctl --user start hyprsunset.service
+    if systemctl --user is-active --quiet hyprsunset.service; then
+        systemctl --user stop hyprsunset.service
+    else
+        # A previous interrupted start can leave systemd's start-limit counter set.
+        systemctl --user reset-failed hyprsunset.service >/dev/null 2>&1 || true
+        systemctl --user start hyprsunset.service
+    fi
 fi

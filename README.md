@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Hyprland** (Wayland, Lua config), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
+My personal Arch Linux dotfiles: **Hyprland** and **Sway** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
 
 ## Contents
 
@@ -16,6 +16,8 @@ My personal Arch Linux dotfiles: **Hyprland** (Wayland, Lua config), **Bash + St
 │   └── .vim/                     # colorschemes (monochrome)
 ├── config/                       # Configs for ~/.config/ (symlinked)
 │   ├── hypr/                     # Hyprland (Lua config + HyprMod gui lua)
+│   ├── sway/                     # Sway session (matching monochrome port)
+│   ├── swaylock/                 # Swaylock appearance
 │   ├── kitty/                    # Terminal
 │   ├── waybar/                   # Status bar (+ Waycat/Skulltype cat/skull fonts)
 │   ├── nvim/                     # Neovim (real dir, copy-if-missing)
@@ -73,7 +75,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned. At login, choose either **Hyprland** or **Sway (Dotfiles)**.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
@@ -89,7 +91,26 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 - Browser profiles (Zen `zen-themes.json` + Transparent Zen mod + Zen Internet,
   Firefox): themed in place on this machine, not shipped in the repo
 
+## Sway session
+
+The installer keeps Hyprland as the default compositor and adds a second SDDM
+entry named **Sway (Dotfiles)**. Select it at login to use the Sway port.
+
+The Sway session reuses the same Kitty terminal, Rofi launcher, monochrome
+Waybar stylesheet, Mako notifications, Matuwall/awww wallpaper picker, Wlogout
+theme, application themes, gaps, cursor, and primary keybinds. Its Waybar
+configuration uses Sway's workspace module while preserving the Hyprland
+layout. `wlsunset` provides the Sway equivalent of the Hyprland 4000K
+Night Light toggle.
+
+Stock Sway does not implement Hyprland's rounded client corners, x-ray blur,
+drop shadows, or animation system. Those effects cannot be copied literally
+into Sway; SwayFX would be required for a closer visual approximation.
+
 ## Keybinds (extra)
+
+The binds below are mirrored in the Sway session where the equivalent Sway
+command exists.
 
 | Bind | Action |
 |------|--------|

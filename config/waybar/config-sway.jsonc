@@ -1,0 +1,70 @@
+{
+  "layer": "top",
+  "position": "top",
+  "spacing": 5,
+  "height": 1,
+  "margin-top": 4,
+  "margin-left": 4,
+  "margin-right": 4,
+
+  "modules-left": ["sway/workspaces", "custom/cpucat"],
+  "modules-center": ["mpris"],
+  "modules-right": [
+    "tray",
+    "wireplumber",
+    "backlight",
+    "battery",
+    "clock"
+  ],
+  "sway/workspaces": {
+    "format": "{name}"
+  },
+
+  "mpris": {
+    "format": "  {artist} - {title} ",
+    "format-paused": " 󰐊 {artist} - {title} ",
+    "max-length": 37,
+    "tooltip": true
+  },
+
+  "tray": {
+    "icon-size": 14,
+    "spacing": 4
+  },
+  "custom/cpucat": {
+    "exec": "bash ~/.config/waybar/scripts/catloop.sh"
+  },
+  "wireplumber": {
+    "scroll-step": 5,
+    "format": " {icon} {volume}%",
+    "format-muted": "󰝟 muted",
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "format-icons": {
+      "default": ["󰕿", "󰖀", "󰕾"],
+      "headphones": "󰋋",
+      "headset": "󰋎"
+    }
+  },
+
+  "backlight": {
+    "on-click": "~/.local/bin/toggle-night-light",
+    "format": " {icon} {percent}% ",
+    "format-icons": ["󰃞", "󰃟", "󰃠"]
+  },
+
+  "battery": {
+    "states": { "warning": 30, "critical": 15 },
+    "format": "{icon} {capacity}% ",
+    "format-charging": "󰂄 {capacity}% ",
+    "format-plugged": "󱟦 {capacity}% ",
+    "format-full": "󰁹 {capacity}% ",
+    "format-icons": [
+      "󰂎", "󰁺", "󰁻", "󰁼", "󰁽",
+      "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"
+    ]
+  },
+
+  "clock": {
+    "format": "{:%m-%d-%Y %I:%M %p}"
+  }
+}

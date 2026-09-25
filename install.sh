@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================================
-# Dotfiles Installer - Arch Linux (Hyprland)
+# Dotfiles Installer - Arch Linux (Hyprland + Sway)
 # ============================================================================
-# Based on water's custom Hyprland setup with:
+# Based on water's custom Hyprland/Sway setup with:
 #   Bash + Starship, Kitty, Neovim (lazy.nvim), Waybar,
 #   Rofi, Mako, optional Matugen theming, tmux, and many utilities.
 #
@@ -203,7 +203,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout \
+    for name in hypr sway swaylock kitty waybar rofi mako fastfetch matugen matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -287,6 +287,16 @@ apply_system_configs() {
         sudo cp "$DOTFILES_DIR/system/etc/sddm.conf.d/"* /etc/sddm.conf.d/
         ok "SDDM configs applied."
     }
+
+    # SDDM is configured to read /usr/share/wayland-sessions. Keep the
+    # environment-setting wrapper as a separate, root-owned session entry so
+    # the stock Sway session remains available as a fallback.
+    if [[ -f "$DOTFILES_DIR/system/usr/share/wayland-sessions/sway-dotfiles.desktop" ]]; then
+        sudo install -D -o root -g root -m 0644 \
+            "$DOTFILES_DIR/system/usr/share/wayland-sessions/sway-dotfiles.desktop" \
+            /usr/share/wayland-sessions/sway-dotfiles.desktop
+        ok "Sway (Dotfiles) session installed."
+    fi
 
     # SDDM theme: GitHub-only (NOT in AUR). Keep the QML tree root-owned;
     # application themes must never be writable by the login user.
@@ -519,7 +529,7 @@ main() {
     echo ""
     echo -e "${CYAN}========================================${NC}"
     echo -e "${CYAN}  Dotfiles Installer — Arch Linux       ${NC}"
-    echo -e "${CYAN}  Hyprland + Bash + Kitty + Neovim      ${NC}"
+    echo -e "${CYAN}  Hyprland + Sway + Bash + Kitty         ${NC}"
     echo -e "${CYAN}========================================${NC}"
     echo ""
 
@@ -548,11 +558,12 @@ main() {
     echo ""
     echo -e "  What to do next:"
     echo -e "    1. Log out and back in (for bash + wayland)"
-    echo -e "    2. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
-    echo -e "    3. Open kitty - nvim plugins install on first launch"
-    echo -e "    4. SDDM theme (gruvbox-minimal-sddm) installs automatically;"
+    echo -e "    2. Choose Hyprland or 'Sway (Dotfiles)' at the SDDM login screen"
+    echo -e "    3. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
+    echo -e "    4. Open kitty - nvim plugins install on first launch"
+    echo -e "    5. SDDM theme (gruvbox-minimal-sddm) installs automatically;"
     echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish application colors"
-    echo -e "    5. Binds: Super+E yazi | Super+, smile | Super+C clipboard | Super+P menu"
+    echo -e "    6. Binds: Super+E yazi | Super+, smile | Super+C clipboard | Super+P menu"
     echo -e "       Machine-local extras (uv tools, tree-sitter) - see README"
     echo ""
 }

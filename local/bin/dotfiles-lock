@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+desktop=${XDG_CURRENT_DESKTOP:-}
+if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
+    exec swaylock -f
+fi
+exec hyprlock

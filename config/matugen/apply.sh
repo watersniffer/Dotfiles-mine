@@ -23,4 +23,12 @@ if pgrep -x waybar >/dev/null 2>&1; then
     pkill -x waybar
     sleep 0.2
 fi
-setsid waybar >/dev/null 2>&1 &
+
+desktop=${XDG_CURRENT_DESKTOP:-}
+if [[ -n "${SWAYSOCK:-}" || "${desktop,,}" == sway* ]]; then
+    waybar_config="$HOME/.config/waybar/config-sway.jsonc"
+else
+    waybar_config="$HOME/.config/waybar/config.jsonc"
+fi
+
+setsid waybar -c "$waybar_config" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &

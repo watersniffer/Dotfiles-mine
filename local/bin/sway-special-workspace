@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+special_workspace=magic
+state_file="${XDG_RUNTIME_DIR:-/tmp}/sway-special-workspace-${UID}.state"
+
+current_workspace() {
+    swaymsg -t get_workspaces -r |
+        jq -r '.[] | select(.focused == true) | .name' |
+        head -n 1
+}
+
+leave_special_workspace() {
+    if [[ -s "$state_file" ]]; then
+        previous_workspace=$(<"$state_file")
+        rm -f "$state_file"
+    else
+        previous_workspace=1
+    fi
+    swaymsg "workspace $previous_workspace" >/dev/null
+}
+
+enter_special_workspace() {
+    current=$(current_workspace)
+    [[ -n "$current" ]] || return 1
+    printf '%s\n' "$current" > "$state_file"
+    swaymsg "workspace $special_workspace" >/dev/null
+}
+
+case "${1:-toggle}" in
+    toggle)
+        current=$(current_workspace)
+        if [[ "$current" == "$special_workspace" ]]; then
+            leave_special_workspace
+        else
+            enter_special_workspace
+        fi
+        ;;
+    move)
+        current=$(current_workspace)
+        [[ -n "$current" && "$current" != "$special_workspace" ]] || exit 0
+        printf '%s\n' "$current" > "$state_file"
+        swaymsg "move container to workspace $special_workspace" >/dev/null
+        # Moving to a named workspace may focus it; Hyprland's special workspace
+        # keeps the user on the original workspace, so return there explicitly.
+        if [[ "$(current_workspace)" == "$special_workspace" ]]; then
+            swaymsg "workspace $current" >/dev/null
+        fi
+        ;;
+    *)
+        echo "usage: ${0##*/} [toggle|move]" >&2
+        exit 2
+        ;;
+esac

@@ -9,12 +9,16 @@ hyprlock
 hyprpolkitagent
 hyprshot
 hyprsunset
+sway
+swayidle
+swaylock
 sddm
 qt5-declarative
 qt5-quickcontrols2
 qt5-graphicaleffects
 waybar
 xdg-desktop-portal-hyprland
+xdg-desktop-portal-wlr
 xwayland-satellite
 wtype
 wl-clipboard
@@ -122,6 +126,7 @@ xorg-xdpyinfo
 xorg-xwininfo
 nvtop
 gammastep
+wlsunset
 
 # --- Qt / GTK Theming ---
 qt6-wayland

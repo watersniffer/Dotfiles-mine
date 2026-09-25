@@ -1,0 +1,9 @@
+# Dark monochrome Swaylock settings.
+font=JetBrainsMono Nerd Font
+color=#161616
+text-color=#f0f0f0
+indicator-radius=5
+indicator-thickness=2
+inside-color=#2a2a2a
+line-color=#aaaaaa
+ring-color=#f0f0f0

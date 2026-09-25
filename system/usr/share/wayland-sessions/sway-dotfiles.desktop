@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Sway (Dotfiles)
+Comment=Monochrome Sway session matching the Hyprland dotfiles
+Exec=/home/water/.local/bin/start-sway
+TryExec=/home/water/.local/bin/start-sway
+Type=Application
+DesktopNames=sway;wlroots
+Keywords=tiling;wayland;compositor;
