@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec swaylock -C "$HOME/.config/niri/lock.conf" -f
+desktop=${XDG_CURRENT_DESKTOP:-}
+if [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
+    exec swaylock -C "$HOME/.config/niri/lock.conf" -f
+fi
+exec hyprlock

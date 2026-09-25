@@ -4,6 +4,12 @@
 
 # --- Desktop / Window Manager ---
 firefox
+hyprland
+hypridle
+hyprlock
+hyprpolkitagent
+hyprshot
+hyprsunset
 niri
 # Standalone lock utility used by Niri's Wlogout integration.
 swaylock
@@ -14,12 +20,14 @@ qt5-graphicaleffects
 waybar
 xdg-desktop-portal-gnome
 xdg-desktop-portal-gtk
+xdg-desktop-portal-hyprland
 gnome-keyring
 xwayland-satellite
 wtype
 wl-clipboard
 cliphist
 nwg-displays
+nwg-dock-hyprland
 nwg-look
 xsettingsd
 geoclue
