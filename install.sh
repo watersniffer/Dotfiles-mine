@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================================
-# Dotfiles Installer - Arch Linux (Hyprland + Niri)
+# Dotfiles Installer - Arch Linux (Hyprland)
 # ============================================================================
-# Based on water's custom Hyprland/Niri setup with:
+# Based on water's custom Hyprland setup with:
 #   Bash + Starship, Kitty, Neovim (lazy.nvim), Waybar,
 #   Rofi, Mako, optional Matugen theming, tmux, and many utilities.
 #
@@ -203,7 +203,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in hypr niri kitty waybar rofi mako fastfetch matugen matuwall wlogout \
+    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -244,11 +244,13 @@ symlink_dotfiles() {
         cp -a "$DOTFILES_DIR/local/bin/startup" "$HOME/.local/bin/startup"
         rm -rf "$HOME/.local/bin/__pycache__"
 
-        # These helpers belonged to the retired Sway session and are no longer
-        # part of the merged ~/.local/bin directory.
+        # These helpers belonged to retired compositor sessions and are no
+        # longer part of the merged ~/.local/bin directory.
         rm -f "$HOME/.local/bin/start-sway" \
               "$HOME/.local/bin/sway-special-workspace" \
-              "$HOME/.local/bin/sway-startup"
+              "$HOME/.local/bin/sway-startup" \
+              "$HOME/.local/bin/start-niri" \
+              "$HOME/.local/bin/niri-startup"
 
         # Preserve the executable bits of repo-managed helpers without
         # changing permissions on unrelated machine-local tools.
@@ -303,15 +305,10 @@ apply_system_configs() {
     }
 
     # SDDM is configured to read /usr/share/wayland-sessions. Remove the old
-    # root-owned Sway entry when upgrading, then install the Niri wrapper as a
-    # separate session while keeping the stock Niri session available.
-    sudo rm -f /usr/share/wayland-sessions/sway-dotfiles.desktop
-    if [[ -f "$DOTFILES_DIR/system/usr/share/wayland-sessions/niri-dotfiles.desktop" ]]; then
-        sudo install -D -o root -g root -m 0644 \
-            "$DOTFILES_DIR/system/usr/share/wayland-sessions/niri-dotfiles.desktop" \
-            /usr/share/wayland-sessions/niri-dotfiles.desktop
-        ok "Niri (Dotfiles) session installed."
-    fi
+    # root-owned Sway entry when upgrading; Hyprland is the only session.
+    sudo rm -f /usr/share/wayland-sessions/sway-dotfiles.desktop \
+        /usr/share/wayland-sessions/niri.desktop \
+        /usr/share/wayland-sessions/niri-dotfiles.desktop
 
     # SDDM theme: pinned GitHub source, installed root-owned. The theme is
     # Qt6-only and relies on the virtualkeyboard QML module.
@@ -550,7 +547,7 @@ main() {
     echo ""
     echo -e "${CYAN}========================================${NC}"
     echo -e "${CYAN}  Dotfiles Installer — Arch Linux       ${NC}"
-    echo -e "${CYAN}  Hyprland + Niri + Bash + Kitty         ${NC}"
+    echo -e "${CYAN}  Hyprland + Bash + Kitty                 ${NC}"
     echo -e "${CYAN}========================================${NC}"
     echo ""
 
@@ -579,7 +576,7 @@ main() {
     echo ""
     echo -e "  What to do next:"
     echo -e "    1. Log out and back in (for bash + wayland)"
-    echo -e "    2. Choose Hyprland or 'Niri (Dotfiles)' at the SDDM login screen"
+    echo -e "    2. Pick Hyprland at the SDDM login screen"
     echo -e "    3. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
     echo -e "    4. Open kitty - nvim plugins install on first launch"
     echo -e "    5. SDDM theme (Hypr SDDM) installs automatically;"
