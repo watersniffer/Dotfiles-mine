@@ -193,7 +193,7 @@ symlink_dotfiles() {
     log "Symlinking dotfiles..."
 
     # --- Home dotfiles ---
-    for f in .tmux.conf .bashrc .bash_profile .bash_logout .vimrc; do
+    for f in .tmux.conf .bashrc .bash_profile .bash_logout .vimrc .inputrc; do
         link_item "$DOTFILES_DIR/home/$f" "$HOME/$f"
     done
     # ~/.vim holds only colorschemes - safe to link wholesale.
