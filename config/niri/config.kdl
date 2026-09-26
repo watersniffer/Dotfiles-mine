@@ -72,9 +72,11 @@ layout {
     }
 
     border {
-        // Hairline outline on every window: bright white for the focused one,
-        // dim grey for the rest, from the Monochrome palette.
-        on
+        // No window outlines. The focus ring above is off too, so nothing
+        // draws a frame around windows any more -- the drop shadow below is
+        // what separates them from the wallpaper. Width and colours are kept
+        // so this is a one-word change if you want them back.
+        off
 
         width 1
 
