@@ -198,6 +198,12 @@ symlink_dotfiles() {
     done
     # ~/.vim holds only colorschemes - safe to link wholesale.
     link_item "$DOTFILES_DIR/home/.vim" "$HOME/.vim"
+    # Pins kitty as the freedesktop default terminal.
+    if [[ -f "$DOTFILES_DIR/home/.config/xdg-terminal-exec.conf" ]]; then
+        mkdir -p "$HOME/.config"
+        link_item "$DOTFILES_DIR/home/.config/xdg-terminal-exec.conf" \
+            "$HOME/.config/xdg-terminal-exec.conf"
+    fi
 
     # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"

@@ -10,6 +10,9 @@ environment {
     QT_SCALE_FACTOR "0.92"
     XCURSOR_SIZE "22"
     XCURSOR_THEME "Bibata-Modern-Classic"
+    // Pinned so the xdg-terminal-exec wrapper in ~/.local/bin cannot be talked
+    // into launching something else by an inherited TERMINAL value.
+    TERMINAL "kitty"
     PATH "/home/water/.local/bin:/home/water/.local/share/flatpak/exports/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
 }
 
@@ -32,8 +35,11 @@ input {
     workspace-auto-back-and-forth
     mod-key "Super"
 
-    mouse
+    mouse {
 
+
+        natural-scroll
+    }
     trackpoint
 }
 
