@@ -25,7 +25,6 @@ input {
 
     touchpad {
         tap
-        natural-scroll
     }
 
     // Keep the system logind power-button policy instead of letting Niri
@@ -252,10 +251,12 @@ binds {
     // Niri has no special workspace; overview is the closest equivalent.
     Mod+S hotkey-overlay-title="Open the Overview" repeat=false { toggle-overview; }
 
-    // Touchpad equivalents of the wheel workspace binds. niri ships these
-    // commented out; natural-scroll is on, so they mirror the wheel direction.
-    Mod+TouchpadScrollDown cooldown-ms=150 { focus-workspace-down; }
-    Mod+TouchpadScrollUp cooldown-ms=150 { focus-workspace-up; }
+    // Touchpad equivalents of the wheel workspace binds, left commented out
+    // because natural-scroll is off: with it off, two-finger scroll runs
+    // opposite to the wheel, so these would move the wrong way. Re-enable them
+    // if you turn natural-scroll back on.
+    // Mod+TouchpadScrollDown cooldown-ms=150 { focus-workspace-down; }
+    // Mod+TouchpadScrollUp cooldown-ms=150 { focus-workspace-up; }
 
     Mod+WheelScrollDown repeat=false cooldown-ms=150 { focus-workspace-down; }
     Mod+WheelScrollUp repeat=false cooldown-ms=150 { focus-workspace-up; }
