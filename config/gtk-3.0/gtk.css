@@ -1,0 +1,14 @@
+@import url("colors.css");
+
+/* Kripton leaves GtkPlacesSidebar (Nemo's places pane) unpainted -- it only
+ * styles stacksidebar and forces .sidebar list to transparent, so the pane
+ * falls back to GTK's white default. Paint it from the generated palette so
+ * Nemo matches the rest of the desktop instead of the wallpaper. */
+placessidebar.sidebar,
+placessidebar.sidebar > viewport.frame,
+placessidebar.sidebar list,
+.nemo-window .sidebar,
+.nemo-window .sidebar > viewport.frame,
+.nemo-window .sidebar list {
+  background-color: @view_bg_color;
+}
