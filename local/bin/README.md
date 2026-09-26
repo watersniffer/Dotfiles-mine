@@ -1,10 +1,10 @@
-Scripts used on my system. `startup` is a directory of scripts executed at session startup; `~/.local/bin` is added to `$PATH` so you can call the helpers from your terminal. They are written for the Hyprland session.
+Scripts used on my system. `startup` is a directory of scripts executed at session startup; `~/.local/bin` is added to `$PATH` so you can call the helpers from your terminal. The same helpers are used by both Hyprland and Niri where possible.
 
 ## Full list
 
 | Script                     | Description                                                                                                                                                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `at_startup`               | script executed by the Hyprland startup config; it iterates the `startup` directory and runs executable `*.sh` files, skipping names beginning with `_` or ending in `.bak` |
+| `at_startup`               | script executed by the Hyprland and Niri startup configs; it iterates the `startup` directory and runs executable `*.sh` files, skipping names beginning with `_` or ending in `.bak` |
 | `bak`                      | add `.bak` to a file\[s\] or remove `.bak` if already set, used to temporary disable some scripts  |
 | `brightness`               | main script that simplifies brightness controll and sends OSD like notification                                                                                                                                                                   |
 | `caffeine`                 | my tiny implementation of an idle inhibitor. Uses systemd-inhibit under the hood, can also prevent laptop from sleep when closing the lid. example: `caffeine handle-lid-switch`. Used from `startup/auto_caffeine.sh`                 |
@@ -22,7 +22,9 @@ Scripts used on my system. `startup` is a directory of scripts executed at sessi
 | `mictoggle`        | Toggles microphone state on/off and sends notification with current state                                                                                                                                                                         |
 | `screenrec`         | similar to `screenshot`, with no argument starts to record your screen, with `--select` firstly lets you select the recording area. If you run it when recording is already on, will end recording                                                |
 | `sshs`                     | starts an ssh session with given identities: `source sshs ./ident_1 ./ident_n`                                                                                                                                                                    |
-| `dotfiles-lock`            | lock helper using `hyprlock` |
+| `dotfiles-lock`            | compositor-aware lock helper (`hyprlock` or Niri's `swaylock`) |
+| `niri-startup`             | guarded one-time Niri session startup for bars, daemons, wallpaper, and terminal |
+| `start-niri`               | environment wrapper for the SDDM `Niri (Dotfiles)` session |
 | `toggle-night-light`       | toggle the warm/night-light display filter (`hyprsunset` or `wlsunset`) |
 | `toggle-waybar`            | hide Waybar when it is running, or start it again with the active compositor's config |
 | `toggle_rofi`              | wrapper script to provide any rofi related menu / script with the toggle functionality (close if already running) executes provided arguments. Example: `toggle_rofi rofi -show drun`                                                             |

@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================================
-# Dotfiles Installer - Arch Linux (Hyprland)
+# Dotfiles Installer - Arch Linux (Hyprland + Niri)
 # ============================================================================
-# Based on water's custom Hyprland setup with:
+# Based on water's custom Hyprland/Niri setup with:
 #   Bash + Starship, Kitty, Neovim (lazy.nvim), Waybar,
 #   Rofi, Mako, optional Matugen theming, tmux, and many utilities.
 #
@@ -203,7 +203,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in hypr kitty waybar rofi mako fastfetch matugen matuwall wlogout \
+    for name in hypr niri kitty waybar rofi mako fastfetch matugen matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -212,7 +212,7 @@ symlink_dotfiles() {
 
     # Remove the retired Sway config links when upgrading an existing checkout.
     # Only symlinks are removed here so a real user directory is never deleted.
-    for legacy in niri sway swaylock; do
+    for legacy in sway swaylock; do
         if [[ -L "$HOME/.config/$legacy" ]]; then
             rm -f "$HOME/.config/$legacy"
         fi
@@ -249,8 +249,9 @@ symlink_dotfiles() {
         rm -f "$HOME/.local/bin/start-sway" \
               "$HOME/.local/bin/sway-special-workspace" \
               "$HOME/.local/bin/sway-startup" \
-              "$HOME/.local/bin/start-niri" \
-              "$HOME/.local/bin/niri-startup"
+              "$HOME/.local/bin/cycle_layout" \
+              "$HOME/.local/bin/dock" \
+              "$HOME/.local/bin/refreshrate"
 
         # Preserve the executable bits of repo-managed helpers without
         # changing permissions on unrelated machine-local tools.
@@ -304,10 +305,15 @@ apply_system_configs() {
     }
 
     # SDDM is configured to read /usr/share/wayland-sessions. Remove the old
-    # root-owned Sway entry when upgrading; Hyprland is the only session.
-    sudo rm -f /usr/share/wayland-sessions/sway-dotfiles.desktop \
-        /usr/share/wayland-sessions/niri.desktop \
-        /usr/share/wayland-sessions/niri-dotfiles.desktop
+    # root-owned Sway entry when upgrading, then install the Niri wrapper as the
+    # default session while keeping the stock Niri session available.
+    sudo rm -f /usr/share/wayland-sessions/sway-dotfiles.desktop
+    if [[ -f "$DOTFILES_DIR/system/usr/share/wayland-sessions/niri-dotfiles.desktop" ]]; then
+        sudo install -D -o root -g root -m 0644 \
+            "$DOTFILES_DIR/system/usr/share/wayland-sessions/niri-dotfiles.desktop" \
+            /usr/share/wayland-sessions/niri-dotfiles.desktop
+        ok "Niri (Dotfiles) session installed."
+    fi
 
     # SDDM theme: pinned GitHub source, installed root-owned. The theme is
     # Qt6-only and relies on the virtualkeyboard QML module.
@@ -491,15 +497,15 @@ setup_gtk_dconf() {
     gsettings set org.gnome.desktop.interface gtk-theme Kripton 2>/dev/null || true
     gsettings set org.gnome.desktop.interface icon-theme Papirus 2>/dev/null || true
     gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface font-name 'Open Sans 10' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font Mono 11' 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface document-font-name 'Open Sans 11' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface document-font-name 'JetBrainsMono Nerd Font 12' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
     gsettings set org.gnome.desktop.interface accent-color slate 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface gtk-theme Kripton 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface icon-theme Papirus 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface font-name 'Open Sans 9' 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface font-name 'JetBrainsMono Nerd Font 9' 2>/dev/null || true
     ok "GTK/icon/cursor theme set in dconf (GNOME + Cinnamon)."
 }
 
@@ -546,7 +552,7 @@ main() {
     echo ""
     echo -e "${CYAN}========================================${NC}"
     echo -e "${CYAN}  Dotfiles Installer — Arch Linux       ${NC}"
-    echo -e "${CYAN}  Hyprland + Bash + Kitty                 ${NC}"
+    echo -e "${CYAN}  Hyprland + Niri + Bash + Kitty         ${NC}"
     echo -e "${CYAN}========================================${NC}"
     echo ""
 
@@ -575,7 +581,7 @@ main() {
     echo ""
     echo -e "  What to do next:"
     echo -e "    1. Log out and back in (for bash + wayland)"
-    echo -e "    2. Pick Hyprland at the SDDM login screen"
+    echo -e "    2. Choose 'Niri (Dotfiles)' or Hyprland at the SDDM login screen"
     echo -e "    3. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
     echo -e "    4. Open kitty - nvim plugins install on first launch"
     echo -e "    5. SDDM theme (Hypr SDDM) installs automatically;"
