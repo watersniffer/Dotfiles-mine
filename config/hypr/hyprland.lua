@@ -31,9 +31,9 @@ hl.window_rule({
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 hl.env("GDK_BACKEND", "wayland")
-hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_SIZE", "22")
 hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
-hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_SIZE", "22")
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 hl.env("QT_STYLE_OVERRIDE", "kvantum")
 hl.env("QT_SCALE_FACTOR", "0.92") -- Qt apps: 92% interface scale (matches GTK)
@@ -52,6 +52,9 @@ hl.env("PATH", user_path .. ":" .. inherited_path .. ":" .. system_path)
 --------------------
 
 hl.on("hyprland.start", function()
+    -- Dunst owns org.freedesktop.Notifications; while it holds that name mako
+    -- refuses to start, so clear it before launching the notifier.
+    hl.exec_cmd("pkill -x dunst")
     hl.exec_cmd("mako")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
     hl.exec_cmd("waybar")

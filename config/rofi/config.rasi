@@ -14,7 +14,7 @@ configuration {
 @import "colors.rasi"
 
 * {
-    font: "JetBrainsMono Nerd Font 10";
+    font: "Open Sans 10";
     background-color: transparent;
     text-color: @fg0;
 

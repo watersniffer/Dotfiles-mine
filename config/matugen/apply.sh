@@ -1,34 +1,6 @@
 #!/usr/bin/env bash
-# Optionally regenerate the application theme from a wallpaper and reload Waybar.
-# MANUAL ONLY: nothing calls this automatically anymore (Matuwall has no hooks).
-# Usage: apply.sh <path>
-set -euo pipefail
-
-WALLPAPER="${1:-}"
-WALLPAPER_DIR="${HOME}/Pictures/Wallpapers"
-
-if [[ -z "$WALLPAPER" ]]; then
-    mapfile -t wallpaper_candidates < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f -print 2>/dev/null | sort)
-    WALLPAPER="${wallpaper_candidates[0]:-}"
-fi
-
-if [[ -z "$WALLPAPER" || ! -f "$WALLPAPER" ]]; then
-    echo "no wallpaper found ($WALLPAPER)" >&2
-    exit 1
-fi
-
-matugen image "$WALLPAPER" --prefer=value
-
-if pgrep -x waybar >/dev/null 2>&1; then
-    pkill -x waybar
-    sleep 0.2
-fi
-
-desktop=${XDG_CURRENT_DESKTOP:-}
-if [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
-    waybar_config="$HOME/.config/waybar/config-niri.jsonc"
-else
-    waybar_config="$HOME/.config/waybar/config.jsonc"
-fi
-
-setsid waybar -c "$waybar_config" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
+# Backwards-compatible entry point. The real work lives in
+# local/bin/matugen-theme, which is what Matuwall's on_apply hook calls.
+# Kept because the README documents this path.
+set -uo pipefail
+exec "$HOME/.local/bin/matugen-theme" "$@"

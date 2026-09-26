@@ -64,5 +64,3 @@ all-update() {
     echo -e "\e[1;32m:: All updates complete!\e[0m"
 }
 
-# SLSsteam: Add wrapper to PATH
-export PATH="$HOME/.local/share/SLSsteam/path:$PATH"

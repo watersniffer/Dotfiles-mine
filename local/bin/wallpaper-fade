@@ -1,0 +1,430 @@
+#!/usr/bin/env python3
+"""wallpaper-fade -- set the desktop wallpaper, with an optional transition.
+
+No wallpaper daemon available here can transition: awww swaps the image
+instantly, this repo's swaybg build has no transition flags, and swww is not
+packaged (the AUR only carries tools that *use* it). So the transition is
+compositor-driven here, using a layer-shell overlay on the background layer:
+the animation happens behind your windows, so nothing steals focus, nothing
+enters the window list, and the bar and every window stay crisp.
+
+Transitions:
+  rise   (default) the new wallpaper slides up from the bottom edge and the
+                  old one is simply covered. No crossfade.
+  fade   the old screen is frozen, the wallpaper changes underneath, and the
+         frozen frame fades away.
+  zoom   as fade, but the frozen frame also drifts closer (Ken Burns).
+  slide  as fade, but the frozen frame slides out sideways.
+  none   set it instantly.
+
+Usage: wallpaper-fade [options] <image>
+
+Options:
+  --transition rise|fade|zoom|slide|none   (default: rise)
+  --duration MS                           length of the animation (620)
+  --no-animation                          same as --transition none
+
+Environment:
+  WALLPAPER_FADE_TRANSITION, WALLPAPER_FADE_MS, WALLPAPER_FADE_DISABLE=1,
+  WALLPAPER_FADE_DEBUG=1
+
+The wallpaper change itself must always happen, so the animation is strictly
+best effort: anything that goes wrong falls back to an instant change.
+"""
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+FRAME_MS = 16
+SETTLE_MS = 90
+SWAP_SETTLE_MS = 450  # hold the panel until the daemon has applied the image
+ZOOM_AMOUNT = 0.06
+DEFAULT_TRANSITION = "rise"
+DEFAULT_DURATION = 620
+TRANSITIONS = ("rise", "fade", "zoom", "slide", "none")
+
+
+def warn(message: str) -> None:
+    print(f"wallpaper-fade: {message}", file=sys.stderr)
+
+
+def ease_out(t: float) -> float:
+    """Cubic ease-out: quick at first, gentle at the end."""
+    return 1.0 - (1.0 - t) ** 3
+
+
+def set_wallpaper(image: str) -> bool:
+    result = subprocess.run(
+        ["awww", "img", image, "--resize", "crop", "--crop-gravity", "center"],
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        warn(f"awww failed to set {os.path.basename(image)}")
+        return False
+    return True
+
+
+def load_gtk():
+    """Import GTK with every namespace pinned, or return None."""
+    try:
+        import gi
+
+        # Requiring Gtk alone lets Gdk load at 4.0 first, which then breaks the
+        # Gtk 3 import. GdkPixbuf is version 2.0, not 3.0.
+        gi.require_version("Gdk", "3.0")
+        gi.require_version("GdkPixbuf", "2.0")
+        gi.require_version("Gtk", "3.0")
+        gi.require_version("GtkLayerShell", "0.1")
+        from gi.repository import GdkPixbuf, GLib, Gtk, GtkLayerShell
+    except (ImportError, ValueError) as exc:
+        warn(f"layer-shell unavailable ({exc}); setting the wallpaper directly")
+        return None
+    if not Gtk.init_check([])[0]:
+        warn("GTK would not initialise; setting the wallpaper directly")
+        return None
+    return Gtk, GdkPixbuf, GLib, GtkLayerShell
+
+
+def screen_size():
+    """The output size, asked of the compositor.
+
+    GdkScreen's dimensions are not reliable on Wayland, so niri is the source
+    of truth here. Returns None if it cannot be determined.
+    """
+    try:
+        result = subprocess.run(["niri", "msg", "outputs"],
+                                capture_output=True, text=True, timeout=5)
+        match = re.search(r"Logical size:\s*(\d+)x(\d+)", result.stdout)
+        if match:
+            return int(match.group(1)), int(match.group(2))
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+def cover_fit(pixbuf, width: int, height: int, GdkPixbuf):
+    """Scale and centre-crop to exactly width x height.
+
+    This has to match awww's "--resize crop --crop-gravity center", otherwise
+    the wallpaper visibly jumps when the overlay is swapped for the real thing.
+    """
+    src_w, src_h = pixbuf.get_width(), pixbuf.get_height()
+    if src_w == width and src_h == height:
+        return pixbuf
+    scale = max(width / src_w, height / src_h)
+    new_w = max(width, min(width * 4, round(src_w * scale)))
+    new_h = max(height, min(height * 4, round(src_h * scale)))
+    if hasattr(pixbuf, "scale_simple"):
+        scaled = pixbuf.scale_simple(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
+    else:
+        scaled = pixbuf.scale2(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
+    offset_x = (new_w - width) // 2
+    offset_y = (new_h - height) // 2
+    if offset_x == 0 and offset_y == 0 and new_w == width and new_h == height:
+        return scaled
+    # new_subpixbuf, not copy_region: it is a view onto the scaled image rather
+    # than a copy, and copy_region is not exposed in this binding.
+    return scaled.new_subpixbuf(offset_x, offset_y, width, height)
+
+
+def make_window(Gtk, GtkLayerShell, width: int, height: int, namespace="wallpaper-fade"):
+    window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+    GtkLayerShell.init_for_window(window)
+    # Background layer: above the wallpaper daemon, below every real window.
+    GtkLayerShell.set_layer(window, GtkLayerShell.Layer.BACKGROUND)
+    GtkLayerShell.set_namespace(window, namespace)
+    GtkLayerShell.set_exclusive_zone(window, 0)
+    for edge in (GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
+        GtkLayerShell.set_anchor(window, edge, True)
+    window.set_default_size(width, height)
+    return window
+
+
+def animate_in(image: str, duration_ms: int, debug: bool) -> bool:
+    """The new wallpaper rises from below the bottom edge, covering the old one.
+
+    Nothing fades: the incoming panel is opaque and simply slides up. The
+    wallpaper itself is switched with awww only once the panel covers the
+    screen, so the swap is invisible and the daemon state ends up correct.
+    """
+    loaded = load_gtk()
+    if loaded is None:
+        return False
+    Gtk, GdkPixbuf, GLib, GtkLayerShell = loaded
+
+    try:
+        source = GdkPixbuf.Pixbuf.new_from_file(image)
+    except GLib.GError as exc:
+        warn(f"could not read {os.path.basename(image)} ({exc})")
+        return False
+
+    started = time.monotonic()
+
+    def trace(message: str) -> None:
+        if debug:
+            print(f"wallpaper-fade: [{time.monotonic() - started:.2f}s] {message}",
+                  file=sys.stderr)
+
+    # The panel must be exactly the size of the output, not of the image:
+    # wallpapers are often not the panel's aspect ratio.
+    size = screen_size()
+    width, height = size if size else (source.get_width(), source.get_height())
+    panel = cover_fit(source, width, height, GdkPixbuf)
+    trace(f"prepared a {width}x{height} cover-fit panel")
+
+    window = make_window(Gtk, GtkLayerShell, width, height)
+    # Anchored to the bottom: a negative bottom margin parks the whole panel
+    # below the screen, and animating it to 0 slides the panel up into view.
+    GtkLayerShell.set_anchor(window, GtkLayerShell.Edge.BOTTOM, True)
+    GtkLayerShell.set_margin(window, GtkLayerShell.Edge.BOTTOM, -height)
+    window.add(Gtk.Image.new_from_pixbuf(panel))
+    window.show_all()
+
+    state = {"began": None, "frames": 0, "done": False}
+
+    def advance() -> bool:
+        if state["began"] is None:
+            state["began"] = time.monotonic()
+            return True
+        elapsed = (time.monotonic() - state["began"]) * 1000
+        if elapsed < SETTLE_MS:
+            return True
+        progress = min(1.0, (elapsed - SETTLE_MS) / duration_ms)
+        margin = int(round(-height * (1.0 - ease_out(progress))))
+        GtkLayerShell.set_margin(window, GtkLayerShell.Edge.BOTTOM, margin)
+        state["frames"] += 1
+        if progress >= 1.0:
+            state["done"] = True
+            trace(f"panel in place after {state['frames']} frames "
+                  f"({state['frames'] * 1000 / duration_ms:.0f} fps); "
+                  f"swapping the wallpaper underneath")
+            set_wallpaper(image)
+            # Keep covering the screen until the daemon has actually applied the
+            # new image, otherwise lifting the panel reveals the old wallpaper
+            # for a moment while awww is still decoding it.
+            GLib.timeout_add(SWAP_SETTLE_MS, lift)
+            return False
+        return True
+
+    def lift() -> bool:
+        trace("panel lifted")
+        window.destroy()
+        Gtk.main_quit()
+        return False
+
+    # Deliberately not waiting for the "map" signal: the panel starts parked
+    # below the output and the compositor need never report such a surface as
+    # mapped. If it appears late the transition just finishes late, and if it
+    # never appears the watchdog still sets the wallpaper.
+    GLib.timeout_add(FRAME_MS, advance)
+    trace("panel parked below the screen, rising")
+
+    def watchdog() -> bool:
+        if not state["done"]:
+            trace("transition did not finish; setting the wallpaper directly")
+            set_wallpaper(image)
+            window.destroy()
+            Gtk.main_quit()
+        return False
+
+    GLib.timeout_add(duration_ms * 6 + 3000, watchdog)
+    Gtk.main()
+    return state["done"]
+
+
+def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: bool) -> bool:
+    """Freeze the screen, change the wallpaper underneath, move the frame away.
+
+    Used by fade/zoom/slide. The animation is driven by the compositor -- window
+    opacity plus layer-shell margins -- so GTK never redraws a frame. Progress
+    comes from the clock, not a frame count, so it lasts exactly duration_ms.
+    """
+    loaded = load_gtk()
+    if loaded is None:
+        return False
+    Gtk, GdkPixbuf, GLib, GtkLayerShell = loaded
+
+    started = time.monotonic()
+
+    def trace(message: str) -> None:
+        if debug:
+            print(f"wallpaper-fade: [{time.monotonic() - started:.2f}s] {message}",
+                  file=sys.stderr)
+
+    try:
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(snapshot)
+    except GLib.GError as exc:
+        warn(f"could not read the snapshot ({exc})")
+        return False
+
+    width = pixbuf.get_width()
+    height = pixbuf.get_height()
+
+    slide_distance = int(width * 0.4)
+    if transition == "zoom":
+        surface_w = int(width * (1 + ZOOM_AMOUNT))
+        surface_h = int(height * (1 + ZOOM_AMOUNT))
+        start_margin, end_margin = -int(width * ZOOM_AMOUNT / 2), 0
+        anchors = (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM)
+    elif transition == "slide":
+        surface_w, surface_h = width + slide_distance, height
+        start_margin, end_margin = 0, slide_distance
+        anchors = (GtkLayerShell.Edge.TOP,)
+    else:
+        surface_w, surface_h = width, height
+        start_margin = end_margin = 0
+        anchors = (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM)
+
+    window = make_window(Gtk, GtkLayerShell, surface_w, surface_h)
+    for edge in anchors:
+        GtkLayerShell.set_anchor(window, edge, True)
+    for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
+                 GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
+        GtkLayerShell.set_margin(window, edge, start_margin)
+
+    image = Gtk.Image.new_from_pixbuf(pixbuf)
+    if transition == "slide":
+        # Keep the frozen frame against the leading edge so the gap it leaves
+        # behind is the new wallpaper showing through.
+        image.set_halign(Gtk.Align.START)
+    window.add(image)
+    window.show_all()
+
+    state = {"swapped_at": None, "frames": 0}
+
+    def advance() -> bool:
+        if state["swapped_at"] is None:
+            return True
+        elapsed = (time.monotonic() - state["swapped_at"]) * 1000 - SETTLE_MS
+        if elapsed < 0:
+            return True
+        progress = min(1.0, elapsed / duration_ms)
+        eased = ease_out(progress)
+        state["frames"] += 1
+        if start_margin != end_margin:
+            margin = int(round(start_margin + (end_margin - start_margin) * eased))
+            for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
+                         GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
+                GtkLayerShell.set_margin(window, edge, margin)
+        window.set_opacity(max(0.0, 1.0 - eased))
+        if progress >= 1.0:
+            trace(f"animation done: {state['frames']} frames over {duration_ms}ms "
+                  f"({state['frames'] * 1000 / duration_ms:.0f} fps)")
+            window.destroy()
+            Gtk.main_quit()
+            return False
+        return True
+
+    def when_mapped() -> bool:
+        if not window.get_mapped():
+            return True
+        trace("overlay up, swapping the wallpaper underneath")
+        swap()
+        state["swapped_at"] = time.monotonic()
+        GLib.timeout_add(FRAME_MS, advance)
+        return False
+
+    window.connect("map", lambda _w: GLib.timeout_add(FRAME_MS, when_mapped))
+    trace(f"overlay shown ({transition}, {duration_ms}ms)")
+
+    def watchdog() -> bool:
+        if state["swapped_at"] is None:
+            trace("overlay never mapped; giving up on the transition")
+            window.destroy()
+            Gtk.main_quit()
+        return False
+
+    GLib.timeout_add(duration_ms * 6 + 2000, watchdog)
+    Gtk.main()
+    return state["swapped_at"] is not None
+
+
+def parse_args(argv):
+    transition = os.environ.get("WALLPAPER_FADE_TRANSITION", DEFAULT_TRANSITION)
+    duration = os.environ.get("WALLPAPER_FADE_MS", str(DEFAULT_DURATION))
+    image = None
+    args = list(argv)
+    while args:
+        arg = args.pop(0)
+        if arg == "--transition" and args:
+            transition = args.pop(0)
+        elif arg.startswith("--transition="):
+            transition = arg.split("=", 1)[1]
+        elif arg == "--duration" and args:
+            duration = args.pop(0)
+        elif arg.startswith("--duration="):
+            duration = arg.split("=", 1)[1]
+        elif arg == "--no-animation":
+            transition = "none"
+        elif not arg.startswith("-"):
+            image = arg
+    return transition, duration, image
+
+
+def main() -> int:
+    transition, duration, image = parse_args(sys.argv[1:])
+    debug = bool(os.environ.get("WALLPAPER_FADE_DEBUG"))
+    disabled = bool(os.environ.get("WALLPAPER_FADE_DISABLE"))
+
+    if image is None:
+        warn(f"usage: wallpaper-fade [--transition {'|'.join(TRANSITIONS)}] "
+             f"[--duration MS] <image>")
+        return 2
+    if transition not in TRANSITIONS:
+        warn(f"unknown transition {transition!r}, using {DEFAULT_TRANSITION}")
+        transition = DEFAULT_TRANSITION
+    if not os.path.isfile(image):
+        warn(f"no such image: {image}")
+        return 1
+    if disabled:
+        transition = "none"
+    if transition == "none":
+        return 0 if set_wallpaper(image) else 1
+
+    try:
+        duration_ms = max(FRAME_MS * 2, int(duration))
+    except ValueError:
+        warn(f"bad duration {duration!r}, using {DEFAULT_DURATION}")
+        duration_ms = DEFAULT_DURATION
+
+    if transition == "rise":
+        # No screenshot needed: the incoming wallpaper is the overlay, so this
+        # path starts faster than the freeze-frame ones.
+        if animate_in(image, duration_ms, debug):
+            return 0
+        return 0 if set_wallpaper(image) else 1
+
+    workdir = tempfile.mkdtemp(prefix="wallpaper-fade-")
+    snapshot = os.path.join(workdir, "before.png")
+    try:
+        # Start the screenshot without waiting: grim and the GTK import are
+        # independent, so overlapping them hides most of the latency.
+        capture = subprocess.Popen(["grim", snapshot],
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
+        try:
+            import gi  # noqa: F401  (warm the import while grim runs)
+
+            gi.require_version("Gdk", "3.0")
+            gi.require_version("GdkPixbuf", "2.0")
+            gi.require_version("Gtk", "3.0")
+            gi.require_version("GtkLayerShell", "0.1")
+        except (ImportError, ValueError):
+            pass
+        capture.wait()
+
+        if os.path.isfile(snapshot) and animate_out(
+            snapshot, lambda: set_wallpaper(image), transition, duration_ms, debug
+        ):
+            return 0
+        return 0 if set_wallpaper(image) else 1
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

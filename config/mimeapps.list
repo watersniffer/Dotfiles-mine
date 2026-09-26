@@ -10,15 +10,16 @@ application/xhtml+xml=zen.desktop
 application/x-extension-xhtml=zen.desktop
 application/x-extension-xht=zen.desktop
 inode/directory=nemo.desktop
-x-scheme-handler/webcal=zen.desktop
+x-scheme-handler/webcal=helium.desktop
 application/pdf=zen.desktop
-x-scheme-handler/about=zen.desktop
-x-scheme-handler/unknown=zen.desktop
+x-scheme-handler/about=helium.desktop
+x-scheme-handler/unknown=helium.desktop
+x-scheme-handler/mailspring=Mailspring.desktop
 
 [Added Associations]
 x-scheme-handler/http=zen.desktop;
 x-scheme-handler/https=zen.desktop;
-x-scheme-handler/chrome=zen.desktop;
 text/html=zen.desktop;
 x-scheme-handler/webcal=zen.desktop;
 video/mp4=mpv.desktop;
+x-scheme-handler/chrome=zen.desktop;

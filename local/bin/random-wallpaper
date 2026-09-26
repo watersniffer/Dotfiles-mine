@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# random-wallpaper -- show a random wallpaper from ~/Pictures/Wallpapers and
+# re-theme the desktop to match it.
+#
+# Bound to Super+Shift+W. The picker (Matuwall, Super+W) has no random mode, so
+# this picks the image itself and hands it to awww directly. It deliberately
+# avoids the wallpaper that is already showing, so the key always visibly does
+# something.
+#
+# Usage: random-wallpaper [directory]
+set -uo pipefail
+
+wallpaper_dir="${1:-$HOME/Pictures/Wallpapers}"
+
+# NUL-delimited: wallpaper names in this directory contain spaces.
+mapfile -d '' -t candidates < <(
+    find "$wallpaper_dir" -maxdepth 1 -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
+           -o -iname '*.webp' -o -iname '*.avif' \) -print0 2>/dev/null
+)
+
+if [[ ${#candidates[@]} -eq 0 ]]; then
+    echo "random-wallpaper: no images found in $wallpaper_dir" >&2
+    exit 1
+fi
+
+current=$(awww query 2>/dev/null |
+    sed -n 's/.*currently displaying: image: //p' | head -n1)
+
+pick="${candidates[RANDOM % ${#candidates[@]}]}"
+if [[ ${#candidates[@]} -gt 1 && "$pick" == "$current" ]]; then
+    # Retry a few times rather than looping forever on a single-image library.
+    for _ in {1..20}; do
+        pick="${candidates[RANDOM % ${#candidates[@]}]}"
+        [[ "$pick" == "$current" ]] || break
+    done
+fi
+
+if ! "$HOME/.local/bin/wallpaper-fade" "$pick"; then
+    echo "random-wallpaper: could not set $pick" >&2
+    exit 1
+fi
+
+# Pass the path explicitly: awww query right after awww img can still report
+# the previous wallpaper, and some names contain spaces.
+"$HOME/.local/bin/matugen-theme" --quiet "$pick"
+
+if command -v notify-send >/dev/null 2>&1; then
+    notify-send --app-name=random-wallpaper --expire-time=2500 \
+        -i preferences-desktop-wallpaper "Random wallpaper" \
+        "$(basename "$pick")" >/dev/null 2>&1 || true
+fi

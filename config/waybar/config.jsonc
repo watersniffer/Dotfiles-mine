@@ -1,11 +1,14 @@
 {
+  // Pick up colours.css changes (matugen-theme rewrites it on every
+  // wallpaper change) without a restart, so the bar never blinks out.
+  "reload_style_on_change": true,
   "layer": "top",
   "position": "top",
   "spacing": 5,
-  "height": 1,
-  "margin-top": 4,
-  "margin-left": 4,
-  "margin-right": 4,
+  // Attached to the top edge: no floating margins, and a real 34px height
+  // (it used to be 1 here, with the visible height coming from the CSS
+  // min-height instead).
+  "height": 30,
 
   "modules-left": ["hyprland/workspaces","custom/cpucat"],
   "modules-center": ["mpris"],

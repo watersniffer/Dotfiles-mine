@@ -8,7 +8,7 @@ environment {
     QT_QPA_PLATFORMTHEME "qt6ct"
     QT_STYLE_OVERRIDE "kvantum"
     QT_SCALE_FACTOR "0.92"
-    XCURSOR_SIZE "24"
+    XCURSOR_SIZE "22"
     XCURSOR_THEME "Bibata-Modern-Classic"
     PATH "/home/water/.local/bin:/home/water/.local/share/flatpak/exports/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
 }
@@ -70,13 +70,16 @@ layout {
     }
 
     border {
-        off
+        // A hairline outline on every window. The two colours are rewritten by
+        // matugen-theme whenever the wallpaper changes -- edit them there, not
+        // here, or the next wallpaper will undo it.
+        on
 
         width 1
 
-        active-color "#ffffff"
+        active-color "#a5c8ff"
 
-        inactive-color "#ffffff"
+        inactive-color "#424751"
     }
 
     shadow {
@@ -95,19 +98,29 @@ layout {
 prefer-no-csd
 
 blur {
-    passes 2
+    // passes 2 was the single most expensive thing in the compositor on this
+    // HD 520 (Gen8 has no fast blur path). One pass is visually near-identical
+    // and roughly halves the per-frame blur cost.
+    passes 1
     offset 8.0
-    noise 0.02
+    // The grain is a per-pixel ALU term in the pass that is already running;
+    // at 0.02 it was invisible on a moving background anyway.
+    noise 0.0
+    // 1.0 is skipped by the shader, so leaving it costs nothing.
     saturation 1.0
 }
 
 window-rule {
-    geometry-corner-radius 5
+    // Square corners: the border is a hairline, so rounding it just looked
+    // like uneven line thickness.
+    geometry-corner-radius 0
     clip-to-geometry true
     background-effect {
         blur true
+        // xray is the cheap path: the backdrop is blurred once and shared, so
+        // it is not recomputed when windows behind move.
         xray true
-        noise 0.02
+        noise 0.0
         saturation 1.0
     }
 }
@@ -122,14 +135,17 @@ window-rule {
 
 cursor {
     xcursor-theme "Bibata-Modern-Classic"
-    xcursor-size 24
+    xcursor-size 22
 }
 
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 animations {
     workspace-switch {
-        spring damping-ratio=1.0 stiffness=700 epsilon=0.0001
+        // Stiffer springs settle in fewer frames. Every animation frame is a
+        // full re-render (and a blur pass with a translucent window behind),
+        // so fewer frames is both smoother-looking and cheaper.
+        spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
     }
     window-open {
         duration-ms 150
@@ -140,13 +156,13 @@ animations {
         curve "ease-out-cubic"
     }
     horizontal-view-movement {
-        spring damping-ratio=1.0 stiffness=650 epsilon=0.0001
+        spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
     }
     window-movement {
-        spring damping-ratio=1.0 stiffness=650 epsilon=0.0001
+        spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
     }
     window-resize {
-        spring damping-ratio=1.0 stiffness=650 epsilon=0.0001
+        spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
     }
 }
 
@@ -174,10 +190,19 @@ binds {
     Mod+Up repeat=false { focus-window-up; }
     Mod+Down repeat=false { focus-window-down; }
 
+    // Keyboard window/column movement. Previously there was no keyboard way to
+    // move a column or a window at all -- only the mouse wheel could do it.
+    Mod+Ctrl+Left repeat=false { move-column-left; }
+    Mod+Ctrl+Right repeat=false { move-column-right; }
+    Mod+Ctrl+Up repeat=false { move-window-up; }
+    Mod+Ctrl+Down repeat=false { move-window-down; }
+
     Mod+Space repeat=false { spawn "rofi" "-show" "drun"; }
     Mod+Comma repeat=false { spawn "smile"; }
     Mod+C repeat=false { spawn-sh "cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"; }
     Mod+W repeat=false { spawn "matuwall"; }
+    // Random wallpaper from ~/Pictures/Wallpapers, theme follows it.
+    Mod+Ctrl+W repeat=false { spawn-sh "~/.local/bin/random-wallpaper"; }
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
     Mod+P repeat=false { spawn "wlogout"; }
 
@@ -187,6 +212,17 @@ binds {
     Mod+End repeat=false { focus-column-last; }
     Mod+Ctrl+Home repeat=false { move-column-to-first; }
     Mod+Ctrl+End repeat=false { move-column-to-last; }
+
+    // Alt+Tab cycles through recent windows, as on any desktop. Niri spells
+    // this "focus the previously focused window", so repeated presses walk
+    // back through the recent-window history.
+    Alt+Tab repeat=false { focus-window-previous; }
+
+    // Page keys for workspace navigation, alongside the existing wheel binds.
+    Mod+Page_Up repeat=false { focus-workspace-up; }
+    Mod+Page_Down repeat=false { focus-workspace-down; }
+    Mod+Ctrl+Page_Up repeat=false { move-column-to-workspace-up; }
+    Mod+Ctrl+Page_Down repeat=false { move-column-to-workspace-down; }
 
     // Workspace switching for the numbered dynamic workspaces.
     Mod+1 repeat=false { focus-workspace 1; }
@@ -229,10 +265,19 @@ binds {
     // Missing Niri defaults: workspace and monitor movement.
     Mod+Shift+Page_Down repeat=false { move-workspace-down; }
     Mod+Shift+Page_Up repeat=false { move-workspace-up; }
-    Mod+Shift+Left repeat=false { focus-monitor-left; }
-    Mod+Shift+Down repeat=false { focus-monitor-down; }
-    Mod+Shift+Up repeat=false { focus-monitor-up; }
-    Mod+Shift+Right repeat=false { focus-monitor-right; }
+    // Monitor focus only does something on a multi-monitor setup; this machine
+    // has one output, so these moved off Mod+Shift+Arrow (which now resizes) to
+    // the free Mod+Alt+Arrow block. They are harmless when there is one screen.
+    Mod+Alt+Left repeat=false { focus-monitor-left; }
+    Mod+Alt+Right repeat=false { focus-monitor-right; }
+    Mod+Alt+Up repeat=false { focus-monitor-up; }
+    Mod+Alt+Down repeat=false { focus-monitor-down; }
+
+    // Resize with Shift+Arrow, matching the rest of the arrow-key navigation.
+    Mod+Shift+Left repeat=false { set-column-width "-10%"; }
+    Mod+Shift+Right repeat=false { set-column-width "+10%"; }
+    Mod+Shift+Up repeat=false { set-window-height "-10%"; }
+    Mod+Shift+Down repeat=false { set-window-height "+10%"; }
     Mod+Shift+Ctrl+Left repeat=false { move-column-to-monitor-left; }
     Mod+Shift+Ctrl+Down repeat=false { move-column-to-monitor-down; }
     Mod+Shift+Ctrl+Up repeat=false { move-column-to-monitor-up; }

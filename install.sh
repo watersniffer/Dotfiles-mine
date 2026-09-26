@@ -497,15 +497,20 @@ setup_gtk_dconf() {
     gsettings set org.gnome.desktop.interface gtk-theme Kripton 2>/dev/null || true
     gsettings set org.gnome.desktop.interface icon-theme Papirus 2>/dev/null || true
     gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-size 18 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface font-name 'Open Sans 10' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font Mono 11' 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface document-font-name 'JetBrainsMono Nerd Font 12' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface document-font-name 'Open Sans 11' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
     gsettings set org.gnome.desktop.interface accent-color slate 2>/dev/null || true
+    # The freedesktop sound theme ships audio-volume-change.oga, the "water
+    # droplet" that plays on every volume keypress. Event sounds off.
+    gsettings set org.gnome.desktop.sound event-sounds false 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface gtk-theme Kripton 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface icon-theme Papirus 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface font-name 'JetBrainsMono Nerd Font 9' 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface cursor-size 22 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface font-name 'Open Sans 9' 2>/dev/null || true
     ok "GTK/icon/cursor theme set in dconf (GNOME + Cinnamon)."
 }
 

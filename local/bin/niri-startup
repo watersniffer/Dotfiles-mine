@@ -13,7 +13,10 @@ if [[ -e "$marker" ]]; then
 fi
 : > "$marker"
 
-# Keep startup work guarded so a config reload does not duplicate daemons.
+# One notification daemon only. Dunst owns org.freedesktop.Notifications, and
+# while it holds that name mako refuses to start at all ("Is a notification
+# daemon already running?"), so clear it first.
+pkill -x dunst >/dev/null 2>&1 || true
 if ! pgrep -x mako >/dev/null 2>&1; then
     mako >/dev/null 2>&1 &
 fi
@@ -27,7 +30,12 @@ if ! pgrep -x awww-daemon >/dev/null 2>&1; then
 fi
 (
     for _ in {1..10}; do
-        awww restore >/dev/null 2>&1 && exit 0
+        if awww restore >/dev/null 2>&1; then
+            # Re-theme from the wallpaper awww just restored, so the palette
+            # is not left over from whatever was set at the time.
+            "$HOME/.local/bin/matugen-theme" --quiet >/dev/null 2>&1
+            exit 0
+        fi
         sleep 0.2
     done
 ) &

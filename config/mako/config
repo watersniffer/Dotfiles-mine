@@ -1,7 +1,7 @@
-font=JetBrainsMono Nerd Font 9
-background-color=#161616
-text-color=#f0f0f0
-border-color=#ffffff
+font=Open Sans 9
+background-color=#252a33
+text-color=#dee2ef
+border-color=#a5c8ff
 border-size=2
 border-radius=4
 padding=12
@@ -13,18 +13,18 @@ max-icon-size=64
 text-alignment=left
 
 [urgency=low]
-background-color=#101010
-text-color=#a0a0a0
-border-color=#2a2a2a
+background-color=#1b2029
+text-color=#c2c6d2
+border-color=#424751
 default-timeout=4000
 
 [urgency=normal]
-background-color=#161616
-text-color=#f0f0f0
-border-color=#ffffff
+background-color=#252a33
+text-color=#dee2ef
+border-color=#a5c8ff
 default-timeout=6000
 
 [urgency=critical]
-background-color=#1e1e1e
-text-color=#f0f0f0
-border-color=#d0d0d0
+background-color=#93000a
+text-color=#ffdad6
+border-color=#ffb4ab
