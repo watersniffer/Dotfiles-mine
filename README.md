@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Hyprland** and **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
+My personal Arch Linux dotfiles: **Hyprland** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matugen** — all themed **Monochrome** (white accent `#ffffff`) with a static palette that never changes with the wallpaper.
 
 ## Contents
 
@@ -16,7 +16,6 @@ My personal Arch Linux dotfiles: **Hyprland** and **Niri** (Wayland), **Bash + S
 │   └── .vim/                     # colorschemes (monochrome)
 ├── config/                       # Configs for ~/.config/ (symlinked)
 │   ├── hypr/                     # Hyprland (Lua config + HyprMod gui lua)
-│   ├── niri/                     # Niri session (matching monochrome port)
 │   ├── kitty/                    # Terminal
 │   ├── waybar/                   # Status bar (+ Waycat/Skulltype cat/skull fonts)
 │   ├── nvim/                     # Neovim (real dir, copy-if-missing)
@@ -74,7 +73,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned. At login, choose either **Hyprland** or **Niri (Dotfiles)**.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**). The theme is a static monochrome palette and does **not** change with the wallpaper; `~/.config/matugen/apply.sh <wallpaper>` re-publishes application colors manually, while SDDM remains static and root-owned. At login, choose **Hyprland**.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
@@ -90,38 +89,18 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 - Browser profiles (Zen `zen-themes.json` + Transparent Zen mod + Zen Internet,
   Firefox): themed in place on this machine, not shipped in the repo
 
-## Niri session
+## Niri backup
 
-The installer keeps Hyprland as the default compositor and adds a second SDDM
-entry named **Niri (Dotfiles)**. Select it at login to use the Niri port.
-
-The Niri session reuses the same Kitty terminal, Rofi launcher, monochrome
-Waybar stylesheet, Mako notifications, Matuwall/awww wallpaper picker, Wlogout
-theme, application themes, gaps, cursor, and primary keybinds. Niri's native
-window effects are configured for the same 5px rounded corners, x-ray blur,
-shadows, and spring animations. Its Waybar configuration uses Niri's workspace
-module while preserving the Hyprland layout. `wlsunset` provides the Niri
-equivalent of the Hyprland 4000K Night Light toggle. The standalone
-`swaylock` utility is retained only as Niri's lock-screen backend; the Sway
-compositor itself is not installed. Niri's native lid-close event starts the
-lock screen, while the system logind policy handles suspend.
-
-Niri's layout is scrollable and its workspace model is dynamic. It has no
-native Hyprland-style special workspace, so `Super+S` opens Niri's overview
-instead; numbered workspaces remain dynamic and start at 1.
-
-## Session backups
-
-Earlier states of this repo are kept on GitHub so either session can be
-recovered at any time:
-
-- [`backup/niri-setup`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/niri-setup) — the tuned Niri session (exact `1366x768@60.016` panel mode, touchpad workspace scrolling, hot-key overlay titles, hot corner)
-- [`backup/hyprland-setup`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/hyprland-setup) — the Hyprland setup as it was before the Niri migration
+Niri is no longer installed or linked by this repository. The Niri session --
+including its tuned config (exact `1366x768@60.016` panel mode, touchpad
+workspace scrolling, column-jump and workspace binds, hot-key overlay titles,
+hot corner, focus-ring/border styling) -- is preserved on the remote branch
+[`backup/niri-final`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/niri-final)
+(the earlier snapshot is `backup/niri-setup`).
 
 ## Keybinds (extra)
 
-The binds below are mirrored in the Niri session where the equivalent Niri
-command exists.
+The binds below are the custom shortcuts on top of the Hyprland defaults.
 
 | Bind | Action |
 |------|--------|
