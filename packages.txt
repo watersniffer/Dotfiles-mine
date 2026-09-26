@@ -46,7 +46,6 @@ rofi-emoji
 
 # --- Notification ---
 mako
-dunst
 libnotify
 
 # --- File Manager ---
