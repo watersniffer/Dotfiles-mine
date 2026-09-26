@@ -1,1 +1,11 @@
-/home/water/.themes/Colloid-Dark/gtk-4.0/gtk.css
+/* Kripton for GTK 4, with the generated palette layered on top.
+ *
+ * Kripton only ships a dark variant, so gtk-dark.css is the one to import.
+ * colors.css and custom-props.css are both written by matugen-theme from the
+ * current wallpaper: the first is the @define-color set GTK reads for named
+ * colours, the second is the libadwaita --window-bg-color style variables.
+ *
+ * This file used to be a symlink to a Colloid-Dark build. */
+@import url("file:///usr/share/themes/Kripton/gtk-4.0/gtk-dark.css");
+@import url("colors.css");
+@import url("custom-props.css");

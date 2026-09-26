@@ -19,6 +19,10 @@ output_path = "~/.config/gtk-4.0/colors.css"
 input_path = "~/.config/matugen/templates/gtk-colors.css"
 output_path = "~/.config/gtk-3.0/colors.css"
 
+[templates.gtk4-custom-props]
+input_path = "~/.config/matugen/templates/gtk4-custom-props.css"
+output_path = "~/.config/gtk-4.0/custom-props.css"
+
 [templates.kitty-theme]
 input_path = "~/.config/matugen/templates/kitty-theme.conf"
 output_path = "~/.config/kitty/current-theme.conf"
