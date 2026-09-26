@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
+# Toggle the bar. With DankMaterialShell installed the bar is DMS's, so ask DMS
+# to toggle it -- starting waybar here would put a second bar on screen next to
+# DMS's. Falls back to the old waybar toggle if DMS is not running.
 set -euo pipefail
+
+if pgrep -x dms >/dev/null 2>&1; then
+    # "index 0" is the first configured bar. The selector is a keyword, not a
+    # bare number -- `bar toggle 0` is rejected as an invalid selector.
+    exec dms ipc call bar toggle index 0
+fi
 
 if pgrep -x waybar >/dev/null 2>&1; then
     pkill -x waybar
