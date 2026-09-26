@@ -292,11 +292,10 @@ apply_system_configs() {
             /usr/local/sbin/dotfiles-powersave
     fi
 
-    [[ -f "$DOTFILES_DIR/system/etc/systemd/system/cpu-performance.service" ]] && {
-        sudo cp "$DOTFILES_DIR/system/etc/systemd/system/cpu-performance.service" /etc/systemd/system/
-        sudo systemctl enable cpu-performance.service
-        ok "CPU performance governor enabled."
-    }
+    # No CPU governor unit here on purpose: power-profiles-daemon owns the
+    # governor and overwrites anything written at boot, so a "performance"
+    # unit only reported success while doing nothing. Use `powerprofilesctl
+    # set performance` (or the PPD tray) instead.
 
     [[ -d "$DOTFILES_DIR/system/etc/sddm.conf.d" ]] && {
         sudo mkdir -p /etc/sddm.conf.d
@@ -492,15 +491,15 @@ setup_gtk_dconf() {
     gsettings set org.gnome.desktop.interface gtk-theme Kripton 2>/dev/null || true
     gsettings set org.gnome.desktop.interface icon-theme Papirus 2>/dev/null || true
     gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface font-name 'Open Sans 10' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font Mono 11' 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface document-font-name 'JetBrainsMono Nerd Font 12' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface document-font-name 'Open Sans 11' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
     gsettings set org.gnome.desktop.interface accent-color slate 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface gtk-theme Kripton 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface icon-theme Papirus 2>/dev/null || true
     gsettings set org.cinnamon.desktop.interface cursor-theme Bibata-Modern-Classic 2>/dev/null || true
-    gsettings set org.cinnamon.desktop.interface font-name 'JetBrainsMono Nerd Font 9' 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.interface font-name 'Open Sans 9' 2>/dev/null || true
     ok "GTK/icon/cursor theme set in dconf (GNOME + Cinnamon)."
 }
 

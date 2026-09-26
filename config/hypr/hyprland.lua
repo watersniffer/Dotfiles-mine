@@ -253,3 +253,15 @@ hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = tr
 
 -- HyprMod managed settings
 require("hyprland-gui")
+
+-- The require() above loads hyprland-gui.lua last, and its decoration block
+-- overrode the hand-tuned block earlier in this file -- which is why rounding 0
+-- never actually took effect. Re-assert it after the require so square corners
+-- apply. Opacity deliberately stays at the GUI value of 1.0: 0.90 would make
+-- windows translucent, which re-enables the blur pass on this iGPU.
+hl.config({
+    decoration = {
+        rounding = 0,
+        rounding_power = 2.0,
+    }
+})
