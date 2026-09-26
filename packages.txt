@@ -152,7 +152,6 @@ gcc
 make
 npm
 python
-matugen
 jq
 tree-sitter-cli
 socat

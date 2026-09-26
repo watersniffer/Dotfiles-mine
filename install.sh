@@ -209,7 +209,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in niri kitty waybar rofi mako fastfetch matugen matuwall wlogout \
+    for name in niri kitty waybar rofi mako fastfetch matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"

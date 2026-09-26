@@ -36,9 +36,6 @@ input {
     mod-key "Super"
 
     mouse {
-
-
-        natural-scroll
     }
     trackpoint
 }
