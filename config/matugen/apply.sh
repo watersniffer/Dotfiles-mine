@@ -24,6 +24,11 @@ if pgrep -x waybar >/dev/null 2>&1; then
     sleep 0.2
 fi
 
-waybar_config="${WAYBAR_CONFIG:-$HOME/.config/waybar/config.jsonc}"
+desktop=${XDG_CURRENT_DESKTOP:-}
+if [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
+    waybar_config="$HOME/.config/waybar/config-niri.jsonc"
+else
+    waybar_config="$HOME/.config/waybar/config.jsonc"
+fi
 
 setsid waybar -c "$waybar_config" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &

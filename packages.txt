@@ -10,6 +10,9 @@ hyprlock
 hyprpolkitagent
 hyprshot
 hyprsunset
+niri
+# Standalone lock utility used by Niri's Wlogout integration.
+swaylock
 sddm
 qt5-declarative
 qt5-quickcontrols2

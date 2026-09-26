@@ -1,0 +1,291 @@
+// Niri configuration for the monochrome desktop.
+// Shared themes and Waybar styling live in the sibling config directories.
+
+environment {
+    XDG_CURRENT_DESKTOP "niri"
+    XDG_SESSION_DESKTOP "niri"
+    XDG_SESSION_TYPE "wayland"
+    QT_QPA_PLATFORMTHEME "qt6ct"
+    QT_STYLE_OVERRIDE "kvantum"
+    QT_SCALE_FACTOR "0.92"
+    XCURSOR_SIZE "24"
+    XCURSOR_THEME "Bibata-Modern-Classic"
+    PATH "/home/water/.local/bin:/home/water/.local/share/flatpak/exports/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
+}
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+
+    // Keep the system logind power-button policy instead of letting Niri
+    // intercept the power key.
+    disable-power-key-handling
+    focus-follows-mouse
+    workspace-auto-back-and-forth
+    mod-key "Super"
+
+    mouse
+
+    trackpoint
+}
+
+// This machine routes the internal panel through the Intel iGPU. Explicitly
+// select it so Niri does not fall back to the slower hybrid-GPU path.
+debug {
+    render-drm-device "/dev/dri/renderD128"
+}
+
+// logind already suspends on lid close; lock before the session sleeps.
+switch-events {
+    lid-close { spawn "sh" "-c" "swaylock -C ~/.config/niri/lock.conf -f"; }
+}
+
+output "eDP-1" {
+    mode "1366x768@60.016"
+    scale 1.0
+    position x=0 y=0
+}
+
+layout {
+    gaps 5
+    default-column-width { proportion 0.5; }
+    center-focused-column "never"
+
+    focus-ring {
+        off
+
+        width 1
+
+        active-color "#c0bfbc"
+
+        inactive-color "#c0bfbc"
+    }
+
+    border {
+        off
+
+        width 1
+
+        active-color "#ffffff"
+
+        inactive-color "#ffffff"
+    }
+
+    shadow {
+        on
+        softness 7
+        spread 0
+        offset x=0 y=3
+        color "#00000099"
+    }
+
+    // Waybar is a layer-shell panel and reserves its own top zone; adding
+    // Niri struts here would create a second gap.
+}
+
+// Match the desktop's 5px rounded, blurred, shadowed client appearance.
+prefer-no-csd
+
+blur {
+    passes 2
+    offset 8.0
+    noise 0.02
+    saturation 1.0
+}
+
+window-rule {
+    geometry-corner-radius 5
+    clip-to-geometry true
+    background-effect {
+        blur true
+        xray true
+        noise 0.02
+        saturation 1.0
+    }
+}
+
+window-rule {
+    match app-id=r"^it\.mijorus\.smile$"
+    open-floating true
+    open-focused false
+    default-column-width { fixed 500; }
+    default-window-height { fixed 400; }
+}
+
+cursor {
+    xcursor-theme "Bibata-Modern-Classic"
+    xcursor-size 24
+}
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+animations {
+    workspace-switch {
+        spring damping-ratio=1.0 stiffness=700 epsilon=0.0001
+    }
+    window-open {
+        duration-ms 150
+        curve "ease-out-expo"
+    }
+    window-close {
+        duration-ms 120
+        curve "ease-out-cubic"
+    }
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=650 epsilon=0.0001
+    }
+    window-movement {
+        spring damping-ratio=1.0 stiffness=650 epsilon=0.0001
+    }
+    window-resize {
+        spring damping-ratio=1.0 stiffness=650 epsilon=0.0001
+    }
+}
+
+hotkey-overlay {
+    skip-at-startup
+    hide-not-bound
+}
+
+spawn-at-startup "~/.local/bin/niri-startup"
+
+binds {
+    Mod+Return repeat=false { spawn "kitty"; }
+    Super+Alt+L repeat=false { spawn-sh "swaylock -C ~/.config/niri/lock.conf -f"; }
+    Mod+B repeat=false { spawn "firefox"; }
+    Mod+Q repeat=false { close-window; }
+    Mod+M repeat=false { quit skip-confirmation=true; }
+    Mod+E repeat=false { spawn "kitty" "--class" "yazi" "-e" "yazi"; }
+    Mod+D repeat=false { spawn "nemo"; }
+    Mod+V repeat=false { toggle-window-floating; }
+    Mod+F repeat=false { fullscreen-window; }
+    Mod+J hotkey-overlay-title="Consume or Expel Window Right" repeat=false { consume-or-expel-window-right; }
+
+    Mod+Left repeat=false { focus-column-left; }
+    Mod+Right repeat=false { focus-column-right; }
+    Mod+Up repeat=false { focus-window-up; }
+    Mod+Down repeat=false { focus-window-down; }
+
+    Mod+Space repeat=false { spawn "rofi" "-show" "drun"; }
+    Mod+Comma repeat=false { spawn "smile"; }
+    Mod+C repeat=false { spawn-sh "cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"; }
+    Mod+W repeat=false { spawn "matuwall"; }
+    Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
+    Mod+P repeat=false { spawn "wlogout"; }
+
+    // Index-free column jumps. Arrow keys already do left/right, so these add
+    // first/last only -- no duplicated actions.
+    Mod+Home repeat=false { focus-column-first; }
+    Mod+End repeat=false { focus-column-last; }
+    Mod+Ctrl+Home repeat=false { move-column-to-first; }
+    Mod+Ctrl+End repeat=false { move-column-to-last; }
+
+    // Workspace switching for the numbered dynamic workspaces.
+    Mod+1 repeat=false { focus-workspace 1; }
+    Mod+2 repeat=false { focus-workspace 2; }
+    Mod+3 repeat=false { focus-workspace 3; }
+    Mod+4 repeat=false { focus-workspace 4; }
+    Mod+5 repeat=false { focus-workspace 5; }
+    Mod+6 repeat=false { focus-workspace 6; }
+    Mod+7 repeat=false { focus-workspace 7; }
+    Mod+8 repeat=false { focus-workspace 8; }
+    Mod+9 repeat=false { focus-workspace 9; }
+    Mod+0 repeat=false { focus-workspace 10; }
+
+    Mod+Shift+1 repeat=false { move-window-to-workspace 1; }
+    Mod+Shift+2 repeat=false { move-window-to-workspace 2; }
+    Mod+Shift+3 repeat=false { move-window-to-workspace 3; }
+    Mod+Shift+4 repeat=false { move-window-to-workspace 4; }
+    Mod+Shift+5 repeat=false { move-window-to-workspace 5; }
+    Mod+Shift+6 repeat=false { move-window-to-workspace 6; }
+    Mod+Shift+7 repeat=false { move-window-to-workspace 7; }
+    Mod+Shift+8 repeat=false { move-window-to-workspace 8; }
+    Mod+Shift+9 repeat=false { move-window-to-workspace 9; }
+    Mod+Shift+0 repeat=false { move-window-to-workspace 10; }
+
+    // Niri has no special workspace; overview is the closest equivalent.
+    Mod+S hotkey-overlay-title="Open the Overview" repeat=false { toggle-overview; }
+
+    // Touchpad equivalents of the wheel workspace binds. niri ships these
+    // commented out; natural-scroll is on, so they mirror the wheel direction.
+    Mod+TouchpadScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+TouchpadScrollUp cooldown-ms=150 { focus-workspace-up; }
+
+    Mod+WheelScrollDown repeat=false cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp repeat=false cooldown-ms=150 { focus-workspace-up; }
+    Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+Ctrl+WheelScrollUp cooldown-ms=150 { move-column-to-workspace-up; }
+    Mod+Ctrl+WheelScrollRight cooldown-ms=150 { move-column-right; }
+    Mod+Ctrl+WheelScrollLeft cooldown-ms=150 { move-column-left; }
+
+    // Missing Niri defaults: workspace and monitor movement.
+    Mod+Shift+Page_Down repeat=false { move-workspace-down; }
+    Mod+Shift+Page_Up repeat=false { move-workspace-up; }
+    Mod+Shift+Left repeat=false { focus-monitor-left; }
+    Mod+Shift+Down repeat=false { focus-monitor-down; }
+    Mod+Shift+Up repeat=false { focus-monitor-up; }
+    Mod+Shift+Right repeat=false { focus-monitor-right; }
+    Mod+Shift+Ctrl+Left repeat=false { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Down repeat=false { move-column-to-monitor-down; }
+    Mod+Shift+Ctrl+Up repeat=false { move-column-to-monitor-up; }
+    Mod+Shift+Ctrl+Right repeat=false { move-column-to-monitor-right; }
+    Mod+Ctrl+1 repeat=false { move-column-to-workspace 1; }
+    Mod+Ctrl+2 repeat=false { move-column-to-workspace 2; }
+    Mod+Ctrl+3 repeat=false { move-column-to-workspace 3; }
+    Mod+Ctrl+4 repeat=false { move-column-to-workspace 4; }
+    Mod+Ctrl+5 repeat=false { move-column-to-workspace 5; }
+    Mod+Ctrl+6 repeat=false { move-column-to-workspace 6; }
+    Mod+Ctrl+7 repeat=false { move-column-to-workspace 7; }
+    Mod+Ctrl+8 repeat=false { move-column-to-workspace 8; }
+    Mod+Ctrl+9 repeat=false { move-column-to-workspace 9; }
+    Mod+Ctrl+0 repeat=false { move-column-to-workspace 10; }
+
+    // Missing Niri defaults: column/window manipulation.
+    Mod+BracketLeft repeat=false { consume-or-expel-window-left; }
+    Mod+Period repeat=false { expel-window-from-column; }
+    Mod+R repeat=false { switch-preset-column-width; }
+    Mod+Shift+R repeat=false { switch-preset-column-width-back; }
+    Mod+Ctrl+Shift+R repeat=false { switch-preset-window-height; }
+    Mod+Ctrl+R repeat=false { reset-window-height; }
+    Mod+Ctrl+F repeat=false { expand-column-to-available-width; }
+    Mod+Ctrl+C repeat=false { center-visible-columns; }
+    Mod+Minus repeat=false { set-column-width "-10%"; }
+    Mod+Equal repeat=false { set-column-width "+10%"; }
+    Mod+Shift+Minus repeat=false { set-window-height "-10%"; }
+    Mod+Shift+Equal repeat=false { set-window-height "+10%"; }
+    Mod+Shift+V repeat=false { switch-focus-between-floating-and-tiling; }
+
+    // Missing Niri default: monitor power.
+    Mod+Shift+P repeat=false { power-off-monitors; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
+    XF86AudioMute allow-when-locked=true repeat=false { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute allow-when-locked=true repeat=false { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%+"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%-"; }
+    XF86AudioNext allow-when-locked=true repeat=false { spawn "playerctl" "next"; }
+    XF86AudioPause allow-when-locked=true repeat=false { spawn "playerctl" "play-pause"; }
+    XF86AudioPlay allow-when-locked=true repeat=false { spawn "playerctl" "play-pause"; }
+    XF86AudioPrev allow-when-locked=true repeat=false { spawn "playerctl" "previous"; }
+    XF86AudioStop allow-when-locked=true repeat=false { spawn "playerctl" "stop"; }
+
+    Print repeat=false { screenshot; }
+    Ctrl+Print repeat=false { screenshot-screen; }
+    Alt+Print repeat=false { screenshot-window; }
+    Mod+Shift+Slash repeat=false { show-hotkey-overlay; }
+    Mod+Escape repeat=false { toggle-keyboard-shortcuts-inhibit; }
+}
+
+gestures {
+    hot-corners {
+        top-left
+    }
+}
