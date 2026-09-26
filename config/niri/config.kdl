@@ -97,7 +97,7 @@ layout {
     // Niri struts here would create a second gap.
 }
 
-// Match the desktop's 5px rounded, blurred, shadowed client appearance.
+// Draw rounded, blurred, shadowed clients instead of the server-side titlebars.
 prefer-no-csd
 
 blur {
@@ -114,9 +114,11 @@ blur {
 }
 
 window-rule {
-    // Square corners: the border is a hairline, so rounding it just looked
-    // like uneven line thickness.
-    geometry-corner-radius 0
+    // Rounded corners. This was 0 back when every window had a 1px border:
+    // rounding it made the hairline look like uneven line thickness. The
+    // border is off now, so there is nothing to distort -- and the background
+    // blur below is clipped to this same radius, so the blur is rounded too.
+    geometry-corner-radius 10
     clip-to-geometry true
     background-effect {
         blur true
