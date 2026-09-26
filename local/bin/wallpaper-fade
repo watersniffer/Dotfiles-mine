@@ -240,7 +240,21 @@ def animate_in(image: str, duration_ms: int, debug: bool) -> bool:
     return state["done"]
 
 
-def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: bool) -> bool:
+def current_wallpaper():
+    """The wallpaper awww is currently showing, or None."""
+    try:
+        result = subprocess.run(["awww", "query"], capture_output=True,
+                                text=True, timeout=5)
+        match = re.search(r"currently displaying: image: (.+)", result.stdout)
+        if match:
+            return match.group(1).strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+def animate_out(source: str, swap, transition: str, duration_ms: int, debug: bool,
+                fit: bool = False) -> bool:
     """Freeze the screen, change the wallpaper underneath, move the frame away.
 
     Used by fade/zoom/slide. The animation is driven by the compositor -- window
@@ -260,10 +274,18 @@ def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: b
                   file=sys.stderr)
 
     try:
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file(snapshot)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(source)
     except GLib.GError as exc:
-        warn(f"could not read the snapshot ({exc})")
+        warn(f"could not read {os.path.basename(source)} ({exc})")
         return False
+
+    if fit:
+        # The source is a wallpaper, not a screenshot: scale and centre-crop it
+        # the same way awww will, so sliding it reveals the new wallpaper with
+        # no jump at the end.
+        size = screen_size()
+        if size:
+            pixbuf = cover_fit(pixbuf, size[0], size[1], GdkPixbuf)
 
     width = pixbuf.get_width()
     height = pixbuf.get_height()
@@ -414,6 +436,19 @@ def main() -> int:
     except ValueError:
         warn(f"bad duration {duration!r}, using {DEFAULT_DURATION}")
         duration_ms = DEFAULT_DURATION
+
+    if transition == "lift":
+        # Slide the *old wallpaper* up, not a screenshot of the screen. A
+        # screenshot carries an image of the bar and of every window, so sliding
+        # it up drags a second copy of the bar across the screen. The wallpaper
+        # alone slides cleanly behind the real bar, and no screenshot is needed.
+        previous = current_wallpaper()
+        if previous and os.path.isfile(previous) and animate_out(
+            previous, lambda: set_wallpaper(image), "lift", duration_ms, debug,
+            fit=True,
+        ):
+            return 0
+        return 0 if set_wallpaper(image) else 1
 
     if transition == "rise":
         # No screenshot needed: the incoming wallpaper is the overlay, so this

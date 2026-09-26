@@ -75,7 +75,7 @@ layout {
         inactive-color "#c0bfbc"
     }
 
-border {
+    border {
         // Hairline outline on every window: bright white for the focused one,
         // dim grey for the rest, from the Monochrome palette.
         on
