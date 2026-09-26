@@ -50,7 +50,6 @@
   },
 
   "backlight": {
-    "on-click": "~/.local/bin/toggle-night-light",
     "format": " {icon} {percent}% ",
     "format-icons": ["󰃞", "󰃟", "󰃠"]
   },

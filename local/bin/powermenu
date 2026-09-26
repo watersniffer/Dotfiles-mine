@@ -8,7 +8,9 @@ chosen=$(printf '%s\n' "${options[@]}" | rofi -dmenu -p "Power" -theme "$theme")
 case "$chosen" in
     "Shutdown") systemctl poweroff ;;
     "Reboot")   systemctl reboot ;;
-    "Lock")     hyprlock 2>/dev/null || loginctl lock-session ;;
+    # Niri is the only session: swaylock with the niri lock config, and
+    # `niri msg action quit` to end the session.
+    "Lock")     swaylock -C "$HOME/.config/niri/lock.conf" -f ;;
     "Suspend")  systemctl suspend ;;
-    "Logout")   hyprctl dispatch exit ;;
+    "Logout")   niri msg action quit skip-confirmation=true ;;
 esac

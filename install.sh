@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================================
-# Dotfiles Installer - Arch Linux (Hyprland + Niri)
+# Dotfiles Installer - Arch Linux (Niri)
 # ============================================================================
-# Based on water's custom Hyprland/Niri setup with:
+# Based on water's custom Niri setup with:
 #   Bash + Starship, Kitty, Neovim (lazy.nvim), Waybar,
 #   Rofi, Mako, optional Matugen theming, tmux, and many utilities.
 #
@@ -203,7 +203,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in hypr niri kitty waybar rofi mako fastfetch matugen matuwall wlogout \
+    for name in niri kitty waybar rofi mako fastfetch matugen matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -249,7 +249,6 @@ symlink_dotfiles() {
         rm -f "$HOME/.local/bin/start-sway" \
               "$HOME/.local/bin/sway-special-workspace" \
               "$HOME/.local/bin/sway-startup" \
-              "$HOME/.local/bin/cycle_layout" \
               "$HOME/.local/bin/dock" \
               "$HOME/.local/bin/refreshrate"
 
@@ -325,14 +324,14 @@ apply_system_configs() {
     [[ -f "$sddm_theme_marker" ]] && installed_theme_commit=$(sudo cat "$sddm_theme_marker" 2>/dev/null || true)
 
     if [[ "$installed_theme_commit" != "$sddm_theme_commit" ]]; then
-        log "Installing pinned Hypr SDDM theme..."
+        log "Installing pinned SDDM greeter theme..."
         local tmp_sddm
         tmp_sddm=$(mktemp -d)
         if git clone --depth 1 "$sddm_theme_repo" "$tmp_sddm/theme"; then
             local cloned_commit
             cloned_commit=$(git -C "$tmp_sddm/theme" rev-parse HEAD)
             if [[ "$cloned_commit" != "$sddm_theme_commit" ]]; then
-                err "The Hypr SDDM revision changed; refusing an unpinned install."
+                err "The SDDM theme revision changed; refusing an unpinned install."
                 rm -rf "$tmp_sddm"
                 return 1
             fi
@@ -347,9 +346,9 @@ apply_system_configs() {
                 "$tmp_sddm/theme/LICENSE" \
                 "$sddm_theme_dir/"
             printf '%s\n' "$sddm_theme_commit" | sudo tee "$sddm_theme_marker" >/dev/null
-            ok "Hypr SDDM theme installed."
+            ok "SDDM greeter theme installed."
         else
-            err "Could not fetch the pinned Hypr SDDM theme; refusing to continue."
+            err "Could not fetch the pinned SDDM theme; refusing to continue."
             rm -rf "$tmp_sddm"
             return 1
         fi
@@ -357,7 +356,7 @@ apply_system_configs() {
     fi
 
     if [[ ! -f "$sddm_theme_dir/Main.qml" || ! -f "$sddm_theme_dir/metadata.desktop" ]]; then
-        err "The Hypr SDDM theme is incomplete: $sddm_theme_dir"
+        err "The SDDM greeter theme is incomplete: $sddm_theme_dir"
         return 1
     fi
     sudo chown -R root:root "$sddm_theme_dir"
@@ -557,7 +556,7 @@ main() {
     echo ""
     echo -e "${CYAN}========================================${NC}"
     echo -e "${CYAN}  Dotfiles Installer — Arch Linux       ${NC}"
-    echo -e "${CYAN}  Hyprland + Niri + Bash + Kitty         ${NC}"
+    echo -e "${CYAN}  Niri + Bash + Kitty                      ${NC}"
     echo -e "${CYAN}========================================${NC}"
     echo ""
 
@@ -586,10 +585,10 @@ main() {
     echo ""
     echo -e "  What to do next:"
     echo -e "    1. Log out and back in (for bash + wayland)"
-    echo -e "    2. Choose 'Niri (Dotfiles)' or Hyprland at the SDDM login screen"
+    echo -e "    2. Choose 'Niri (Dotfiles)' at the SDDM login screen"
     echo -e "    3. Wallpapers are copied to ~/Pictures/Wallpapers/; add more there, then Super+W (Matuwall)"
     echo -e "    4. Open kitty - nvim plugins install on first launch"
-    echo -e "    5. SDDM theme (Hypr SDDM) installs automatically;"
+    echo -e "    5. The SDDM greeter theme installs automatically;"
     echo -e "       re-run ~/.config/matugen/apply.sh <wallpaper> to publish application colors"
     echo -e "    6. Binds: Super+E yazi | Super+, smile | Super+C clipboard | Super+P menu"
     echo -e "       Machine-local extras (uv tools, tree-sitter) - see README"

@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
+# Lock the session. Niri is the only session, so this is always swaylock.
 set -euo pipefail
-
-desktop=${XDG_CURRENT_DESKTOP:-}
-if [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
-    exec swaylock -C "$HOME/.config/niri/lock.conf" -f
-fi
-exec hyprlock
+exec swaylock -C "$HOME/.config/niri/lock.conf" -f
