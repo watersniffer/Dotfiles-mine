@@ -73,7 +73,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**) to pick one or `Super+Ctrl+W` for a random one. Either way the theme follows: `matugen-theme` regenerates the Waybar, Kitty, Rofi, GTK, Qt, niri border, Matuwall and Mako colors, and the new wallpaper rises into place. SDDM remains static and root-owned. At login, choose **Niri (Dotfiles)**.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**) to pick one or `Super+Ctrl+W` for a random one. The new wallpaper rises into place, but the **Monochrome** palette is fixed and does not change with it; edit `config/matugen/templates/` to recolour the desktop. SDDM remains static and root-owned. At login, choose **Niri (Dotfiles)**.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
@@ -92,10 +92,10 @@ Niri is the only session. The installer registers it with SDDM as
 **Niri (Dotfiles)** and makes it the default; select it at login.
 
 The session uses the Kitty terminal, Rofi launcher, Waybar, Mako
-notifications, the Matuwall/awww wallpaper picker, Wlogout and the Matugen
-theming pipeline. Colours are generated from the current wallpaper, so the bar,
-terminal, launcher, GTK/Qt apps, window border, wallpaper picker and
-notifications all follow it. Waybar is a single solid line attached to the top
+notifications, the Matuwall/awww wallpaper picker and Wlogout. The palette is a
+fixed **Monochrome** set (white accent, near-black backgrounds) shared by the
+bar, terminal, launcher, GTK/Qt apps, window border, wallpaper picker and
+notifications; changing the wallpaper does not recolour anything. Waybar is a single solid line attached to the top
 edge at 30px. Windows get a hairline border, square corners, an x-ray blur and
 spring animations. `swaylock` is Niri's lock-screen backend; the Sway
 compositor itself is not installed. Niri's native lid-close event starts the

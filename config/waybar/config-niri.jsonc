@@ -1,6 +1,6 @@
 {
-  // Pick up colours.css changes (matugen-theme rewrites it on every
-  // wallpaper change) without a restart, so the bar never blinks out.
+  // Reload the stylesheet in place when colours.css changes, so editing the
+  // palette never makes the bar blink out and come back.
   "reload_style_on_change": true,
   "layer": "top",
   "position": "top",

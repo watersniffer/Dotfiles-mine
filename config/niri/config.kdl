@@ -75,17 +75,16 @@ layout {
         inactive-color "#c0bfbc"
     }
 
-    border {
-        // A hairline outline on every window. The two colours are rewritten by
-        // matugen-theme whenever the wallpaper changes -- edit them there, not
-        // here, or the next wallpaper will undo it.
+border {
+        // Hairline outline on every window: bright white for the focused one,
+        // dim grey for the rest, from the Monochrome palette.
         on
 
         width 1
 
-        active-color "#a4c9ff"
+        active-color "#ffffff"
 
-        inactive-color "#424751"
+        inactive-color "#3c3c3c"
     }
 
     shadow {

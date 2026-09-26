@@ -1,15 +1,8 @@
-# Matugen configuration — the theme follows the wallpaper.
-#
-# These templates are rendered by matugen-theme (local/bin/matugen-theme),
-# which Matuwall calls from its on_apply hook, so picking a wallpaper
-# retheme Waybar, Kitty, Rofi, GTK and Qt from that image.
-#
-# The colour scheme is NOT set here: matugen 4.2 ignores `type` in this file
-# (confirmed by passing it with -c and getting the default palette back).
-# matugen-theme passes --type on the command line instead.
+# Matugen configuration — optional manual theme generation.
+# Matuwall has no hooks, so wallpaper changes do not alter the desktop palette.
 
 [config]
-mode = "dark"
+type = "scheme-tonal-spot"
 
 [templates.gtk-colors]
 input_path = "~/.config/matugen/templates/gtk-colors.css"
@@ -18,10 +11,6 @@ output_path = "~/.config/gtk-4.0/colors.css"
 [templates.gtk3-colors]
 input_path = "~/.config/matugen/templates/gtk-colors.css"
 output_path = "~/.config/gtk-3.0/colors.css"
-
-[templates.gtk4-custom-props]
-input_path = "~/.config/matugen/templates/gtk4-custom-props.css"
-output_path = "~/.config/gtk-4.0/custom-props.css"
 
 [templates.kitty-theme]
 input_path = "~/.config/matugen/templates/kitty-theme.conf"
@@ -38,11 +27,3 @@ output_path = "~/.config/waybar/colors.css"
 [templates.rofi-colors]
 input_path = "~/.config/matugen/templates/rofi-colors.rasi"
 output_path = "~/.config/rofi/colors.rasi"
-
-[templates.matuwall-colors]
-input_path = "~/.config/matugen/templates/matuwall-colors.conf"
-output_path = "~/.config/matugen/matuwall-colors.conf"
-
-[templates.mako-colors]
-input_path = "~/.config/matugen/templates/mako-colors.conf"
-output_path = "~/.config/matugen/mako-colors.conf"

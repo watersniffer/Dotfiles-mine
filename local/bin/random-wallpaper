@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# random-wallpaper -- show a random wallpaper from ~/Pictures/Wallpapers and
-# re-theme the desktop to match it.
+# random-wallpaper -- show a random wallpaper from ~/Pictures/Wallpapers.
 #
 # Bound to Super+Shift+W. The picker (Matuwall, Super+W) has no random mode, so
 # this picks the image itself and hands it to awww directly. It deliberately
@@ -40,10 +39,6 @@ if ! "$HOME/.local/bin/wallpaper-fade" "$pick"; then
     echo "random-wallpaper: could not set $pick" >&2
     exit 1
 fi
-
-# Pass the path explicitly: awww query right after awww img can still report
-# the previous wallpaper, and some names contain spaces.
-"$HOME/.local/bin/matugen-theme" --quiet "$pick"
 
 if command -v notify-send >/dev/null 2>&1; then
     notify-send --app-name=random-wallpaper --expire-time=2500 \

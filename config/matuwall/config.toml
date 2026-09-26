@@ -1,21 +1,17 @@
-# Matuwall configuration — wallpaper-driven theme.
+# Matuwall configuration — static Monochrome desktop.
 #
-# [hooks] on_apply regenerates the whole palette from the image that was just
-# applied, so picking a wallpaper retheme the desktop. matugen-theme lives in
-# ~/.local/bin, which is on the session PATH, and hooks run without a shell,
-# so it is called by bare name. {path} is replaced with the wallpaper path.
+# Deliberately has NO [hooks] section: the OS palette does NOT follow the
+# wallpaper. Changing the wallpaper only swaps the background image.
 
 [general]
 directory = "~/Pictures/Wallpapers"
 backend = "awww"
 
 [window]
-# Live preview: the wallpaper follows the highlighted tile as you browse, so
-# choosing one is a gradual change rather than an instant jump.
 preview = true
 close_on_focus_loss = false
 position = "center"
-background = "#090e16f2"
+background = "#161616"
 margin = 34
 edge_margin = 24
 radius = 24
@@ -35,7 +31,6 @@ border_width = 1
 shadow_width = 0
 ring_width = 2
 visible_rows = 2
-# Carousel scrolls the grid instead of jumping between rows.
 carousel = true
 edge_peek = true
 
@@ -44,13 +39,8 @@ width = 260
 height = 146
 
 [colors]
-tile = "#1a2028e6"
-border = "#424751ff"
+tile = "#1e1e1eff"
+border = "#2a2a2aff"
 shadow = "#00000066"
-ring = "#a4c9ffff"
-spinner = "#a4c9ffff"
-
-[hooks]
-on_apply = [
-     "matugen-theme {path}",
-]
+ring = "#ffffffff"
+spinner = "#a9a9a9ff"

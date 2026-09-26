@@ -31,9 +31,6 @@ fi
 (
     for _ in {1..10}; do
         if awww restore >/dev/null 2>&1; then
-            # Re-theme from the wallpaper awww just restored, so the palette
-            # is not left over from whatever was set at the time.
-            "$HOME/.local/bin/matugen-theme" --quiet >/dev/null 2>&1
             exit 0
         fi
         sleep 0.2
