@@ -36,6 +36,9 @@ input {
     mod-key "Super"
 
     mouse {
+
+
+        natural-scroll
     }
     trackpoint
 }
@@ -199,19 +202,14 @@ binds {
     Mod+Ctrl+Up repeat=false { move-window-up; }
     Mod+Ctrl+Down repeat=false { move-window-down; }
 
-    // DMS Spotlight: app launcher, launcher and calculator in one.
-    Mod+Space repeat=false { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
+    Mod+Space repeat=false { spawn "rofi" "-show" "drun"; }
     Mod+Comma repeat=false { spawn "smile"; }
-    // DMS clipboard history (replaces the cliphist + rofi pipeline).
-    Mod+C repeat=false { spawn "dms" "ipc" "call" "clipboard" "toggle"; }
-    // DMS wallpaper browser (replaces Matuwall: DMS owns the background now,
-    // so awww and the lift animation in wallpaper-fade are dormant).
-    Mod+W repeat=false { spawn "dms" "ipc" "call" "dash" "toggle" "wallpaper"; }
+    Mod+C repeat=false { spawn-sh "cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"; }
+    Mod+W repeat=false { spawn "matuwall"; }
     // Random wallpaper from ~/Pictures/Wallpapers, theme follows it.
     Mod+Ctrl+W repeat=false { spawn-sh "~/.local/bin/random-wallpaper"; }
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
-    // DMS power menu (replaces wlogout).
-    Mod+P repeat=false { spawn "dms" "ipc" "call" "powermenu" "toggle"; }
+    Mod+P repeat=false { spawn "wlogout"; }
 
     // Index-free column jumps. Arrow keys already do left/right, so these add
     // first/last only -- no duplicated actions.
@@ -341,24 +339,3 @@ gestures {
         top-left
     }
 }
-
-// --- DankMaterialShell -----------------------------------------------------
-// Deployed by `dms setup <part>`; see config/niri/dms/. Included last so DMS
-// gets the final word on colours, gaps, border width and corner radius -- that
-// is the "full DMS look".
-//
-// binds.kdl is deliberately NOT included: it would replace Mod+Space, Mod+M,
-// Mod+V and Mod+Comma. The keybinds stay ours; DMS is reachable from its bar
-// and through `dms ipc call <target> <action>`.
-include "dms/colors.kdl"
-include "dms/layout.kdl"
-include "dms/alttab.kdl"
-include "dms/input.kdl"
-include "dms/wpblur.kdl"
-
-// Put DMS's panels on the overview's wallpaper backdrop.
-layer-rule {
-    match namespace="^quickshell$"
-    place-within-backdrop true
-}
-include "dms/outputs.kdl"

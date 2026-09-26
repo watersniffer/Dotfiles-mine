@@ -19,6 +19,3 @@ config/btop/btop.log
 
 # Machine-local symlink into ~/.themes (not portable)
 config/gtk-4.0/assets
-
-# DankMaterialShell setup backups
-config/niri/config.kdl.backup*

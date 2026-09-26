@@ -13,24 +13,37 @@ if [[ -e "$marker" ]]; then
 fi
 : > "$marker"
 
-# DankMaterialShell owns the bar, notifications, clipboard, network, polkit and
-# the lock/idle handling, and dms.service claims the
-# org.freedesktop.Notifications bus name -- so anything competing with it has to
-# be gone before it starts, or you get two bars and no notifications at all.
-for daemon in waybar mako dunst nm-applet; do
-    pkill -x "$daemon" >/dev/null 2>&1 || true
-done
+# One notification daemon only. Dunst owns org.freedesktop.Notifications, and
+# while it holds that name mako refuses to start at all ("Is a notification
+# daemon already running?"), so clear it first.
+pkill -x dunst >/dev/null 2>&1 || true
+if ! pgrep -x mako >/dev/null 2>&1; then
+    mako >/dev/null 2>&1 &
+fi
 
 systemctl --user restart xdg-desktop-portal.service >/dev/null 2>&1 || true
-
-# No wallpaper daemon here: DMS owns the desktop background. Leaving awww
-# running alongside it means two daemons committing the same layer, which
-# flickers and leaves the two disagreeing about what is showing.
-
+waybar -c "$HOME/.config/waybar/config-niri.jsonc" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
 "$HOME/.local/bin/at_startup" >/dev/null 2>&1 &
 
-# No cliphist watcher: DMS keeps the clipboard history and Mod+C now opens it.
+if ! pgrep -x awww-daemon >/dev/null 2>&1; then
+    awww-daemon >/dev/null 2>&1 &
+fi
+(
+    for _ in {1..10}; do
+        if awww restore >/dev/null 2>&1; then
+            exit 0
+        fi
+        sleep 0.2
+    done
+) &
 
+if ! pgrep -x nm-applet >/dev/null 2>&1; then
+    nm-applet >/dev/null 2>&1 &
+fi
+wl-paste --watch cliphist store >/dev/null 2>&1 &
+if [[ -x /usr/lib/polkit-kde-authentication-agent-1 ]]; then
+    /usr/lib/polkit-kde-authentication-agent-1 >/dev/null 2>&1 &
+fi
 if command -v kitty >/dev/null 2>&1; then
     kitty >/dev/null 2>&1 &
 fi

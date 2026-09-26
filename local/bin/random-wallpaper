@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # random-wallpaper -- show a random wallpaper from ~/Pictures/Wallpapers.
 #
-# Bound to Super+Ctrl+W. DankMaterialShell owns the desktop background, so the
-# pick is handed to it with `dms ipc call wallpaper set`. It never re-picks the
-# wallpaper that is already showing, so the key always visibly does something.
+# Bound to Super+Shift+W. The picker (Matuwall, Super+W) has no random mode, so
+# this picks the image itself and hands it to awww directly. It deliberately
+# avoids the wallpaper that is already showing, so the key always visibly does
+# something.
 #
 # Usage: random-wallpaper [directory]
 set -uo pipefail
@@ -22,7 +23,8 @@ if [[ ${#candidates[@]} -eq 0 ]]; then
     exit 1
 fi
 
-current=$(dms ipc call wallpaper get 2>/dev/null | head -n1)
+current=$(awww query 2>/dev/null |
+    sed -n 's/.*currently displaying: image: //p' | head -n1)
 
 pick="${candidates[RANDOM % ${#candidates[@]}]}"
 if [[ ${#candidates[@]} -gt 1 && "$pick" == "$current" ]]; then
@@ -33,8 +35,8 @@ if [[ ${#candidates[@]} -gt 1 && "$pick" == "$current" ]]; then
     done
 fi
 
-if ! dms ipc call wallpaper set "$pick" >/dev/null 2>&1; then
-    echo "random-wallpaper: dms refused to set $pick" >&2
+if ! "$HOME/.local/bin/wallpaper-fade" "$pick"; then
+    echo "random-wallpaper: could not set $pick" >&2
     exit 1
 fi
 
