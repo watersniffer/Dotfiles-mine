@@ -15,7 +15,7 @@ backend = "awww"
 preview = true
 close_on_focus_loss = false
 position = "center"
-background = "#090e17f2"
+background = "#110c16f2"
 margin = 34
 edge_margin = 24
 radius = 24
@@ -44,11 +44,11 @@ width = 260
 height = 146
 
 [colors]
-tile = "#1b2029e6"
-border = "#424751ff"
+tile = "#231e28e6"
+border = "#4b4450ff"
 shadow = "#00000066"
-ring = "#a5c8ffff"
-spinner = "#a5c8ffff"
+ring = "#d9b9ffff"
+spinner = "#d9b9ffff"
 
 [hooks]
 on_apply = [

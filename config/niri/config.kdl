@@ -77,9 +77,9 @@ layout {
 
         width 1
 
-        active-color "#a5c8ff"
+        active-color "#d9b9ff"
 
-        inactive-color "#424751"
+        inactive-color "#4b4450"
     }
 
     shadow {

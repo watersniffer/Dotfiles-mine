@@ -16,3 +16,6 @@ config/btop/btop.log
 
 # Ad-hoc backups (*.bak-store-base, *.bak-handwritten, ...)
 *.bak-*
+
+# Machine-local symlink into ~/.themes (not portable)
+config/gtk-4.0/assets

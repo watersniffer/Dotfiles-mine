@@ -9,8 +9,9 @@ the animation happens behind your windows, so nothing steals focus, nothing
 enters the window list, and the bar and every window stay crisp.
 
 Transitions:
-  rise   (default) the new wallpaper slides up from the bottom edge and the
-                  old one is simply covered. No crossfade.
+  lift   (default) the previous wallpaper slides up and out, revealing the new
+                  one underneath it. Nothing fades.
+  rise   the new wallpaper slides up from the bottom edge over the old one.
   fade   the old screen is frozen, the wallpaper changes underneath, and the
          frozen frame fades away.
   zoom   as fade, but the frozen frame also drifts closer (Ken Burns).
@@ -43,9 +44,12 @@ FRAME_MS = 16
 SETTLE_MS = 90
 SWAP_SETTLE_MS = 450  # hold the panel until the daemon has applied the image
 ZOOM_AMOUNT = 0.06
-DEFAULT_TRANSITION = "rise"
+DEFAULT_TRANSITION = "lift"
 DEFAULT_DURATION = 620
-TRANSITIONS = ("rise", "fade", "zoom", "slide", "none")
+TRANSITIONS = ("lift", "rise", "fade", "zoom", "slide", "none")
+# Only these dissolve the frozen frame; lift and rise move it without any
+# opacity change, which is what "no fading" means here.
+FADING_TRANSITIONS = ("fade", "zoom", "slide")
 
 
 def warn(message: str) -> None:
@@ -265,15 +269,29 @@ def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: b
     height = pixbuf.get_height()
 
     slide_distance = int(width * 0.4)
+    # Which edges the margin animation drives, and where they travel to.
+    margin_edges: tuple = ()
     if transition == "zoom":
         surface_w = int(width * (1 + ZOOM_AMOUNT))
         surface_h = int(height * (1 + ZOOM_AMOUNT))
         start_margin, end_margin = -int(width * ZOOM_AMOUNT / 2), 0
         anchors = (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM)
+        margin_edges = (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
+                        GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT)
     elif transition == "slide":
         surface_w, surface_h = width + slide_distance, height
         start_margin, end_margin = 0, slide_distance
         anchors = (GtkLayerShell.Edge.TOP,)
+        margin_edges = (GtkLayerShell.Edge.LEFT,)
+    elif transition == "lift":
+        # Screen-sized frozen frame, anchored to the bottom. A positive bottom
+        # margin lifts it upwards, so the old wallpaper slides off the top and
+        # the new one -- already set underneath -- is revealed. No opacity
+        # change, so nothing fades.
+        surface_w, surface_h = width, height
+        start_margin, end_margin = 0, height
+        anchors = (GtkLayerShell.Edge.BOTTOM,)
+        margin_edges = (GtkLayerShell.Edge.BOTTOM,)
     else:
         surface_w, surface_h = width, height
         start_margin = end_margin = 0
@@ -292,7 +310,6 @@ def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: b
         # behind is the new wallpaper showing through.
         image.set_halign(Gtk.Align.START)
     window.add(image)
-    window.show_all()
 
     state = {"swapped_at": None, "frames": 0}
 
@@ -305,12 +322,12 @@ def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: b
         progress = min(1.0, elapsed / duration_ms)
         eased = ease_out(progress)
         state["frames"] += 1
-        if start_margin != end_margin:
+        if margin_edges and start_margin != end_margin:
             margin = int(round(start_margin + (end_margin - start_margin) * eased))
-            for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
-                         GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
+            for edge in margin_edges:
                 GtkLayerShell.set_margin(window, edge, margin)
-        window.set_opacity(max(0.0, 1.0 - eased))
+        if transition in FADING_TRANSITIONS:
+            window.set_opacity(max(0.0, 1.0 - eased))
         if progress >= 1.0:
             trace(f"animation done: {state['frames']} frames over {duration_ms}ms "
                   f"({state['frames'] * 1000 / duration_ms:.0f} fps)")
@@ -320,20 +337,27 @@ def animate_out(snapshot: str, swap, transition: str, duration_ms: int, debug: b
         return True
 
     def when_mapped() -> bool:
-        if not window.get_mapped():
-            return True
+        if state["swapped_at"] is not None:
+            return False
+        # GTK's get_mapped() never turns true for a layer-shell surface, so the
+        # map signal is the only reliable "it is on screen" signal. Waiting a
+        # beat after it means the frozen frame is really up before the
+        # wallpaper changes underneath, otherwise the new one flashes first.
         trace("overlay up, swapping the wallpaper underneath")
         swap()
         state["swapped_at"] = time.monotonic()
         GLib.timeout_add(FRAME_MS, advance)
         return False
 
-    window.connect("map", lambda _w: GLib.timeout_add(FRAME_MS, when_mapped))
+    # Connected before show_all(): that call maps the window immediately, so a
+    # handler attached afterwards would never see the signal.
+    window.connect("map", lambda _w: GLib.timeout_add(SETTLE_MS, when_mapped))
+    window.show_all()
     trace(f"overlay shown ({transition}, {duration_ms}ms)")
 
     def watchdog() -> bool:
         if state["swapped_at"] is None:
-            trace("overlay never mapped; giving up on the transition")
+            trace("overlay never came up; giving up on the transition")
             window.destroy()
             Gtk.main_quit()
         return False
