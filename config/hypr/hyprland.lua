@@ -4,10 +4,10 @@
 ---- MY PROGRAMS ----
 --------------------
 
-local terminal    = "kitty"
+local terminal = "kitty"
 -- yazi is a TUI: it must run inside a terminal, not exec bare.
 local fileManager = "kitty --class yazi -e yazi"
-local menu        = "rofi -show drun"
+local menu = "rofi -show drun"
 
 --------------------
 ---- WINDOW RULES --
@@ -16,11 +16,11 @@ local menu        = "rofi -show drun"
 -- array-style rules are silently ignored by the Lua parser; stayfocused is now
 -- stay_focused, and match conditions live under match{}).
 hl.window_rule({
-    name         = "smile-emoji-picker-float",
-    match        = { class = "^it\\.mijorus\\.smile$" },
-    float        = true,
-    size         = "500 400",
-    center       = true,
+    name = "smile-emoji-picker-float",
+    match = { class = "^it\\.mijorus\\.smile$" },
+    float = true,
+    size = "500 400",
+    center = true,
     stay_focused = true,
 })
 
@@ -36,7 +36,7 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 hl.env("QT_STYLE_OVERRIDE", "kvantum")
-hl.env("QT_SCALE_FACTOR", "0.92")   -- Qt apps: 92% interface scale (matches GTK)
+hl.env("QT_SCALE_FACTOR", "0.92") -- Qt apps: 92% interface scale (matches GTK)
 
 -- SDDM starts Hyprland directly, so .bashrc never runs and ~/.local/bin is
 -- missing from PATH. Without this every script bind (powermenu, matuwall,
@@ -72,13 +72,13 @@ end)
 
 hl.config({
     general = {
-        gaps_in  = 5,
+        gaps_in = 7,
         gaps_out = 5,
 
         border_size = 0,
 
         col = {
-            active_border   = { colors = { "rgba(eaeaeaff)" }, angle = 0 },
+            active_border = { colors = { "rgba(eaeaeaff)" }, angle = 0 },
             inactive_border = "rgba(2b2b2bff)",
         },
 
@@ -88,25 +88,25 @@ hl.config({
     },
 
     decoration = {
-        rounding       = 0,
+        rounding = 10,
         rounding_power = 2.0,
 
-        active_opacity   = 0.90,
+        active_opacity = 0.90,
         inactive_opacity = 0.90,
 
         shadow = {
-            enabled      = true,
-            range        = 7,
+            enabled = true,
+            range = 7,
             render_power = 6,
-            color        = 0x00000099,
+            color = 0x00000099,
         },
 
         blur = {
-            enabled           = true,
-            size              = 8,
-            passes            = 2,
+            enabled = true,
+            size = 8,
+            passes = 2,
             new_optimizations = true,
-            vibrancy          = 1,
+            vibrancy = 1,
         },
     },
 
@@ -116,30 +116,48 @@ hl.config({
 })
 
 -- Curves
-hl.curve("quick",  { type = "bezier", points = { {0.4, 1.2}, {0.6, 1} } })
-hl.curve("snap",   { type = "bezier", points = { {0.3, 1},   {0.4, 1} } })
-hl.curve("bounce", { type = "bezier", points = { {0.2, 0},   {0.1, 1} } })
+hl.curve("quick", { type = "bezier", points = { { 0.4, 1.2 }, { 0.6, 1 } } })
+hl.curve("snap", { type = "bezier", points = { { 0.3, 1 }, { 0.4, 1 } } })
+hl.curve("bounce", { type = "bezier", points = { { 0.2, 0 }, { 0.1, 1 } } })
 
-hl.animation({ leaf = "global",         enabled = true,  speed = 10,   bezier = "default" })
-hl.animation({ leaf = "border",         enabled = true,  speed = 6,    bezier = "quick" })
-hl.animation({ leaf = "windows",        enabled = true,  speed = 4,    bezier = "bounce" })
-hl.animation({ leaf = "windowsIn",      enabled = true,  speed = 3.5,  bezier = "bounce" })
-hl.animation({ leaf = "windowsOut",     enabled = true,  speed = 4,    bezier = "bounce" })
-hl.animation({ leaf = "fadeIn",         enabled = true,  speed = 0.25, bezier = "quick" })
-hl.animation({ leaf = "fadeOut",        enabled = true,  speed = 0.2,  bezier = "quick" })
-hl.animation({ leaf = "fade",           enabled = true,  speed = 0.6,  bezier = "quick" })
-hl.animation({ leaf = "layers",         enabled = true,  speed = 2.8,  bezier = "snap" })
-hl.animation({ leaf = "layersIn",       enabled = true,  speed = 2.5,  bezier = "snap",  style = "slide" })
-hl.animation({ leaf = "layersOut",      enabled = true,  speed = 2.5,  bezier = "snap",  style = "slide" })
-hl.animation({ leaf = "fadeLayersIn",   enabled = true,  speed = 0.18, bezier = "quick" })
-hl.animation({ leaf = "fadeLayersOut",  enabled = true,  speed = 0.15, bezier = "quick" })
-hl.animation({ leaf = "workspaces",         enabled = true,  speed = 4,    bezier = "bounce", style = "slide" })
-hl.animation({ leaf = "workspacesIn",       enabled = true,  speed = 4,    bezier = "bounce", style = "slide" })
-hl.animation({ leaf = "workspacesOut",      enabled = true,  speed = 3,    bezier = "quick",  style = "slide" })
-hl.animation({ leaf = "specialWorkspace",   enabled = true,  speed = 4,    bezier = "bounce", style = "slidefadevert -50%" })
-hl.animation({ leaf = "specialWorkspaceIn", enabled = true,  speed = 4,    bezier = "bounce", style = "slidefadevert -50%" })
-hl.animation({ leaf = "specialWorkspaceOut",enabled = true,  speed = 3,    bezier = "quick",  style = "slidefadevert -50%" })
-hl.animation({ leaf = "zoomFactor",         enabled = true,  speed = 6,    bezier = "quick" })
+hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
+hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "quick" })
+hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "bounce" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 3.5, bezier = "bounce" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 4, bezier = "bounce" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 0.25, bezier = "quick" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 0.2, bezier = "quick" })
+hl.animation({ leaf = "fade", enabled = true, speed = 0.6, bezier = "quick" })
+hl.animation({ leaf = "layers", enabled = true, speed = 2.8, bezier = "snap" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 2.5, bezier = "snap", style = "slide" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 2.5, bezier = "snap", style = "slide" })
+hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 0.18, bezier = "quick" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 0.15, bezier = "quick" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "bounce", style = "slide" })
+hl.animation({ leaf = "workspacesIn", enabled = true, speed = 4, bezier = "bounce", style = "slide" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3, bezier = "quick", style = "slide" })
+hl.animation({
+    leaf = "specialWorkspace",
+    enabled = true,
+    speed = 4,
+    bezier = "bounce",
+    style = "slidefadevert -50%",
+})
+hl.animation({
+    leaf = "specialWorkspaceIn",
+    enabled = true,
+    speed = 4,
+    bezier = "bounce",
+    style = "slidefadevert -50%",
+})
+hl.animation({
+    leaf = "specialWorkspaceOut",
+    enabled = true,
+    speed = 3,
+    bezier = "quick",
+    style = "slidefadevert -50%",
+})
+hl.animation({ leaf = "zoomFactor", enabled = true, speed = 6, bezier = "quick" })
 
 --------------------
 ---- LAYOUTS -------
@@ -158,7 +176,7 @@ hl.config({
 hl.config({
     misc = {
         force_default_wallpaper = 1,
-        disable_hyprland_logo   = false,
+        disable_hyprland_logo = false,
     },
 })
 
@@ -168,11 +186,11 @@ hl.config({
 
 hl.config({
     input = {
-        kb_layout  = "us",
+        kb_layout = "us",
         kb_variant = "",
-        kb_model   = "",
+        kb_model = "",
         kb_options = "",
-        kb_rules   = "",
+        kb_rules = "",
 
         follow_mouse = 1,
 
@@ -185,9 +203,9 @@ hl.config({
 })
 
 hl.gesture({
-    fingers   = 3,
+    fingers = 3,
     direction = "horizontal",
-    action    = "workspace",
+    action = "workspace",
 })
 
 ----------------------
@@ -205,13 +223,16 @@ hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("nemo"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
-hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + left", hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+hl.bind(mainMod .. " + up", hl.dsp.focus({ direction = "up" }))
+hl.bind(mainMod .. " + down", hl.dsp.focus({ direction = "down" }))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("smile"))
-hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"))
+hl.bind(
+    mainMod .. " + C",
+    hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy")
+)
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("matuwall"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("toggle-waybar"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("wlogout"))
@@ -220,48 +241,56 @@ hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("wlogout"))
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]
 for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
-    hl.bind(mainMod .. " + " .. key,         hl.dsp.focus({ workspace = i }))
+    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
     hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
 -- Special workspace (scratchpad)
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces with mainMod + scroll
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
 -- Move/resize windows with mainMod + LMB/RMB and dragging
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
 -- Laptop multimedia keys for volume and LCD brightness
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+hl.bind(
+    "XF86AudioRaiseVolume",
+    hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"),
+    { locked = true, repeating = true }
+)
+hl.bind(
+    "XF86AudioLowerVolume",
+    hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+    { locked = true, repeating = true }
+)
+hl.bind(
+    "XF86AudioMute",
+    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+    { locked = true, repeating = true }
+)
+hl.bind(
+    "XF86AudioMicMute",
+    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+    { locked = true, repeating = true }
+)
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"), { locked = true, repeating = true })
 
 -- Requires playerctl
-hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
-
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 -- HyprMod managed settings
-require("hyprland-gui")
 
--- The require() above loads hyprland-gui.lua last, and its decoration block
--- overrode the hand-tuned block earlier in this file -- which is why rounding 0
--- never actually took effect. Re-assert it after the require so square corners
--- apply. Opacity deliberately stays at the GUI value of 1.0: 0.90 would make
--- windows translucent, which re-enables the blur pass on this iGPU.
-hl.config({
-    decoration = {
-        rounding = 0,
-        rounding_power = 2.0,
-    }
-})
+-- HyprMod owns the settings below from here on: hyprland-gui.lua is loaded by
+-- the require() above and its decoration block is applied last, so anything it
+-- manages (rounding, opacity, blur, shadow) wins over the hand-tuned block
+-- earlier in this file. Change those values in HyprMod, not here.
+require("hyprland-gui")
