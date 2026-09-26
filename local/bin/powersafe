@@ -3,24 +3,6 @@ set -euo pipefail
 
 ROOT_HELPER=/usr/local/sbin/dotfiles-powersave
 
-if [[ -v HYPRLAND_INSTANCE_SIGNATURE && "$EUID" -ne 0 ]]; then
-    # Apply the user-session visual changes without evaluating untrusted input.
-    hyprctl eval "hl.config({ decoration = { blur = { enabled = false } } })"
-    hyprctl eval "hl.config({ decoration = { shadow = { enabled = false } } })"
-
-    LUA='
-    local monitor = hl.get_active_monitor()
-
-    if not monitor.is_mirror then
-        hl.monitor({
-            output = monitor.name,
-            mode = monitor.width.."x"..monitor.height.."@60"
-        })
-    end
-    '
-    hyprctl eval "$LUA"
-fi
-
 if [[ "$EUID" -ne 0 ]]; then
     if [[ ! -x "$ROOT_HELPER" ]]; then
         echo "Root helper is missing: $ROOT_HELPER" >&2
