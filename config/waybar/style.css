@@ -19,11 +19,15 @@ window#waybar {
 
 /* Apply translucent background specifically to the widget sections, so the
    gaps between them show the wallpaper. Catppuccin mantle with alpha rather
-   than the pure black this used to be. */
+   than the pure black this used to be.
+
+   .modules-center is deliberately NOT in this list. A module group with
+   nothing in it still paints its own padding, so styling it left an empty
+   capsule in the middle of the bar whenever nothing was playing. The media
+   module carries its own pill instead, via hide-empty-text. */
 .modules-left,
-.modules-center,
 .modules-right,
-#mpris {
+#custom-media {
     background: @island;
     border-radius: 8px;
     padding: 2px 8px;
@@ -61,7 +65,7 @@ window#waybar {
     border-bottom: 2px solid @ws_active;
 }
 
-#mpris {
+#custom-media {
     font-weight: 700;
 }
 

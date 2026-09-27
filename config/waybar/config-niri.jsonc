@@ -11,7 +11,11 @@
   "height": 35,
 
   "modules-left": ["niri/workspaces", "custom/cpucat"],
-  "modules-center": ["mpris"],
+  // custom/media rather than mpris: the mpris module always renders a label,
+  // so its island pill showed up as an empty capsule whenever nothing was
+  // playing. hide-empty-text removes the module instead, so the pill only
+  // exists while there is something to show.
+  "modules-center": ["custom/media"],
   "modules-right": [
     "tray",
     "wireplumber",
@@ -23,11 +27,11 @@
     "format": "{value}"
   },
 
-  "mpris": {
-    "format": "  {artist} - {title} ",
-    "format-paused": " 󰐊 {artist} - {title} ",
-    "max-length": 37,
-    "tooltip": true
+  "custom/media": {
+    "exec": "bash ~/.config/waybar/scripts/media-title.sh",
+    "interval": 2,
+    "hide-empty-text": true,
+    "max-length": 40
   },
 
   "tray": {
