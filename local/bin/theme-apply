@@ -84,7 +84,7 @@ def die(msg: str) -> "None":
 # --------------------------------------------------------------------------
 
 # name, nvim, btop and vscode are identifiers or display names, not colours.
-TEXT_ROLES = ("name", "nvim", "btop", "vscode")
+TEXT_ROLES = ("name", "nvim", "btop", "vscode", "wallpapers")
 
 ROLES = (
     "name", "nvim", "btop",
@@ -860,6 +860,13 @@ def apply(slug: str) -> int:
 
     # VS Code's setting, when this palette wants to drive it. Optional: most
     # palettes leave it alone so the editor keeps whatever the user picked.
+    # A wallpaper folder name is a single path segment under the wallpaper root.
+    # It is rejected rather than sanitised if it looks like a path, because
+    # quietly rewriting someone's folder name is worse than refusing.
+    folder = p.get("wallpapers", "").strip()
+    if folder and ("/" in folder or folder in (".", "..") or folder.startswith(".")):
+        die(f"{slug}: wallpapers is {folder!r}, which is not a plain folder name")
+
     vscode = p.get("vscode", "").strip()
     if vscode:
         if set_vscode_theme(vscode):
@@ -890,6 +897,8 @@ def apply(slug: str) -> int:
     print(f"  rendered {len(written)} files, patched {len(patched)}")
     if vscode:
         print(f"  VS Code workbench.colorTheme: {vscode}")
+    if folder:
+        print(f"  wallpaper folder: {folder}")
     if not nvim_colorscheme_exists(p["nvim"]):
         print(f"  WARNING nvim has no colorscheme named {p['nvim']!r}. theme.lua "
               f"falls back to tokyonight, so nvim will not match the desktop. "
@@ -920,6 +929,11 @@ def main() -> int:
     ap.add_argument("--list", action="store_true", help="list theme slugs")
     ap.add_argument("--current", action="store_true",
                     help="print the current theme slug")
+    ap.add_argument("--wallpapers", action="store_true",
+                    help="print the wallpaper folder for the current theme")
+    ap.add_argument("--wallpapers-for", metavar="SLUG",
+                    help="print the wallpaper folder a theme names, without "
+                         "applying it")
     args = ap.parse_args()
 
     if args.list:
@@ -931,6 +945,20 @@ def main() -> int:
 
     if args.current:
         print(current())
+        return 0
+
+    if args.wallpapers:
+        slug = current()
+        if slug:
+            folder = load_palette(slug).get("wallpapers", "").strip()
+            if folder:
+                print(folder)
+        return 0
+
+    if args.wallpapers_for:
+        folder = load_palette(args.wallpapers_for).get("wallpapers", "").strip()
+        if folder:
+            print(folder)
         return 0
 
     if not args.theme:

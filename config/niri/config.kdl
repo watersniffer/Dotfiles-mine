@@ -224,7 +224,12 @@ binds {
     // themes/<slug>/palette.conf, then reloads the bar, mako and niri.
     Mod+T repeat=false { spawn-sh "~/.local/bin/themesw"; }
     Mod+C repeat=false { spawn-sh "cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"; }
-    Mod+W repeat=false { spawn "matuwall"; }
+    // The wallpaper picker, scoped to the current theme's folder: each theme
+    // names its own under themes/<slug>/palette.conf, and a folder that is
+    // missing or still empty falls back to ALL.
+    Mod+W repeat=false { spawn-sh "~/.local/bin/wallpaper-switcher"; }
+    // Every wallpaper, across all folders.
+    Mod+Ctrl+W repeat=false { spawn-sh "~/.local/bin/wallpaper-switcher all"; }
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
     // Cycle the power profile: power-saver -> balanced -> performance.
     Mod+P repeat=false { spawn-sh "~/.local/bin/powerprofile"; }
