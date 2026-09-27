@@ -44,7 +44,14 @@ FRAME_MS = 16
 SETTLE_MS = 90
 SWAP_SETTLE_MS = 450  # hold the panel until the daemon has applied the image
 ZOOM_AMOUNT = 0.06
-DEFAULT_TRANSITION = "lift"
+# The expanding circle: awww's "center", which is an alias for "grow" with the
+# circle centred on the screen. awww is the renamed swww, so these are the
+# animations from that project's demos.
+DEFAULT_TRANSITION = "awww:center"
+# awww defaults to 30fps, which is visibly steppier on a moving edge. The
+# transition is a shader on the wallpaper layer, so 60 costs almost nothing
+# even on the HD 520.
+AWWW_FPS = 60
 DEFAULT_DURATION = 620
 TRANSITIONS = ("lift", "rise", "fade", "zoom", "slide", "none")
 # awww's own transitions, reached as "awww:<type>". They are namespaced because
@@ -73,7 +80,8 @@ def ease_out(t: float) -> float:
 def set_wallpaper(image: str, awww_transition: str = "") -> bool:
     cmd = ["awww", "img", image, "--resize", "crop", "--crop-gravity", "center"]
     if awww_transition:
-        cmd += ["--transition-type", awww_transition]
+        cmd += ["--transition-type", awww_transition,
+                "--transition-fps", str(AWWW_FPS)]
     result = subprocess.run(cmd, capture_output=True)
     if result.returncode != 0:
         warn(f"awww failed to set {os.path.basename(image)}")

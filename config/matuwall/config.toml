@@ -1,7 +1,10 @@
-# Matuwall configuration — static Monochrome desktop.
+  # Matuwall configuration.
 #
 # Deliberately has NO [hooks] section: the OS palette does NOT follow the
 # wallpaper. Changing the wallpaper only swaps the background image.
+#
+# The colours below are repainted by theme-apply along with everything else,
+# so they follow the desktop theme even though the wallpaper does not.
 
 [general]
 directory = "~/Pictures/Wallpapers"

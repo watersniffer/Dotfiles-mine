@@ -229,8 +229,6 @@ binds {
     Mod+T repeat=false { spawn-sh "~/.local/bin/themesw"; }
     Mod+C repeat=false { spawn-sh "cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"; }
     Mod+W repeat=false { spawn "matuwall"; }
-    // Random wallpaper from ~/Pictures/Wallpapers, theme follows it.
-    Mod+Ctrl+W repeat=false { spawn-sh "~/.local/bin/random-wallpaper"; }
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
     // Cycle the power profile: power-saver -> balanced -> performance.
     Mod+P repeat=false { spawn-sh "~/.local/bin/powerprofile"; }
