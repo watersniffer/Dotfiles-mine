@@ -82,9 +82,17 @@ layout {
     }
 
     border {
-        // No window outlines. The focus ring above is off too, so nothing
-        // draws a frame around windows any more -- the drop shadow below is
-        // what separates them from the wallpaper. Width and colours are kept
+        // No window outlines, and the focus ring above is off too, so nothing
+        // frames a window. The shadow below is what separates it from the
+        // wallpaper, and the 0.90 opacity is what shows the wallpaper through
+        // it.
+        //
+        // A border on a translucent window draws a frame you can see the
+        // background through, which reads as a rendering fault rather than as
+        // an edge. That is the combination that made borders look wrong here,
+        // so both stay off.
+        //
+        // Width and colours are kept, and the colours are still THEME-managed,
         // so this is a one-word change if you want them back.
         off
 
@@ -149,9 +157,9 @@ window-rule {
     // sequence. Rounded, clipped and 90% opaque is one intent, so it is written
     // once.
     //
-    // Rounded corners. This was 0 back when every window had a 1px border:
-    // rounding it made the hairline look like uneven line thickness. The
-    // border is off now, so there is nothing to distort.
+    // Rounded corners, kept even with the border off: they soften the window's
+    // own edges against the wallpaper, which is doing the separating work now
+    // that no border does.
     opacity 0.90
     geometry-corner-radius 10
     clip-to-geometry true

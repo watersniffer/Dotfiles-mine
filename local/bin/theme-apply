@@ -1037,6 +1037,65 @@ def patch_key(path: Path, pattern: str, value: str) -> bool:
 
 
 # --------------------------------------------------------------------------
+# obsidian
+# --------------------------------------------------------------------------
+
+# The seven Obsidian themes in the vault, mapped to the seven desktop palettes.
+# The names are Obsidian's own ("Obsidian gruvbox", not "gruvbox") and have to
+# match cssTheme in appearance.json exactly.
+OBSIDIAN_THEMES = {
+    "catppuccin-mocha": "Catppuccin",
+    "e-ink": "Ink",
+    "everforest-dark": "Everforest",
+    "gruvbox-dark": "Obsidian gruvbox",
+    "nord-dark": "Obsidian Nord",
+    "rose-pine": "Rose Pine",
+    "tokyo-night": "Tokyo Night",
+}
+
+# The vault lives outside the repo -- it is the user's notes, not dotfiles -- so
+# it is reached by path rather than through CONFIG. Missing vault is not an
+# error: someone may not have Obsidian set up, and the desktop theme should
+# still apply to everything else.
+VAULT = HOME / "doc" / "Sniffing-Vault"
+
+
+def patch_obsidian(theme: str, written: list) -> bool:
+    """Point the vault's Obsidian at the theme matching the desktop palette.
+
+    This is the one target that is a whole JSON file rather than a config with
+    colours in it, and it is rewritten rather than regex-patched, because
+    cssTheme is a bare string whose length changes with the theme name and a
+    pattern written against the old value would miss the new one.
+
+    Obsidian reads appearance.json on focus, so a theme switch takes effect the
+    next time the window is focused -- there is no reload to send it.
+    """
+    name = OBSIDIAN_THEMES.get(theme)
+    if name is None:
+        return False
+
+    appearance = VAULT / ".obsidian" / "appearance.json"
+    if not appearance.is_file():
+        return False
+
+    try:
+        data = json.loads(appearance.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False
+
+    if data.get("cssTheme") == name:
+        return False
+
+    data["cssTheme"] = name
+    appearance.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    # A label rather than a Path: the vault is outside the repo, so printing the
+    # path in the summary would be noise, and this reads as what it is.
+    written.append(Path(f"obsidian: {name}"))
+    return True
+
+
+# --------------------------------------------------------------------------
 # wallpaper
 # --------------------------------------------------------------------------
 
@@ -1200,6 +1259,11 @@ def apply(slug: str, wallpaper: bool = True) -> int:
        r"^color_scheme_path=.*$",
        f"color_scheme_path=~/.config/qt6ct/colors/{camel}.conf")
 
+    # The vault is not in the repo, so this is not a `do(...)` over CONFIG.
+    # patch_obsidian adds itself to `written` when it changes something, which
+    # is what makes it show up in the summary rather than failing silently.
+    patch_obsidian(slug, written)
+
     # --- mirror to the real (non-symlinked) config dirs ---
     mirror("nvim", written)
     mirror("qt6ct", written)
@@ -1309,7 +1373,16 @@ def apply(slug: str, wallpaper: bool = True) -> int:
                 wall_line = f"  wallpaper: {chosen.name}  (of {folder})"
 
     print(f"{p['name']} applied.")
-    print(f"  rendered {len(written)} files, patched {len(patched)}")
+    # The vault is outside the repo, so it is counted separately from the config
+    # files: saying "rendered 14 files" when one of them is your notes would be
+    # counting something the summary otherwise implies is dotfiles.
+    vault_writes = [w for w in written if str(w).startswith("obsidian: ")]
+    if vault_writes:
+        print(f"  rendered {len(written) - len(vault_writes)} files, "
+              f"patched {len(patched)}  (+{len(vault_writes)} vault: "
+              f"{str(vault_writes[0]).removeprefix('obsidian: ')})")
+    else:
+        print(f"  rendered {len(written)} files, patched {len(patched)}")
     if vscode_name:
         print(f"  VS Code theme: {vscode_name}")
     print(wall_line)

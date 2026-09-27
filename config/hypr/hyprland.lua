@@ -145,8 +145,8 @@ hl.config({
         -- these are what a layout that does draw a border would use, and they
         -- are what theme-apply rewrites.
         col = {
-            active_border = "rgba(cba6f7ff)",     -- THEME (accent)
-            inactive_border = "rgba(6c7086ff)",   -- THEME (fg3)
+            active_border = "rgba(fabd2fff)",     -- THEME (accent)
+            inactive_border = "rgba(a89984ff)",   -- THEME (fg3)
         },
     },
 
@@ -160,7 +160,7 @@ hl.config({
             enabled = true,
             range = 7,                  -- niri: shadow range 7
             render_power = 6,
-            color = "0x1e1e2e99",       -- THEME (bg0 at 60%)
+            color = "0x28282899",       -- THEME (bg0 at 60%)
         },
 
         -- niri: blur passes 2, offset 8.0. Hyprland's "size" is the radius in

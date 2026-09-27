@@ -4,19 +4,19 @@ return {
 	config = function()
 		-- 1. Catppuccin Mocha palette
 		local colors = {
-			base = "#1e1e2e",
-			mantle = "#181825",
-			crust = "#1e1e2e",
-			surface0 = "#313244",
-			overlay0 = "#6c7086",
-			text = "#cdd6f4",
-			subtext0 = "#bac2de",
-			accent = "#cba6f7",
-			green = "#a6e3a1",
-			orange = "#f9e2af",
-			yellow = "#f9e2af",
-			red = "#f38ba8",
-			blue = "#89b4fa",
+			base = "#282828",
+			mantle = "#1d2021",
+			crust = "#282828",
+			surface0 = "#3c3836",
+			overlay0 = "#a89984",
+			text = "#fbf1c7",
+			subtext0 = "#ebdbb2",
+			accent = "#fabd2f",
+			green = "#b8bb26",
+			orange = "#fabd2f",
+			yellow = "#fabd2f",
+			red = "#fb4934",
+			blue = "#83a598",
 		}
 
 		-- 2. Map the theme's palette to the 'p' variable. theme-apply rewrites
