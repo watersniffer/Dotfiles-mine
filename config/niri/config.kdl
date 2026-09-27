@@ -76,9 +76,9 @@ layout {
 
         width 1
 
-        active-color "#cba6f7"
+        active-color "#fabd2f"
 
-        inactive-color "#6c7086"
+        inactive-color "#a89984"
     }
 
     border {
@@ -90,9 +90,9 @@ layout {
 
         width 1
 
-        active-color "#cba6f7"
+        active-color "#fabd2f"
 
-        inactive-color "#6c7086"
+        inactive-color "#a89984"
     }
 
     shadow {
@@ -100,48 +100,34 @@ layout {
         softness 7
         spread 0
         offset x=0 y=3
-        color "#1e1e2e99"
+        color "#28282899"
     }
 
     // Waybar is a layer-shell panel and reserves its own top zone; adding
     // Niri struts here would create a second gap.
 }
 
-// Draw rounded, blurred, shadowed clients instead of the server-side titlebars.
+// Draw rounded, shadowed, translucent clients instead of the server-side
+// titlebars.
 prefer-no-csd
 
-blur {
-    // This was 1, on the grounds that a second pass was "the single most
-    // expensive thing in the compositor on this HD 520" and that one pass was
-    // "visually near-identical". Both halves of that were measured and neither
-    // held:
-    //
-    //   - passes 2 and passes 3 render pixel-identical output here (0 differing
-    //     pixels, twice, alternating), so there is nothing to buy back by
-    //     staying at 1. At 1 the backdrop survives as hard-edged blocks and
-    //     bright areas break up, which is what made the translucent panels look
-    //     pixelated rather than frosted.
-    //   - niri's own CPU while a video played behind a blurred panel: 15.4% and
-    //     15.9% at passes 1, 15.0% and 15.3% at passes 3. The difference is
-    //     inside the noise, and the run drifted downwards throughout, so the
-    //     saving that was traded away for quality was not there to begin with.
-    //
-    // 2 rather than 3 because they are indistinguishable and 2 is the cheaper of
-    // the two. One thing to know: niri caches a window's blurred backdrop, so
-    // editing this and reloading does not re-blur windows that are already
-    // open -- they pick the new radius up when they move or are reopened.
-    passes 2
-    offset 8.0
-    // offset was also tried at 16 in case the radius, not the pass count, was
-    // what made the panels look rough. It is not: 8 and 16 differ by 326
-    // pixels across the whole panel, so there is nothing there either, and the
-    // smaller radius is the cheaper of the two.
-    // The grain is a per-pixel ALU term in the pass that is already running;
-    // at 0.02 it was invisible on a moving background anyway.
-    noise 0.0
-    // 1.0 is skipped by the shader, so leaving it costs nothing.
-    saturation 1.0
-}
+// No blur. The global blur settings are gone along with the per-window
+// background-effect below, because in niri this block only sets the parameters;
+// nothing draws a blur until a window rule asks for one.
+//
+// Why it went: blur was the single most expensive thing in this compositor on an
+// HD 520, and it kept looking wrong in ways that were hard to pin down -- a
+// bright shape on the wallpaper smeared into a soft blob behind translucent
+// windows, which reads as a rendering fault rather than as frosted glass. Every
+// pass-count and radius value that was tried (1, 2, 3; offset 8 and 16) had the
+// same character. The measurements in the history said the cost difference was
+// inside the noise, so the honest read is that it was not earning its keep on
+// quality either.
+//
+// Transparency is unaffected: the 0.90 below and kitty's own background_opacity
+// still apply, so windows are still see-through. They are just sharp rather than
+// blurred now. If this ever comes back, it is one line -- `blur true` in the
+// window rule below, with `passes`/`offset` back in a block here.
 
 window-rule {
     match app-id="^kitty$"
@@ -150,8 +136,8 @@ window-rule {
     // rule's 0.90 would multiply on top of it -- 0.90 x 0.80 is 0.72, so the
     // window ends up more transparent than the number in kitty.conf says and
     // there are two dials for one effect. 1.0 leaves the compositor out of it
-    // and kitty's own setting is the single source of truth. The blur, rounding
-    // and clipping still come from the blanket rule below, since this one only
+    // and kitty's own setting is the single source of truth. The rounding and
+    // clipping still come from the blanket rule below, since this one only
     // overrides opacity.
     opacity 1.0
 }
@@ -160,25 +146,19 @@ window-rule {
     // One blanket rule for every window, rather than the two this used to be.
     // Both of the old ones matched everything and both set a background-effect,
     // so which xray won depended on how niri merged two effects blocks in
-    // sequence -- and the second one, which set only `blur`, is the one that
-    // would have decided it. Rounded, clipped, blurred and 90% opaque is one
-    // intent, so it is written once.
+    // sequence. Rounded, clipped and 90% opaque is one intent, so it is written
+    // once.
     //
     // Rounded corners. This was 0 back when every window had a 1px border:
     // rounding it made the hairline look like uneven line thickness. The
-    // border is off now, so there is nothing to distort -- and the background
-    // blur below is clipped to this same radius, so the blur is rounded too.
+    // border is off now, so there is nothing to distort.
     opacity 0.90
     geometry-corner-radius 10
     clip-to-geometry true
-    background-effect {
-        blur true
-        // xray is the cheap path: the backdrop is blurred once and shared, so
-        // it is not recomputed when windows behind move.
-        xray true
-        noise 0.0
-        saturation 1.0
-    }
+    // No background-effect. Opacity alone still makes the window see-through, so
+    // this is the "leave transparency" half: windows are translucent, the
+    // backdrop behind them is left sharp. See the note above the removed blur
+    // block for why, and for what to add back to restore it.
 }
 
 window-rule {
