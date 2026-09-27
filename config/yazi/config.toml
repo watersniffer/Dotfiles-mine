@@ -9,9 +9,10 @@
 # yazi reads ~/.config/yazi/config.toml -- the old file was named yazi.toml,
 # which this version does not look for.
 #
-# Openers whose tool is not installed: play (celluloid), markdown (glow),
-# ebook (ebook-viewer), and the exiftool line in reveal. Those will fail the same
-# way until the tools are installed or the rules are commented out.
+# Every opener here has its tool installed: nvim, celluloid, xdg-open, zathura,
+# glow, 7z, ebook-viewer (calibre) and exiftool. Note that Arch's exiftool
+# package only Provides: exiftool and installs nothing on $PATH, so
+# local/bin/exiftool is a wrapper pointing at /usr/bin/vendor_perl/exiftool.
 
 # Yazi configuration file
 
