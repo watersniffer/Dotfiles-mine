@@ -10,7 +10,9 @@ set -euo pipefail
 # "command not found".
 #
 # The one difference is deliberate: the compositor config lives at
-# config/hypr/hyprland.conf rather than config/niri/config.kdl, passed below.
+# config/hypr/hyprland.lua rather than config/niri/config.kdl, passed below.
+# Hyprland 0.56 is lua-first, and its lua config is the only place the window
+# rules, animations and hyprcursor settings can be expressed correctly.
 # Everything else -- kitty, waybar, rofi, mako, the seven themes, awww -- is
 # shared, so the two sessions look and behave the same.
 #
@@ -36,4 +38,4 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/flatpak/exports/bin:/usr/local/
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export WAYLAND_DISPLAY=wayland-1
 
-exec /usr/bin/Hyprland -c "$HOME/.config/hypr/hyprland.conf"
+exec /usr/bin/Hyprland -c "$HOME/.config/hypr/hyprland.lua"

@@ -979,11 +979,13 @@ def patch_hypr_effects(path: Path, p: dict) -> bool:
 
     The same three roles niri's focus ring uses, so the two sessions match.
     Each pattern is written to match one exact spelling rather than a bare
-    colour: `col.active_border` and `col.inactive_border` are similar enough
-    that a loose rule would rewrite the wrong one, and the shadow colour is
-    rgba (0xAARRGGBB) here rather than niri's 8-digit hex, so the byte order
-    has to be assembled rather than substituted.
+    colour: `active_border` and `inactive_border` are similar enough that a
+    loose rule would rewrite the wrong one, and the shadow colour is rgba
+    (0xAARRGGBB) here rather than niri's 8-digit hex, so the byte order has to
+    be assembled rather than substituted.
 
+    The target is hyprland.lua, where every value is a quoted Lua string, so
+    each pattern matches the opening quote and stops before the closing one.
     The values are marked THEME in the config; do not reword those lines.
     """
     if not path.is_file():
@@ -995,10 +997,10 @@ def patch_hypr_effects(path: Path, p: dict) -> bool:
     fg3 = p["fg3"].lstrip("#")
 
     rules = [
-        (r'(?m)^(\s*color = )0x[0-9a-fA-F]{8}', rf'\g<1>{shadow}'),
-        (r'(?m)^(col\.active_border = rgba\()[0-9a-fA-F]{6}',
+        (r'(?m)^(\s*color = ")0x[0-9a-fA-F]{8}', rf'\g<1>{shadow}'),
+        (r'(?m)^(\s*active_border = "rgba\()[0-9a-fA-F]{6}',
          rf'\g<1>{p["accent"].lstrip("#")}'),
-        (r'(?m)^(col\.inactive_border = rgba\()[0-9a-fA-F]{6}',
+        (r'(?m)^(\s*inactive_border = "rgba\()[0-9a-fA-F]{6}',
          rf'\g<1>{fg3}'),
     ]
     for pattern, repl in rules:
@@ -1189,7 +1191,7 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     do(patch_matuwall, CONFIG / "matuwall/config.toml", p)
     do(patch_fastfetch, CONFIG / "fastfetch/config.jsonc", p)
     do(patch_niri_effects, CONFIG / "niri/config.kdl", p)
-    do(patch_hypr_effects, CONFIG / "hypr/hyprland.conf", p)
+    do(patch_hypr_effects, CONFIG / "hypr/hyprland.lua", p)
     do(patch_lualine, CONFIG / "nvim/lua/plugins/lualine.lua", p)
     do(patch_key, CONFIG / "nvim/current-theme.txt", r"^.*$", p["nvim"])
     do(patch_key, CONFIG / "btop/btop.conf",
@@ -1260,7 +1262,19 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # session, so this is a no-op under niri and vice versa. "config-only"
     # because the three colour values are all that changed, and a full reload
     # would restart every animation.
+    # Guarded on the file existing. A running Hyprland holds the path it was
+    # started with, which is not necessarily the current one: after the config
+    # moved from hyprland.conf to hyprland.lua, a session started before that
+    # switch still points at the old name. Reloading a path that no longer
+    # exists makes the compositor unhappy in ways that are not worth risking at
+    # a keystroke, so the reload is simply skipped and the colours the user can
+    # see still update. Log out and back in to pick the new config up.
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        hypr_conf = next((f for f in (CONFIG / "hypr/hyprland.lua",
+                                      CONFIG / "hypr/hyprland.conf")
+                          if f.is_file()), None)
+        if hypr_conf is None:
+            return
         run(["hyprctl", "reload", "config-only"])
 
     # --- wallpaper ---
