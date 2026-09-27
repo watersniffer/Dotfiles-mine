@@ -82,6 +82,12 @@ def set_wallpaper(image: str, awww_transition: str = "") -> bool:
     if awww_transition:
         cmd += ["--transition-type", awww_transition,
                 "--transition-fps", str(AWWW_FPS)]
+    else:
+        # Always explicit. Reaching this point with no awww transition means the
+        # caller animated it itself (lift, rise, fade, zoom, slide), so the
+        # daemon's swap has to be invisible -- and an "awww" on PATH may be the
+        # shim that would otherwise add a transition of its own.
+        cmd += ["--transition-type", "none"]
     result = subprocess.run(cmd, capture_output=True)
     if result.returncode != 0:
         warn(f"awww failed to set {os.path.basename(image)}")

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+#
+# awww shim: give every wallpaper change the expanding circle unless the caller
+# asked for something specific.
+#
+# matuwall sets the wallpaper itself through its own awww backend and has no
+# transition option (see matuwall(5) -- [hooks] on_apply only runs *after* the
+# apply, so it is too late to change the animation). The one knob that does work
+# is the awww command line, so this sits in front of the real binary on $PATH
+# and fills in the transition when the caller left it out.
+#
+#   wallpaper-fade --transition awww:wipe  ->  passes --transition-type through
+#   wallpaper-fade --transition lift        ->  passes --transition-type none,
+#                                               so the overlay animation is not
+#                                               followed by a second one
+#   matuwall (Super+W)                     ->  gets the circle
+#
+# Everything else is passed straight through, and only the "img" subcommand is
+# ever touched: awww restore, query, toggle, kill etc. are unaffected.
+#
+# AWWW_TRANSITION and AWWW_TRANSITION_FPS work too and would apply session-wide,
+# but they are undocumented and only present as strings in the binary, whereas
+# --transition-type is in `awww img --help`. This uses the documented flag.
+#
+# Set AWWW_SHIM_DEBUG=1 to see the final command line on stderr.
+
+set -uo pipefail
+
+REAL_AWWW=/usr/bin/awww
+
+# The transition applied when a caller does not name one. "center" is awww's
+# alias for "grow" with the circle centred on the screen.
+DEFAULT_TRANSITION=center
+DEFAULT_FPS=60
+
+if [[ ! -x $REAL_AWWW ]]; then
+    echo "awww-shim: $REAL_AWWW is missing; is the awww package installed?" >&2
+    exit 127
+fi
+
+args=("$@")
+
+# Only "img" sets a wallpaper, and only when the caller has not chosen.
+if [[ ${args[0]-} == "img" ]]; then
+    has_transition=0
+    for a in "${args[@]}"; do
+        case "$a" in
+            --transition-type|-t) has_transition=1 ;;
+        esac
+    done
+    if (( has_transition == 0 )); then
+        args+=(--transition-type "$DEFAULT_TRANSITION"
+               --transition-fps "$DEFAULT_FPS")
+    fi
+fi
+
+if [[ -n ${AWWW_SHIM_DEBUG-} ]]; then
+    printf 'awww-shim: %s\n' "${args[*]}" >&2
+fi
+
+exec "$REAL_AWWW" "${args[@]}"

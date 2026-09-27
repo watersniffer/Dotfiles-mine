@@ -72,7 +72,7 @@ Re-running the installer is safe: already-correct symlinks are left untouched.
 ## Post-install steps
 
 1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**) to pick one or `Super+Ctrl+W` for a random one. The new wallpaper rises into place, but the **Catppuccin Mocha** palette is fixed and does not change with it; edit `config/waybar/colors.css` (and the matching `colors.rasi` / `current-theme.conf` / GTK `colors.css`) to recolour the desktop. SDDM remains static and root-owned. At login, choose **Niri (Dotfiles)**.
+2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` (**Matuwall**) to pick one. The **Catppuccin Mocha** palette is fixed and does not change with it; edit `config/waybar/colors.css` (and the matching `colors.rasi` / `current-theme.conf` / GTK `colors.css`) to recolour the desktop. SDDM remains static and root-owned. At login, choose **Niri (Dotfiles)**.
 3. First `nvim` launch installs all plugins automatically (lazy.nvim).
 4. `starship config` tweaks the prompt.
 5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
