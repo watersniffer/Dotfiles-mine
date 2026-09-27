@@ -11,7 +11,10 @@ directory = "~/Pictures/Wallpapers"
 backend = "awww"
 
 [window]
-preview = true
+# Off: the grid thumbnails already show each wallpaper, so the full-screen
+# preview behind the panel was only covering the desktop while browsing. This is
+# also matuwall's own default. Enter, or a click, still applies.
+preview = false
 close_on_focus_loss = false
 position = "center"
 background = "#1e1e2e"

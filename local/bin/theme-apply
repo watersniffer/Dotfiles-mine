@@ -25,6 +25,7 @@ are listed at the end.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -84,7 +85,7 @@ def die(msg: str) -> "None":
 # --------------------------------------------------------------------------
 
 # name, nvim, btop and vscode are identifiers or display names, not colours.
-TEXT_ROLES = ("name", "nvim", "btop", "vscode", "wallpapers")
+TEXT_ROLES = ("name", "nvim", "btop", "wallpapers")
 
 ROLES = (
     "name", "nvim", "btop",
@@ -126,8 +127,6 @@ def load_palette(slug: str) -> dict:
     # on the same line parses fine and then fails much later and silently: a
     # colorscheme that will not load just falls back, per theme.lua.
     # (name is allowed spaces -- it is a display name.)
-    # vscode is exempt: "Default Dark Modern" is a display name and has spaces,
-    # same as name. Only these two are identifiers that must not.
     for role in ("nvim", "btop"):
         if re.search(r"\s", pal[role]):
             die(f"{slug}: {role} is {pal[role]!r}, which contains whitespace -- "
@@ -174,6 +173,213 @@ def nvim_colorscheme_exists(name: str) -> bool:
         if any(c.is_file() for c in candidates):
             return True
     return False
+
+
+def render_vscode_theme(p: dict) -> str:
+    """A VS Code theme file for this palette.
+
+    VS Code has no equivalent of `colorscheme`: the only themes it ships are its
+    own built-ins, and the matching community ones (Catppuccin, Gruvbox, ...) are
+    extensions, each wanting a network install and a hand-picked name. Writing
+    the theme here keeps VS Code in step with everything else in the desktop for
+    the same reason the other nineteen files are generated rather than hand
+    maintained.
+
+    VS Code reads user themes from <user-data>/User/themes, and a flat .json
+    file there is a valid theme, so this is written to
+    ~/.config/Code/User/themes/<slug>.json.
+    """
+    name = f"Dotfiles: {p['name']}"
+
+    # Workbench chrome, from the palette's own roles.
+    colors = {
+        "editor.background": p["bg0"],
+        "editor.foreground": p["fg0"],
+        "editorLineNumber.foreground": p["fg2"],
+        "editorLineNumber.activeForeground": p["fg0"],
+        "editorCursor.foreground": p["fg0"],
+        "editor.selectionBackground": p["bg4"],
+        "editor.lineHighlightBackground": p["bg2"],
+        "editor.findMatchBackground": p["bg4"],
+        "editor.findMatchHighlightBackground": p["bg3"],
+        "editorWhitespace.foreground": p["bg4"],
+        "editorIndentGuide.background1": p["bg3"],
+        "editorIndentGuide.activeBackground1": p["bg4"],
+        "editorGutter.background": p["bg0"],
+        "editorWidget.background": p["bg2"],
+        "editorHoverWidget.background": p["bg2"],
+        "editorSuggestWidget.background": p["bg2"],
+        "editorSuggestWidget.border": p["bg4"],
+        "editorHoverWidget.border": p["bg4"],
+
+        "sideBar.background": p["bg1"],
+        "sideBar.foreground": p["fg0"],
+        "sideBar.border": p["bg3"],
+        "activityBar.background": p["bg1"],
+        "activityBar.foreground": p["fg0"],
+        "activityBar.inactiveForeground": p["fg2"],
+        "activityBarBadge.background": p["accent"],
+        "activityBarBadge.foreground": p["on_accent"],
+
+        "titleBar.activeBackground": p["bg1"],
+        "titleBar.activeForeground": p["fg0"],
+        "titleBar.inactiveBackground": p["bg1"],
+        "titleBar.inactiveForeground": p["fg2"],
+        "titleBar.border": p["bg3"],
+
+        "tab.activeBackground": p["bg0"],
+        "tab.activeForeground": p["fg0"],
+        "tab.inactiveBackground": p["bg1"],
+        "tab.inactiveForeground": p["fg2"],
+        "tab.border": p["bg3"],
+        "tab.activeBorderTop": p["accent"],
+
+        "statusBar.background": p["bg1"],
+        "statusBar.foreground": p["fg0"],
+        "statusBar.border": p["bg3"],
+        "statusBar.noFolderBackground": p["bg1"],
+        "statusBar.debugBackground": p["orange"],
+        "statusBarItem.remoteBackground": p["accent"],
+        "statusBarItem.remoteForeground": p["on_accent"],
+
+        "panel.background": p["bg1"],
+        "panel.border": p["bg3"],
+        "panelTitle.activeForeground": p["fg0"],
+        "panelTitle.inactiveForeground": p["fg2"],
+        "panelSection.border": p["bg3"],
+
+        "input.background": p["bg3"],
+        "input.foreground": p["fg0"],
+        "input.border": p["bg4"],
+        "inputOption.activeBorder": p["accent"],
+        "dropdown.background": p["bg3"],
+        "dropdown.listBackground": p["bg2"],
+
+        "list.activeSelectionBackground": p["bg3"],
+        "list.activeSelectionForeground": p["fg0"],
+        "list.inactiveSelectionBackground": p["bg2"],
+        "list.hoverBackground": p["bg2"],
+        "list.highlightForeground": p["accent"],
+        "list.dropBackground": p["bg4"],
+
+        "focusBorder": p["accent"],
+        "foreground": p["fg0"],
+        "descriptionForeground": p["fg2"],
+        "errorForeground": p["urgent"],
+        "widget.shadow": p["bg1"],
+        "selection.background": p["bg4"],
+        "icon.foreground": p["fg0"],
+        "sash.hoverBorder": p["accent"],
+
+        # diagnostics
+        "editorError.foreground": p["urgent"],
+        "editorWarning.foreground": p["yellow"],
+        "editorInfo.foreground": p["blue"],
+        "editorHint.foreground": p["fg2"],
+        "editorError.border": "#00000000",
+        "editorWarning.border": "#00000000",
+        "editorInfo.border": "#00000000",
+        "editorHint.border": "#00000000",
+        "editorError.background": p["bg2"],
+        "editorWarning.background": p["bg2"],
+        "editorInfo.background": p["bg2"],
+        "editorHint.background": p["bg2"],
+        "editorOverviewRuler.border": "#00000000",
+        "editorOverviewRuler.errorForeground": p["urgent"],
+        "editorOverviewRuler.warningForeground": p["yellow"],
+        "editorOverviewRuler.infoForeground": p["blue"],
+        "editorOverviewRuler.addedForeground": p["green"],
+        "editorOverviewRuler.modifiedForeground": p["yellow"],
+        "editorOverviewRuler.deletedForeground": p["urgent"],
+
+        # git decorations
+        "gitDecoration.addedResourceForeground": p["green"],
+        "gitDecoration.modifiedResourceForeground": p["yellow"],
+        "gitDecoration.deletedResourceForeground": p["urgent"],
+        "gitDecoration.untrackedResourceForeground": p["fg2"],
+        "gitDecoration.ignoredResourceForeground": p["fg3"],
+        "gitDecoration.conflictingResourceForeground": p["orange"],
+        "gitDecoration.submoduleResourceForeground": p["blue"],
+
+        # terminal
+        "terminal.background": p["bg0"],
+        "terminal.foreground": p["fg0"],
+        "terminal.ansiBlack": p["bg3"],
+        "terminal.ansiRed": p["red"],
+        "terminal.ansiGreen": p["green"],
+        "terminal.ansiYellow": p["yellow"],
+        "terminal.ansiBlue": p["blue"],
+        "terminal.ansiMagenta": p["magenta"],
+        "terminal.ansiCyan": p["cyan"],
+        "terminal.ansiWhite": p["fg1"],
+        "terminal.ansiBrightBlack": p["fg2"],
+        "terminal.ansiBrightRed": p["red"],
+        "terminal.ansiBrightGreen": p["green"],
+        "terminal.ansiBrightYellow": p["yellow"],
+        "terminal.ansiBrightBlue": p["blue"],
+        "terminal.ansiBrightMagenta": p["magenta"],
+        "terminal.ansiBrightCyan": p["cyan"],
+        "terminal.ansiBrightWhite": p["fg0"],
+        "terminal.selectionBackground": p["bg4"],
+
+        # scrollbars and badges
+        "scrollbarSlider.background": p["bg4"],
+        "scrollbarSlider.hoverBackground": p["fg3"],
+        "scrollbarSlider.activeBackground": p["fg2"],
+        "badge.background": p["accent"],
+        "badge.foreground": p["on_accent"],
+        "notebook.cellBorderColor": p["bg4"],
+        "notebook.selectedCellBackground": p["bg2"],
+    }
+
+    # Token rules, mirroring the nvim colorschemes: same roles, same shades.
+    def rule(*scopes, fg=None, bold=False, italic=False):
+        settings = {}
+        if fg:
+            settings["foreground"] = fg
+        if bold:
+            settings["fontStyle"] = (settings.get("fontStyle", "") + " bold").strip()
+        if italic:
+            settings["fontStyle"] = (settings.get("fontStyle", "") + " italic").strip()
+        return {"name": " ".join(scopes), "scope": list(scopes), "settings": settings}
+
+    token_colors = [
+        rule("comment", "punctuation.definition.comment", fg=p["fg3"], italic=True),
+        rule("string", "string.quoted", fg=p["green"]),
+        rule("constant.numeric", "constant.language", fg=p["cyan"]),
+        rule("constant.language", "constant.character", fg=p["cyan"]),
+        rule("variable", fg=p["fg1"]),
+        rule("variable.parameter", fg=p["fg1"], italic=True),
+        rule("keyword", "storage.type", "storage.modifier", fg=p["magenta"]),
+        rule("keyword.control", "keyword.operator.new", fg=p["magenta"]),
+        rule("keyword.operator", "keyword.other", fg=p["fg2"]),
+        rule("entity.name.function", "support.function", "meta.function-call",
+             fg=p["yellow"]),
+        rule("entity.name.type", "entity.name.class", "support.type",
+             "support.class", fg=p["cyan"]),
+        rule("entity.name.tag", "meta.tag", fg=p["accent"]),
+        rule("entity.other.attribute-name", "meta.attribute", fg=p["accent"]),
+        rule("punctuation", "meta.brace", fg=p["fg2"]),
+        rule("invalid", "invalid.illegal", fg=p["urgent"], bold=True),
+        rule("markup.bold", fg=p["fg0"], bold=True),
+        rule("markup.italic", fg=p["fg0"], italic=True),
+        rule("markup.heading", fg=p["accent"], bold=True),
+        rule("markup.underline.link", "string.other.link", fg=p["blue"]),
+        rule("markup.inline.raw", fg=p["green"]),
+        rule("markup.inserted", fg=p["green"]),
+        rule("markup.deleted", fg=p["urgent"]),
+        rule("markup.changed", fg=p["yellow"]),
+    ]
+
+    theme = {
+        "$schema": "vscode://schemas/color-theme",
+        "name": name,
+        "type": "dark",
+        "semanticHighlighting": True,
+        "colors": colors,
+        "tokenColors": token_colors,
+    }
+    return json.dumps(theme, indent=2) + "\n"
 
 
 def set_vscode_theme(theme: str) -> bool:
@@ -867,14 +1073,23 @@ def apply(slug: str) -> int:
     if folder and ("/" in folder or folder in (".", "..") or folder.startswith(".")):
         die(f"{slug}: wallpapers is {folder!r}, which is not a plain folder name")
 
-    vscode = p.get("vscode", "").strip()
-    if vscode:
-        if set_vscode_theme(vscode):
-            patched.append(Path("Code settings.json"))
-        else:
-            problems.append("Code/User/settings.json")
-    else:
-        vscode = None
+    # VS Code gets a generated theme for this palette and is pointed at it, so
+    # the editor follows along with everything else.
+    vscode = render_vscode_theme(p)
+    theme_dir = HOME / ".config/Code/User/themes"
+    try:
+        theme_dir.mkdir(parents=True, exist_ok=True)
+        (theme_dir / f"{slug}.json").write_text(vscode, encoding="utf-8")
+        written.append(theme_dir / f"{slug}.json")
+    except OSError as exc:
+        problems.append(f"Code themes dir ({exc.strerror})")
+
+    # workbench.colorTheme has to match the theme file's "name" field exactly,
+    # and for a file-based theme that name is what VS Code shows in the picker.
+    vscode_name = f"Dotfiles: {p['name']}"
+    if not set_vscode_theme(vscode_name):
+        vscode_name = None
+        problems.append("Code/User/settings.json")
 
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(slug + "\n", encoding="utf-8")
@@ -895,8 +1110,8 @@ def apply(slug: str) -> int:
 
     print(f"{p['name']} applied.")
     print(f"  rendered {len(written)} files, patched {len(patched)}")
-    if vscode:
-        print(f"  VS Code workbench.colorTheme: {vscode}")
+    if vscode_name:
+        print(f"  VS Code theme: {vscode_name}")
     if folder:
         print(f"  wallpaper folder: {folder}")
     if not nvim_colorscheme_exists(p["nvim"]):
