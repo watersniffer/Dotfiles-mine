@@ -72,9 +72,9 @@ layout {
 
         width 1
 
-        active-color "#cba6f7"
+        active-color "#88c0d0"
 
-        inactive-color "#6c7086"
+        inactive-color "#616e88"
     }
 
     border {
@@ -86,9 +86,9 @@ layout {
 
         width 1
 
-        active-color "#cba6f7"
+        active-color "#88c0d0"
 
-        inactive-color "#6c7086"
+        inactive-color "#616e88"
     }
 
     shadow {
@@ -96,7 +96,7 @@ layout {
         softness 7
         spread 0
         offset x=0 y=3
-        color "#1e1e2e99"
+        color "#2e344099"
     }
 
     // Waybar is a layer-shell panel and reserves its own top zone; adding
@@ -137,6 +137,19 @@ blur {
     noise 0.0
     // 1.0 is skipped by the shader, so leaving it costs nothing.
     saturation 1.0
+}
+
+window-rule {
+    match app-id="^kitty$"
+    // 1.0, not a lower number, and deliberately so. Kitty draws its own
+    // translucency (background_opacity in its kitty.conf), and this blanket
+    // rule's 0.90 would multiply on top of it -- 0.90 x 0.88 is 0.79, so the
+    // window ends up more transparent than the number in kitty.conf says and
+    // there are two dials for one effect. 1.0 leaves the compositor out of it
+    // and kitty's own setting is the single source of truth. The blur, rounding
+    // and clipping still come from the blanket rule below, since this one only
+    // overrides opacity.
+    opacity 1.0
 }
 
 window-rule {

@@ -10,9 +10,10 @@
 # which this version does not look for.
 #
 # Every opener here has its tool installed: nvim, celluloid, xdg-open, zathura,
-# glow, 7z, ebook-viewer (calibre) and exiftool. Note that Arch's exiftool
-# package only Provides: exiftool and installs nothing on $PATH, so
-# local/bin/exiftool is a wrapper pointing at /usr/bin/vendor_perl/exiftool.
+# glow, 7z and exiftool. Note that Arch's exiftool package only Provides:
+# exiftool and installs nothing on $PATH, so local/bin/exiftool is a wrapper
+# pointing at /usr/bin/vendor_perl/exiftool. ebook-viewer was here too and is
+# not any more, because it meant keeping calibre installed for one file type.
 
 # Yazi configuration file
 
@@ -42,9 +43,16 @@ extract = [
 view_archive = [
     { run = 'if [ -f "$1" ]; then case "$1" in *.tar) tar tf "$1" ;; *.zip) unzip -l "$1" ;; *.rar) unrar l "$1" ;; *.7z) 7z l "$1" ;; esac; echo "Press enter to exit"; read _; fi', block = true, desc = "View archive contents", for = "unix" },
 ]
-ebook = [
-    { run = 'ebook-viewer "$1"', desc = "Open with ebook-viewer", for = "unix" },
-]
+# The ebook opener is gone: ebook-viewer came from calibre, which was removed as
+# bloat. Leaving the rule in place is worse than having none -- it fails with
+# "command not found" and exit 127, the same silent breakage the vi opener had.
+# An .epub now has no [open] rule, so Enter does nothing and `reveal` still
+# shows its details. If epubs are wanted back, foliate is a much smaller
+# install than calibre (which pulled 69 packages for 136 MB) and this line
+# becomes { run = 'foliate "$1"', ... }.
+# ebook = [
+#     { run = 'ebook-viewer "$1"', desc = "Open with ebook-viewer", for = "unix" },
+# ]
 
 [open]
 rules = [
@@ -63,8 +71,8 @@ rules = [
     { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", use = ["extract", "view_archive", "reveal"] },
     # PDF
     { mime = "application/pdf", use = ["pdf", "reveal"] },
-    # Ebooks
-    { mime = "application/epub+zip", use = ["ebook", "reveal"] },
+    # Ebooks: no opener, see the note where the ebook opener used to be.
+    # { mime = "application/epub+zip", use = ["ebook", "reveal"] },
     # JSON
     { mime = "application/{json,ndjson}", use = ["edit", "reveal"] },
     # JavaScript

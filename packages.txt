@@ -158,7 +158,9 @@ socat
 rclone
 
 # --- Apps ---
-obsidian
+# obsidian: removed as bloat. Its config is left alone at ~/.config/obsidian,
+# so an old vault is still there if it is ever wanted; delete that directory by
+# hand once you are sure.
 bc
 imagemagick
 ffmpegthumbnailer
