@@ -4,7 +4,14 @@
     "type": "small",
     "source": "arch",
     "color": {
-      "1": "#ffffff"
+      "1": "#cba6f7",
+      "2": "#f38ba8",
+      "3": "#fab387",
+      "4": "#f9e2af",
+      "5": "#a6e3a1",
+      "6": "#94e2d5",
+      "7": "#89dceb",
+      "8": "#89b4fa"
     },
     "padding": {
       "top": 2,
@@ -21,70 +28,70 @@
     {
       "type": "title",
       "keyWidth": 10,
-      "color": "#ffffff"
+      "color": "#cdd6f4"
     },
     "break",
     {
       "type": "os",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "host",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "shell",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "terminal",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "wm",
       "format": "{} (wayland)",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "cpu",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "gpu",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "memory",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0",
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4",
       "format": "{} {}"
     },
     {
       "type": "disk",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     {
       "type": "uptime",
       "key": " ",
-      "keyColor": "#ffffff",
-      "color": "#f0f0f0"
+      "keyColor": "#89b4fa",
+      "color": "#cdd6f4"
     },
     "break",
     "break",

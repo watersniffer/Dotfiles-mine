@@ -1,9 +1,9 @@
 font=Open Sans 9
-background-color=#161616
-text-color=#f0f0f0
-border-color=#ffffff
+background-color=#1e1e2e
+text-color=#cdd6f4
+border-color=#cba6f7
 border-size=2
-border-radius=4
+border-radius=10
 padding=12
 margin=8
 default-timeout=5000
@@ -13,18 +13,18 @@ max-icon-size=64
 text-alignment=left
 
 [urgency=low]
-background-color=#101010
-text-color=#a0a0a0
-border-color=#2a2a2a
+background-color=#181825
+text-color=#a6adc8
+border-color=#313244
 default-timeout=4000
 
 [urgency=normal]
-background-color=#161616
-text-color=#f0f0f0
-border-color=#ffffff
+background-color=#1e1e2e
+text-color=#cdd6f4
+border-color=#cba6f7
 default-timeout=6000
 
 [urgency=critical]
-background-color=#1e1e1e
-text-color=#f0f0f0
-border-color=#d0d0d0
+background-color=#181825
+text-color=#cdd6f4
+border-color=#f38ba8

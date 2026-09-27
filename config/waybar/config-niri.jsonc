@@ -8,7 +8,7 @@
   // Attached to the top edge: no floating margins, and a real 34px height
   // (it used to be 1 here, with the visible height coming from the CSS
   // min-height instead).
-  "height": 30,
+  "height": 35,
 
   "modules-left": ["niri/workspaces", "custom/cpucat"],
   "modules-center": ["mpris"],

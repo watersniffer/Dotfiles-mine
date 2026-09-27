@@ -2,21 +2,21 @@ return {
 	"nvim-lualine/lualine.nvim",
 	dependencies = { "nvim-tree/nvim-web-devicons" },
 	config = function()
-		-- 1. Monochrome palette (desktop accent: white #ffffff)
+		-- 1. Catppuccin Mocha palette
 		local colors = {
-			base = "#161616",
-			mantle = "#101010",
-			crust = "#101010",
-			surface0 = "#1e1e1e",
-			overlay0 = "#606060",
-			text = "#f0f0f0",
-			subtext0 = "#a0a0a0",
-			accent = "#ffffff",
-			green = "#a9a9a9",
-			orange = "#787878",
-			yellow = "#e0e0e0",
-			red = "#d0d0d0",
-			blue = "#999999",
+			base = "#1e1e2e",
+			mantle = "#181825",
+			crust = "#11111b",
+			surface0 = "#313244",
+			overlay0 = "#6c7086",
+			text = "#cdd6f4",
+			subtext0 = "#a6adc8",
+			accent = "#cba6f7",
+			green = "#a6e3a1",
+			orange = "#fab387",
+			yellow = "#f9e2af",
+			red = "#f38ba8",
+			blue = "#89b4fa",
 		}
 
 		-- 2. Map Monochrome colours to the 'p' variable

@@ -1,1 +1,1 @@
-monochrome
+catppuccin-mocha

@@ -462,7 +462,7 @@ setup_nvim() {
 
     # Ensure theme file exists (theme-loader falls back to this)
     if [[ ! -f "$dst/current-theme.txt" ]]; then
-        echo "monochrome" > "$dst/current-theme.txt"
+        echo "catppuccin-mocha" > "$dst/current-theme.txt"
     fi
 
     ok "Neovim ready. Plugins install on first launch."

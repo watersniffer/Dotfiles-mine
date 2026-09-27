@@ -1,13 +1,49 @@
-/* Waybar palette matched to Kitty's Noctalia theme. */
+/* Catppuccin Mocha. Static palette -- the wallpaper does not drive it.
+ *
+ * Catppuccin's own names, for reference:
+ *   base #1e1e2e   mantle #181825  crust #11111b
+ *   text #cdd6f4   subtext1 #bac2de subtext0 #a6adc8
+ *   overlay0 #6c7086  surface0 #313244  surface1 #45475a  surface2 #585b70
+ *   mauve #cba6f7  blue #89b4fa  sky #89dceb  red #f38ba8
+ *   yellow #f9e2af  green #a6e3a1
+ *
+ * The values are written out literally rather than aliased (@define-color bg
+ * @mantle) because the alias form is not reliably resolved by the GTK CSS
+ * parser Waybar uses. Keep the two lists in sync if you edit either.
+ */
 
-@define-color bg #000000;
-@define-color fg #828282;
-@define-color ws_inactive #3c3c3c;
-@define-color ws_active #aaaaaa;
-@define-color hover #191919;
-@define-color urgent #dddddd;
-@define-color tooltip_bg #191919;
-@define-color tooltip_border #3c3c3c;
-@define-color battery_warn #aaaaaa;
-@define-color battery_crit #dddddd;
-@define-color cpucat #aaaaaa;
+@define-color base #1e1e2e;
+@define-color mantle #181825;
+@define-color crust #11111b;
+
+/* The bar itself is transparent (see style.css) and the module islands paint
+   these, so the alpha is baked in. */
+@define-color island rgba(24, 24, 37, 0.85);
+@define-color island_hover rgba(49, 50, 68, 0.9);
+
+@define-color text #cdd6f4;
+@define-color subtext #bac2de;
+@define-color overlay #6c7086;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+
+@define-color mauve #cba6f7;
+@define-color blue #89b4fa;
+@define-color sky #89dceb;
+@define-color green #a6e3a1;
+@define-color yellow #f9e2af;
+@define-color red #f38ba8;
+
+/* The names style.css actually references. */
+@define-color bg #181825;
+@define-color fg #cdd6f4;
+@define-color ws_inactive #45475a;
+@define-color ws_active #cba6f7;
+@define-color hover #313244;
+@define-color urgent #f38ba8;
+@define-color tooltip_bg #11111b;
+@define-color tooltip_border #45475a;
+@define-color battery_warn #f9e2af;
+@define-color battery_crit #f38ba8;
+@define-color cpucat #89dceb;

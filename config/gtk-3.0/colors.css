@@ -1,42 +1,45 @@
-/* Static Monochrome palette for GTK 3. */
+/* Catppuccin Mocha. Static palette -- the wallpaper does not drive it.
+   base #1e1e2e, mantle #181825, crust #11111b, surface0 #313244,
+   text #cdd6f4, blue #89b4fa, mauve #cba6f7, red #f38ba8,
+   green #a6e3a1, yellow #f9e2af. */
 
-@define-color accent_bg_color #ffffff;
-@define-color accent_color #ffffff;
-@define-color accent_fg_color #161616;
+@define-color accent_bg_color #45475a;
+@define-color accent_color #89b4fa;
+@define-color accent_fg_color #1e1e2e;
 
-@define-color window_bg_color #161616;
-@define-color window_fg_color #f0f0f0;
+@define-color window_bg_color #1e1e2e;
+@define-color window_fg_color #cdd6f4;
 
-@define-color view_bg_color #161616;
-@define-color view_fg_color #f0f0f0;
+@define-color view_bg_color #181825;
+@define-color view_fg_color #cdd6f4;
 
-@define-color headerbar_bg_color #1e1e1e;
-@define-color headerbar_fg_color #f0f0f0;
+@define-color headerbar_bg_color #181825;
+@define-color headerbar_fg_color #cdd6f4;
 
-@define-color card_bg_color #1e1e1e;
-@define-color card_fg_color #f0f0f0;
+@define-color card_bg_color #313244;
+@define-color card_fg_color #cdd6f4;
 
-@define-color popover_bg_color #1e1e1e;
-@define-color popover_fg_color #f0f0f0;
+@define-color popover_bg_color #181825;
+@define-color popover_fg_color #cdd6f4;
 
-@define-color dialog_bg_color #2a2a2a;
-@define-color dialog_fg_color #f0f0f0;
+@define-color dialog_bg_color #313244;
+@define-color dialog_fg_color #cdd6f4;
 
-@define-color sidebar_bg_color #2a2a2a;
-@define-color sidebar_fg_color #f0f0f0;
+@define-color sidebar_bg_color #181825;
+@define-color sidebar_fg_color #cdd6f4;
 
-@define-color destructive_bg_color #d0d0d0;
-@define-color destructive_fg_color #161616;
-@define-color destructive_color #d0d0d0;
+@define-color destructive_bg_color #f38ba8;
+@define-color destructive_fg_color #1e1e2e;
+@define-color destructive_color #f38ba8;
 
-@define-color error_bg_color #d0d0d0;
-@define-color error_fg_color #161616;
-@define-color error_color #d0d0d0;
+@define-color error_bg_color #f38ba8;
+@define-color error_fg_color #1e1e2e;
+@define-color error_color #f38ba8;
 
-@define-color success_bg_color #a9a9a9;
-@define-color success_fg_color #161616;
-@define-color success_color #a9a9a9;
+@define-color success_bg_color #a6e3a1;
+@define-color success_fg_color #1e1e2e;
+@define-color success_color #a6e3a1;
 
-@define-color warning_bg_color #e0e0e0;
-@define-color warning_fg_color #161616;
-@define-color warning_color #e0e0e0;
+@define-color warning_bg_color #f9e2af;
+@define-color warning_fg_color #1e1e2e;
+@define-color warning_color #f9e2af;
