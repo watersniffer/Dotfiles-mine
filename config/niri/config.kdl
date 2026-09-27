@@ -10,6 +10,12 @@ environment {
     QT_SCALE_FACTOR "0.92"
     XCURSOR_SIZE "22"
     XCURSOR_THEME "Bibata-Modern-Classic"
+    // Anything niri spawns inherits this, not ~/.bashrc: kitty -e runs the
+    // command directly rather than through a login shell, so $EDITOR was unset
+    // for everything launched from a keybind. yazi is configured to call nvim
+    // explicitly, but this is what everything else that reads $EDITOR wants.
+    EDITOR "nvim"
+    VISUAL "nvim"
     // Pinned so the xdg-terminal-exec wrapper in ~/.local/bin cannot be talked
     // into launching something else by an inherited TERMINAL value.
     TERMINAL "kitty"
