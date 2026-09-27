@@ -11,7 +11,9 @@
 # theme in use is marked, so you can see where you are before picking.
 #
 # All the work is done by theme-apply, which renders every app's config from
-# the chosen palette. This script is only the front-end.
+# the chosen palette and applies a wallpaper from that theme's own folder. This
+# script is only the front-end, and says which wallpaper landed in the
+# notification so the change is not silent.
 
 set -uo pipefail
 
@@ -85,9 +87,30 @@ fi
 
 # --- apply, and say so ----------------------------------------------------
 if output=$("$APPLY" "$selected" 2>&1); then
+    # theme-apply reports the wallpaper on one line, as
+    # "  wallpaper: <file>  (of <folder>)". Pulled out and put first, because
+    # the wallpaper changing under you with no explanation is the surprising
+    # part of a theme switch; the restart note is the predictable part.
+    # The warning shape is matched too: the output of a successful switch is
+    # captured here and never printed, so a wallpaper that failed to apply
+    # would otherwise be completely silent.
+    body="kitty, nvim, btop and any open GTK/Qt app need a restart"
+    # BRE, so the capture is \( \) and the literal parens around "of ..." stay
+    # unescaped -- writing \)$ here is an unmatched group-close and sed bails
+    # out with no output at all, which looks exactly like "nothing matched".
+    # The capture is .* and not [^ ]* because these filenames contain spaces
+    # ("29. Catppuccin Mocha.png"); what separates the name from the folder is
+    # the two spaces before "(of", and a greedy .* takes the last one, so the
+    # whole name is kept.
+    wall=$(sed -n \
+        -e 's/^  wallpaper: \(.*\)  (of .*)$/wallpaper: \1/p' \
+        -e 's/^  wallpaper: WARNING \(.*\) did not apply.*$/wallpaper FAILED: \1/p' \
+        <<< "$output")
+    [[ -n $wall ]] && body="$wall"$'\n'"$body"
+
     notify-send --app-name=themesw --icon=preferences-desktop-theme \
         "$(head -1 <<< "$output")" \
-        "kitty, nvim, btop and any open GTK/Qt app need a restart"
+        "$body"
 else
     notify-send --app-name=themesw --icon=gtk-dialog-error \
         "Theme switch failed" "$output"

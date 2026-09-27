@@ -4,6 +4,7 @@
 Called by themesw, but usable directly:
 
     theme-apply catppuccin-mocha
+    theme-apply --no-wallpaper catppuccin-mocha
     theme-apply --list
     theme-apply --current
 
@@ -20,6 +21,10 @@ Files fall into two groups:
 
 Running apps are reloaded where that is possible; the rest need a restart and
 are listed at the end.
+
+Applying a theme also applies a wallpaper from the folder that theme names, so
+the desktop and the palette move together. See next_wallpaper for why that
+walk is round-robin rather than random, and --no-wallpaper to skip it.
 """
 
 from __future__ import annotations
@@ -65,6 +70,13 @@ THEMES_DIR = REPO / "themes"
 CONFIG = REPO / "config"
 
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "theme-current"
+
+# Where the themes' wallpapers live, and where the round-robin position is kept:
+# one small file per theme, named after the theme, holding the image it last
+# applied. A file per theme rather than one index in a single file, so a
+# filename with a space or a quote in it cannot corrupt the state.
+WALL_ROOT = HOME / "Pictures/Wallpapers"
+WALL_STATE = STATE.parent / "theme-wallpaper"
 
 # Apps whose config is a real directory rather than a symlink into the repo
 # (nvim and qt6ct write state into them), so they need copying after the repo
@@ -978,6 +990,91 @@ def patch_key(path: Path, pattern: str, value: str) -> bool:
 
 
 # --------------------------------------------------------------------------
+# wallpaper
+# --------------------------------------------------------------------------
+
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+
+
+def wallpaper_images(folder: str) -> list[Path]:
+    """Images sitting directly in a theme's wallpaper folder, in name order.
+
+    Non-recursive on purpose: a theme folder should offer the wallpapers that
+    belong to it, not everything someone once dropped in a subfolder of it.
+    Sorted by name so the walk below is in the same order every time.
+    """
+    d = WALL_ROOT / folder
+    if not d.is_dir():
+        return []
+    return sorted((p for p in d.iterdir()
+                   if p.is_file() and p.suffix.lower() in IMAGE_SUFFIXES),
+                  key=lambda p: p.name)
+
+
+def next_wallpaper(slug: str, folder: str) -> Path | None:
+    """The image after the last one this theme used, wrapping at the end.
+
+    Round-robin rather than a random pick. Two reasons, both from what the
+    folders actually hold: Nord has 207 images and Catppuccin 36, so a random
+    pick lands on the same handful over and over and most images are never
+    seen; and a random wallpaper on every theme switch cannot be reproduced,
+    which makes "what did I just change this to" unanswerable. Walking in
+    order shows every image once per lap and is predictable.
+
+    The position is remembered per theme, so switching to Nord and back picks
+    up where that theme left off rather than restarting at its first image.
+    None means the folder is missing or empty, which is not an error: the
+    caller reports it and carries on with the colours.
+    """
+    images = wallpaper_images(folder)
+    if not images:
+        return None
+
+    marker = WALL_STATE / slug
+    last = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+    names = [p.name for p in images]
+
+    if last in names:
+        chosen = images[(names.index(last) + 1) % len(images)]
+    else:
+        # First visit, or the remembered image has since been deleted or
+        # renamed: start again from the top rather than guessing.
+        chosen = images[0]
+
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(chosen.name + "\n", encoding="utf-8")
+    return chosen
+
+
+def apply_wallpaper(path: Path) -> str:
+    """Set the wallpaper with awww. Returns "" on success, else the reason.
+
+    Called through the dotfiles shim by path rather than as a bare "awww",
+    because the shim is what turns a plain image change into the expanding
+    circle, and naming it explicitly means the transition does not depend on
+    ~/.local/bin happening to be first on $PATH -- niri sets its own
+    environment for keybind spawns, and that PATH is not guaranteed to match
+    a login shell's.
+    """
+    shim = REPO / "local/bin/awww"
+    awww = str(shim) if os.access(shim, os.X_OK) else "awww"
+
+    try:
+        proc = subprocess.run(
+            [awww, "img", "--transition-duration", "1", "--", str(path)],
+            capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        return "awww timed out after 30s"
+    except (OSError, subprocess.SubprocessError) as exc:
+        return f"could not run awww ({exc})"
+
+    if proc.returncode != 0:
+        said = (proc.stderr or proc.stdout or "").strip().splitlines()
+        return f"awww exited {proc.returncode}" + (f": {said[-1]}" if said else "")
+    return ""
+
+
+# --------------------------------------------------------------------------
 # apply
 # --------------------------------------------------------------------------
 
@@ -1010,13 +1107,17 @@ def run(cmd: list) -> None:
         pass
 
 
-def apply(slug: str) -> int:
+def apply(slug: str, wallpaper: bool = True) -> int:
     p = load_palette(slug)
     p["_slug"] = slug
     camel = slug_to_camel(slug)
     written: list = []
     patched: list = []
     problems: list = []
+
+    # Read before STATE is overwritten below, so "was this already the theme
+    # in use" can still be answered when the wallpaper is chosen.
+    previous = current()
 
     def do(fn, *args):
         if fn(*args):
@@ -1108,12 +1209,42 @@ def apply(slug: str) -> int:
     if niri:
         run(["niri", "msg", "action", "load-config-file"])
 
+    # --- wallpaper ---
+    #
+    # Last, so the expanding circle plays over the palette that is already in
+    # place rather than being covered by it a moment later.
+    #
+    # Re-applying the theme that is already active deliberately leaves the
+    # wallpaper alone. themesw already refuses to re-apply the active theme,
+    # so this only comes up when theme-apply is called directly, and there the
+    # command means "make everything match this palette" -- advancing the
+    # wallpaper as well would quietly make the same command do two different
+    # things depending on the order you ran things in.
+    if not wallpaper:
+        wall_line = "  wallpaper: skipped (--no-wallpaper)"
+    elif previous == slug:
+        wall_line = "  wallpaper: left alone (that theme was already active)"
+    elif not folder:
+        wall_line = "  wallpaper: this theme names no folder"
+    else:
+        chosen = next_wallpaper(slug, folder)
+        if chosen is None:
+            wall_line = f"  wallpaper: {folder} holds no images"
+        else:
+            fault = apply_wallpaper(chosen)
+            if fault:
+                # Not added to `problems`: the colours did apply, and themesw
+                # turns a non-zero exit into a "Theme switch failed" popup that
+                # would be wrong. Same treatment as the nvim warning below.
+                wall_line = f"  wallpaper: WARNING {chosen.name} did not apply ({fault})"
+            else:
+                wall_line = f"  wallpaper: {chosen.name}  (of {folder})"
+
     print(f"{p['name']} applied.")
     print(f"  rendered {len(written)} files, patched {len(patched)}")
     if vscode_name:
         print(f"  VS Code theme: {vscode_name}")
-    if folder:
-        print(f"  wallpaper folder: {folder}")
+    print(wall_line)
     if not nvim_colorscheme_exists(p["nvim"]):
         print(f"  WARNING nvim has no colorscheme named {p['nvim']!r}. theme.lua "
               f"falls back to tokyonight, so nvim will not match the desktop. "
@@ -1149,6 +1280,10 @@ def main() -> int:
     ap.add_argument("--wallpapers-for", metavar="SLUG",
                     help="print the wallpaper folder a theme names, without "
                          "applying it")
+    ap.add_argument("--no-wallpaper", action="store_true",
+                    help="recolour the apps but leave the wallpaper alone; by "
+                         "default a theme change also applies a wallpaper from "
+                         "that theme's own folder")
     args = ap.parse_args()
 
     if args.list:
@@ -1179,7 +1314,7 @@ def main() -> int:
     if not args.theme:
         ap.error("give a theme slug, or --list / --current")
 
-    return apply(args.theme)
+    return apply(args.theme, wallpaper=not args.no_wallpaper)
 
 
 if __name__ == "__main__":
