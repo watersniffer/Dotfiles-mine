@@ -5,6 +5,10 @@
 # --- Desktop / Window Manager ---
 firefox
 niri
+# The second session. Hyprland, not a fork of niri: a conventional columns WM,
+# sharing kitty/waybar/rofi/mako/awww and all seven themes, so only the window
+# management differs. In extra, not the AUR.
+hyprland
 # Standalone lock utility used by Niri's Wlogout integration.
 swaylock
 sddm

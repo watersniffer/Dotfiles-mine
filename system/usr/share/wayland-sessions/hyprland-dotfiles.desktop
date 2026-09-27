@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Hyprland
+Comment=Hyprland session matching these dotfiles
+Exec=/home/water/.local/bin/start-hyprland
+TryExec=/home/water/.local/bin/start-hyprland
+Type=Application
+DesktopNames=Hyprland
+Keywords=tiling;wayland;compositor;hyprland;
