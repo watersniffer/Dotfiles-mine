@@ -489,7 +489,17 @@ def render_rofi_colors(p: dict) -> str:
  * the window is translucent and the desktop shows through, and the rounded
  * corners only read because config.rasi keeps every inner container
  * transparent. selectedBg and onSelected are opaque, so a selected row still
- * reads over the translucency. */
+ * reads over the translucency.
+ *
+ * The alpha values were 0.72 and 0.82, which was tuned when the blur was
+ * strong enough to dissolve whatever was behind the panel. It is not: niri
+ * 26.04's blur here is weak no matter what it is set to (see the blur block in
+ * config/niri/config.kdl -- passes 2 and 3 are pixel-identical, and offset 8
+ * and 16 differ by 326 pixels), so at 0.72 the backdrop stopped being a frosted
+ * suggestion and became a smudge that competed with the menu text. Raising the
+ * panel opacity is what actually makes it legible; 0.86 keeps the desktop
+ * visible at the edges while the list itself stays readable over anything.
+ * Lower these two together if you want more show-through. */
 * {{
     bg0     : {p['bg0']};
     bg1     : {p['bg1']};
@@ -511,8 +521,8 @@ def render_rofi_colors(p: dict) -> str:
     accent  : {p['accent']};
     urgent  : {p['urgent']};
 
-    windowBg  : rgba({r} {g} {b} / 0.72);
-    surfaceBg : rgba({r0} {g0} {b0} / 0.82);
+    windowBg  : rgba({r} {g} {b} / 0.86);
+    surfaceBg : rgba({r0} {g0} {b0} / 0.93);
     borderSoft : rgba({r3} {g3} {b3} / 0.80);
     selectedBg : {p['bg3']};
     onSelected : {p['fg0']};

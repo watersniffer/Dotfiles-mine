@@ -7,7 +7,17 @@
  * the window is translucent and the desktop shows through, and the rounded
  * corners only read because config.rasi keeps every inner container
  * transparent. selectedBg and onSelected are opaque, so a selected row still
- * reads over the translucency. */
+ * reads over the translucency.
+ *
+ * The alpha values were 0.72 and 0.82, which was tuned when the blur was
+ * strong enough to dissolve whatever was behind the panel. It is not: niri
+ * 26.04's blur here is weak no matter what it is set to (see the blur block in
+ * config/niri/config.kdl -- passes 2 and 3 are pixel-identical, and offset 8
+ * and 16 differ by 326 pixels), so at 0.72 the backdrop stopped being a frosted
+ * suggestion and became a smudge that competed with the menu text. Raising the
+ * panel opacity is what actually makes it legible; 0.86 keeps the desktop
+ * visible at the edges while the list itself stays readable over anything.
+ * Lower these two together if you want more show-through. */
 * {
     bg0     : #1e1e2e;
     bg1     : #181825;
@@ -29,8 +39,8 @@
     accent  : #cba6f7;
     urgent  : #f38ba8;
 
-    windowBg  : rgba(24 24 37 / 0.72);
-    surfaceBg : rgba(30 30 46 / 0.82);
+    windowBg  : rgba(24 24 37 / 0.86);
+    surfaceBg : rgba(30 30 46 / 0.93);
     borderSoft : rgba(69 71 90 / 0.80);
     selectedBg : #45475a;
     onSelected : #cdd6f4;

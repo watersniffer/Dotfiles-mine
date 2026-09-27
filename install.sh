@@ -283,6 +283,40 @@ symlink_dotfiles() {
         fi
     fi
 
+    # One folder per theme, named by that palette's `wallpapers = ...` key.
+    #
+    # Both wallpaper-switcher and theme-apply resolve a theme's wallpapers
+    # through that key, and wallpaper-switcher only falls back to ALL when the
+    # folder is *missing*, so without this a fresh install has no theme folders
+    # at all and every Super+W drops straight into the ALL pool.
+    #
+    # They are created empty on purpose. An empty folder is the honest state
+    # ("this theme has no wallpapers yet") and it keeps theme-apply's
+    # round-robin from quietly picking something unrelated, whereas silently
+    # filling a theme's folder from ALL would put a Nord wallpaper behind
+    # Gruvbox.
+    local palette folder
+    for palette in "$DOTFILES_DIR"/themes/*/palette.conf; do
+        [[ -f $palette ]] || continue
+        folder=$(sed -n 's/^[[:space:]]*wallpapers[[:space:]]*=[[:space:]]*//p' \
+                 "$palette" | head -1)
+        folder=${folder%%#*}                       # a trailing comment, if any
+        # Trim only the ends. These names contain spaces on purpose ("Tokyo
+        # Night", "Rosé Pine"), so deleting every space instead would create
+        # "TokyoNight" and the themes would never find their own folders.
+        folder=$(printf '%s' "$folder" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        [[ -z $folder ]] && continue
+        # A name that looks like a path is a typo, not an instruction to
+        # create it. theme-apply refuses the same value, so the two agree.
+        case $folder in
+            */*|.|..|.*)
+                warn "theme $(basename "$(dirname "$palette")"): '$folder' is not a plain folder name, skipping"
+                continue
+                ;;
+        esac
+        mkdir -p "$HOME/Pictures/Wallpapers/$folder"
+    done
+
     ok "Dotfiles linked."
 }
 
