@@ -232,7 +232,11 @@ binds {
     // Random wallpaper from ~/Pictures/Wallpapers, theme follows it.
     Mod+Ctrl+W repeat=false { spawn-sh "~/.local/bin/random-wallpaper"; }
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
-    Mod+P repeat=false { spawn "wlogout"; }
+    // Cycle the power profile: power-saver -> balanced -> performance.
+    Mod+P repeat=false { spawn-sh "~/.local/bin/powerprofile"; }
+    // The logout menu moved here when Super+P was given back to the power
+    // profiles; it used to be Super+P.
+    Mod+Shift+Q repeat=false { spawn "wlogout"; }
 
     // Index-free column jumps. Arrow keys already do left/right, so these add
     // first/last only -- no duplicated actions.

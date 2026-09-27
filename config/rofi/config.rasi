@@ -29,25 +29,27 @@ window {
     width: 500;
     y-offset: -20;
 
-    border-radius: 0px;
+    /* The rounded corners only show because every container inside is
+       transparent and the window itself is the translucent one. */
+    border-radius: 10px;
     border: 2px;
-    border-color: #2a2a2a;
+    border-color: @bg3;
 
-    background-color: rgba(22 22 22 / 0.94);
+    background-color: @windowBg;
 }
 
 /* ===== Main container ===== */
 mainbox {
     padding: 0px;
-    background-color: #161616;
+    background-color: transparent;
 }
 
 /* ===== Input bar ===== */
 inputbar {
-    background-color: #1e1e1e;
-    border-radius: 0px;
+    background-color: @surfaceBg;
+    border-radius: 8px;
     border: 1px;
-    border-color: rgba(42 42 42 / 0.8);
+    border-color: @borderSoft;
 
     padding: 8px 16px;
     spacing: 8px;
@@ -67,7 +69,7 @@ entry {
 
 /* ===== List ===== */
 listview {
-    background-color: #161616;
+    background-color: transparent;
     margin: 10px 0 0;
 
     columns: 1;
@@ -79,38 +81,38 @@ listview {
 element {
     padding: 10px 6px;
     spacing: 6px;
-    border-radius: 0px;
+    border-radius: 8px;
 
-    background-color: #161616;
+    background-color: transparent;
 }
 
 element normal.normal,
 element alternate.normal {
-    background-color: #161616;
-    text-color: #f0f0f0;
+    background-color: transparent;
+    text-color: @fg0;
 }
 
 element normal.active,
 element alternate.active {
-    background-color: #161616;
-    text-color: #ffffff;
+    background-color: @surfaceBg;
+    text-color: @fg0;
 }
 
 element normal.urgent,
 element alternate.urgent {
-    background-color: #1e1e1e;
-    text-color: #f0f0f0;
+    background-color: transparent;
+    text-color: @urgent;
 }
 
 element selected.normal,
 element selected.active {
-    background-color: #484848;
-    text-color: #ffffff;
+    background-color: @selectedBg;
+    text-color: @onSelected;
 }
 
 element selected.urgent {
-    background-color: #2a2a2a;
-    text-color: #f0f0f0;
+    background-color: @urgent;
+    text-color: @onUrgent;
 }
 
 /* ===== Icons & text ===== */
@@ -127,14 +129,14 @@ element-text {
 /* ===== Message box ===== */
 message {
     margin: 12px 0 0;
-    border-radius: 0px;
+    border-radius: 10px;
     border: 1px;
-    border-color: rgba(42 42 42 / 0.8);
+    border-color: @borderSoft;
 
-    background-color: rgba(16 16 16 / 0.92);
+    background-color: @surfaceBg;
 }
 
 textbox {
     padding: 8px 24px;
-    background-color: rgba(16 16 16 / 0.92);
+    background-color: @surfaceBg;
 }
