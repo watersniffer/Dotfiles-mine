@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a swappable palette: **Catppuccin Mocha**, **Gruvbox Dark**, **Tokyo Night**, **Rosé Pine**, **Everforest Dark**, **Nord Dark** or **E-ink**.
+My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a swappable palette: **Catppuccin Mocha**, **Gruvbox Dark**, **Tokyo Night**, **Rosé Pine**, **Everforest Dark**, **Nord Dark**, **E-ink** or **VS Code Dark Modern**.
 
 ## Contents
 
@@ -97,7 +97,8 @@ by the bar, terminal, launcher, GTK/Qt apps, nvim/lualine, fastfetch, the lock
 screen, the wallpaper picker and notifications; changing the wallpaper does not
 recolour anything. Press `Super+T` (**themesw**) to switch: it opens a rofi
 picker listing every theme with the active one marked, re-renders all of those
-files, and reloads the bar, mako and niri. Kitty, nvim, btop and any open
+files, and reloads the bar, mako and niri. The VS Code palette also writes
+`workbench.colorTheme`; the other seven leave VS Code's own setting alone. Kitty, nvim, btop and any open
 GTK/Qt app need a restart to follow. `themesw <slug>` switches without the
 picker, and adding a theme means adding one more `palette.conf`. Waybar is a floating island bar: the bar itself is
 transparent and the left, centre (mpris) and right groups are separate rounded

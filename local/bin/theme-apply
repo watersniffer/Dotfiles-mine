@@ -83,6 +83,9 @@ def die(msg: str) -> "None":
 # palettes
 # --------------------------------------------------------------------------
 
+# name, nvim, btop and vscode are identifiers or display names, not colours.
+TEXT_ROLES = ("name", "nvim", "btop", "vscode")
+
 ROLES = (
     "name", "nvim", "btop",
     "bg0", "bg1", "bg2", "bg3", "bg4",
@@ -123,13 +126,15 @@ def load_palette(slug: str) -> dict:
     # on the same line parses fine and then fails much later and silently: a
     # colorscheme that will not load just falls back, per theme.lua.
     # (name is allowed spaces -- it is a display name.)
+    # vscode is exempt: "Default Dark Modern" is a display name and has spaces,
+    # same as name. Only these two are identifiers that must not.
     for role in ("nvim", "btop"):
         if re.search(r"\s", pal[role]):
             die(f"{slug}: {role} is {pal[role]!r}, which contains whitespace -- "
                 "put any comment on its own line")
 
     for role, value in pal.items():
-        if role in ("name", "nvim", "btop"):
+        if role in TEXT_ROLES:
             continue
         if not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
             die(f"{slug}: {role} is not a #rrggbb colour ({value!r})")
@@ -169,6 +174,37 @@ def nvim_colorscheme_exists(name: str) -> bool:
         if any(c.is_file() for c in candidates):
             return True
     return False
+
+
+def set_vscode_theme(theme: str) -> bool:
+    """Write workbench.colorTheme into VS Code's user settings.
+
+    The file is JSONC and hand-edited, so it is edited as text rather than
+    round-tripped through a parser: rewriting it with json.dumps would drop the
+    user's comments and key order. A missing key is inserted before the closing
+    brace, and an existing one is replaced in place.
+    """
+    path = HOME / ".config/Code/User/settings.json"
+    if not path.is_file():
+        return False
+
+    key = '"workbench.colorTheme"'
+    line = f'  {key}: "{theme}"'
+    s = path.read_text(encoding="utf-8")
+
+    if re.search(rf"^[ \t]*{re.escape(key)}\s*:", s, re.M):
+        s = re.sub(rf"^[ \t]*{re.escape(key)}\s*:.*$", line, s, count=1, flags=re.M)
+    else:
+        # before the last closing brace
+        idx = s.rstrip().rfind("}")
+        if idx == -1:
+            return False
+        head = s[:idx].rstrip()
+        needs_comma = head.rstrip() not in ("{", "")
+        s = f"{head}{',' if needs_comma else ''}\n{line}\n{s[idx:]}\n"
+
+    path.write_text(s, encoding="utf-8")
+    return True
 
 
 def slug_to_camel(slug: str) -> str:
@@ -822,6 +858,17 @@ def apply(slug: str) -> int:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, target)
 
+    # VS Code's setting, when this palette wants to drive it. Optional: most
+    # palettes leave it alone so the editor keeps whatever the user picked.
+    vscode = p.get("vscode", "").strip()
+    if vscode:
+        if set_vscode_theme(vscode):
+            patched.append(Path("Code settings.json"))
+        else:
+            problems.append("Code/User/settings.json")
+    else:
+        vscode = None
+
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(slug + "\n", encoding="utf-8")
 
@@ -841,6 +888,8 @@ def apply(slug: str) -> int:
 
     print(f"{p['name']} applied.")
     print(f"  rendered {len(written)} files, patched {len(patched)}")
+    if vscode:
+        print(f"  VS Code workbench.colorTheme: {vscode}")
     if not nvim_colorscheme_exists(p["nvim"]):
         print(f"  WARNING nvim has no colorscheme named {p['nvim']!r}. theme.lua "
               f"falls back to tokyonight, so nvim will not match the desktop. "

@@ -156,10 +156,6 @@ window-rule {
 window-rule {
     match app-id="kitty"
     opacity 0.70
-    
-    background-effect {
-        blur true
-    }
 }
 
 
