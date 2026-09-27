@@ -209,7 +209,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout \
+    for name in niri kitty waybar rofi mako fastfetch matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -268,6 +268,40 @@ symlink_dotfiles() {
             [[ -f "$dest" ]] && chmod +x "$dest"
         done < <(find "$DOTFILES_DIR/local/bin" -type f -perm -u+x -print0)
     fi
+
+    # --- Autostart masking ---
+    #
+    # Two apps that were starting with every login and were not wanted:
+    # Mailspring (a tray client) and the GNOME alarm-clock applet, which
+    # /etc/xdg/autostart launches as `ln-clock-applet --hidden` -- hidden only in
+    # the sense that it has no visible window until you click the clock.
+    #
+    # A Hidden=true entry in ~/.config/autostart overrides the /etc/xdg one by
+    # name, per the XDG autostart spec, and is reversible by deleting the file.
+    # Masking beats deleting: the packages stay installed, and the entries come
+    # back on upgrade rather than silently vanishing.
+    mkdir -p "$HOME/.config/autostart"
+    local masked=""
+    for entry in Mailspring.desktop alarm-clock-applet.desktop; do
+        if [[ -f "$HOME/.config/autostart/$entry" ]] && \
+           grep -q '^Hidden=true' "$HOME/.config/autostart/$entry" 2>/dev/null; then
+            continue    # already masked
+        fi
+        # Only mask what would otherwise actually start, so this never creates a
+        # pointless shadow entry for a package that is not installed.
+        if [[ -f "$HOME/.config/autostart/$entry" || -f "/etc/xdg/autostart/$entry" ]]; then
+            cp -a "$HOME/.config/autostart/$entry" \
+                  "$HOME/.config/autostart/$entry.disabled" 2>/dev/null || true
+            cat > "$HOME/.config/autostart/$entry" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=Disabled by dotfiles install.sh
+Hidden=true
+DESKTOP
+            masked="$masked $entry"
+        fi
+    done
+    [[ -n "$masked" ]] && ok "autostart disabled:$masked"
 
     # --- Custom fonts ---
     mkdir -p "$HOME/.local/share/fonts"
@@ -352,18 +386,6 @@ apply_system_configs() {
             "$DOTFILES_DIR/system/usr/share/wayland-sessions/niri-dotfiles.desktop" \
             /usr/share/wayland-sessions/niri-dotfiles.desktop
         ok "Niri (Dotfiles) session installed."
-    fi
-
-    # Hyprland, the second session. Registered alongside Niri rather than
-    # instead of it: the two share kitty, waybar, rofi, mako, awww and every
-    # theme, so which one you log into changes the window management model and
-    # a dozen binds, nothing else. Both desktop files stay in
-    # /usr/share/wayland-sessions so the login screen offers a choice.
-    if [[ -f "$DOTFILES_DIR/system/usr/share/wayland-sessions/hyprland-dotfiles.desktop" ]]; then
-        sudo install -D -o root -g root -m 0644 \
-            "$DOTFILES_DIR/system/usr/share/wayland-sessions/hyprland-dotfiles.desktop" \
-            /usr/share/wayland-sessions/hyprland-dotfiles.desktop
-        ok "Hyprland session installed."
     fi
 
     # SDDM theme: pinned GitHub source, installed root-owned. The theme is

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Drop the blur/shadow/power-profile changes for the current session by asking
 # the root helper to do it. The compositor-specific part used to live here and
-# was removed with Hyprland; niri applies the same PPD profile changes through
+# was removed with its compositor; niri applies the same PPD profile changes through
 # the helper.
 ROOT_HELPER=/usr/local/sbin/dotfiles-powersave
 
