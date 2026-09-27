@@ -113,12 +113,18 @@ opens Niri's overview; numbered workspaces are dynamic and start at 1.
 
 ## Session backups
 
-Earlier states of this repo are kept on GitHub so any of them can be
-recovered at any time:
+The `backup/*` branches have been deleted from this repository. They were
+per-change snapshots, and keeping them cost more than they were worth: 14
+branches locally and on the remote, two of which held the only copy of anything
+unique. Those two commits are preserved as tags so nothing becomes unreachable:
 
-- [`backup/niri-setup`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/niri-setup) — the tuned Niri session (exact `1366x768@60.016` panel mode, touchpad workspace scrolling, hot-key overlay titles, hot corner)
-- [`backup/hyprland-setup`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/hyprland-setup) — the old Hyprland setup, kept for reference only (Hyprland is no longer installed)
-- [`backup/pre-hyprland-removal`](https://github.com/watersniffer/Dotfiles-mine/tree/backup/pre-hyprland-removal) — Niri with the wallpaper-driven theme, before Hyprland and its packages were removed
+- `backup-keep/niri-setup` — the tuned Niri session (exact `1366x768@60.016`
+  panel mode, touchpad workspace scrolling, hot-key overlay titles, hot corner)
+- `backup-keep/hyprland-setup` — the old Hyprland setup, kept for reference only
+  (Hyprland has since been removed entirely)
+
+Full history is in `main`; any earlier state can be recovered by commit hash
+from there.
 
 ## Keybinds (extra)
 

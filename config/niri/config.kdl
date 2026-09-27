@@ -188,8 +188,8 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 animations {
     workspace-switch {
         // Stiffer springs settle in fewer frames. Every animation frame is a
-        // full re-render (and a blur pass with a translucent window behind),
-        // so fewer frames is both smoother-looking and cheaper.
+        // full re-render, so fewer frames is both smoother-looking and cheaper
+        // on an HD 520. (No blur pass any more -- that was removed.)
         spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
     }
     window-open {
