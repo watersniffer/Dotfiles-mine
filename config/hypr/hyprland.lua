@@ -307,10 +307,10 @@ hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
 -- --- monitors (niri: Mod+Alt+arrows) ---
-hl.bind(mainMod .. " + alt + left", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_left"))
-hl.bind(mainMod .. " + alt + right", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_right"))
-hl.bind(mainMod .. " + alt + up", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_up"))
-hl.bind(mainMod .. " + alt + down", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_down"))
+hl.bind(mainMod .. " + ALT + left", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_left"))
+hl.bind(mainMod .. " + ALT + right", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_right"))
+hl.bind(mainMod .. " + ALT + up", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_up"))
+hl.bind(mainMod .. " + ALT + down", hl.dsp.exec_cmd("hyprctl dispatch movefocus mon_down"))
 
 -- --- drag and resize with the mouse ---
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
@@ -325,7 +325,7 @@ hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd(home .. "/.local/bin/wallpaper
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(home .. "/.local/bin/toggle-waybar"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(
     "cliphist list | rofi -dmenu -theme " .. home .. "/.config/rofi/config.rasi | cliphist decode | wl-copy"))
-hl.bind("SUPER + alt + L", hl.dsp.exec_cmd("swaylock -C " .. home .. "/.config/niri/lock.conf -f"))
+hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd("swaylock -C " .. home .. "/.config/niri/lock.conf -f"))
 -- niri: Mod+S opens the overview. Here the scratchpad is the closer everyday
 -- equivalent, and it is the one Hyprland's own default config binds to Super+S.
 hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
@@ -340,7 +340,7 @@ hl.bind("CTRL + Print", hl.dsp.exec_cmd("grim - | wl-copy"))
 -- of this one bind, which is why it gets its own key rather than sharing
 -- Print's path. Long-bracket string so the nested quoting stays readable.
 local winRegion = [==[grim -g "$(hyprctl -j activewindow | jq -r '"\(.size[0])x\(.size[1])+\(.at[0])+\(.at[1])"')" - | wl-copy]==]
-hl.bind("alt + Print", hl.dsp.exec_cmd(winRegion))
+hl.bind("ALT + Print", hl.dsp.exec_cmd(winRegion))
 
 -- --- volume, brightness and media.
 -- XF86 keys carry no modifier, so the key string is just the key name -- there
