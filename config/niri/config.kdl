@@ -68,7 +68,7 @@ layout {
 
         active-color "#cba6f7"
 
-        inactive-color "#cba6f7"
+        inactive-color "#6c7086"
     }
 
     border {
@@ -82,7 +82,7 @@ layout {
 
         active-color "#cba6f7"
 
-        inactive-color "#45475a"
+        inactive-color "#6c7086"
     }
 
     shadow {
@@ -90,7 +90,7 @@ layout {
         softness 7
         spread 0
         offset x=0 y=3
-        color "#11111b99"
+        color "#1e1e2e99"
     }
 
     // Waybar is a layer-shell panel and reserves its own top zone; adding
@@ -145,12 +145,23 @@ cursor {
 
 window-rule {
     opacity 0.90
+
+    geometry-corner-radius 10
+
+    background-effect {
+        blur true
+    }
 }
 
 window-rule {
     match app-id="kitty"
     opacity 0.70
+    
+    background-effect {
+        blur true
+    }
 }
+
 
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
@@ -213,6 +224,9 @@ binds {
 
     Mod+Space repeat=false { spawn "rofi" "-show" "drun"; }
     Mod+Comma repeat=false { spawn "smile"; }
+    // Theme picker. themesw re-renders every app's colours from
+    // themes/<slug>/palette.conf, then reloads the bar, mako and niri.
+    Mod+T repeat=false { spawn-sh "~/.local/bin/themesw"; }
     Mod+C repeat=false { spawn-sh "cliphist list | rofi -dmenu -theme ~/.config/rofi/config.rasi | cliphist decode | wl-copy"; }
     Mod+W repeat=false { spawn "matuwall"; }
     // Random wallpaper from ~/Pictures/Wallpapers, theme follows it.

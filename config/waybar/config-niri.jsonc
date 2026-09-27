@@ -1,7 +1,9 @@
 {
-  // Reload the stylesheet in place when colours.css changes, so editing the
-  // palette never makes the bar blink out and come back.
-  "reload_style_on_change": true,
+  // Off deliberately. It reloads the bar's style whenever style.css changes,
+  // and under niri that style reload drops the bar onto the Bottom layer,
+  // where every window covers it. Editing the palette is not lost either way:
+  // themesw sends SIGUSR2, which re-reads the stylesheet and keeps the layer.
+  "reload_style_on_change": false,
   "layer": "top",
   "position": "top",
   "spacing": 5,

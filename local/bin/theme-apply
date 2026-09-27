@@ -1,0 +1,835 @@
+#!/usr/bin/env python3
+"""Apply a desktop theme from themes/<slug>/palette.conf to every app.
+
+Called by themesw, but usable directly:
+
+    theme-apply catppuccin-mocha
+    theme-apply --list
+    theme-apply --current
+
+Each theme is one palette.conf holding generic roles (bg0..bg4, fg0..fg3 and
+the eight accents). Everything an app needs is rendered from that, so adding a
+theme means adding one file and nothing else.
+
+Files fall into two groups:
+
+  rendered   the file is pure palette, so it is rewritten in full
+  patched    the file also holds content we must not touch (icon URLs, module
+             lists, the user's compositor settings), so only its colour
+             properties are substituted in place
+
+Running apps are reloaded where that is possible; the rest need a restart and
+are listed at the end.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+
+
+def find_repo() -> Path:
+    """Locate the dotfiles checkout.
+
+    install.sh *copies* local/bin into ~/.local/bin rather than symlinking it,
+    so walking up from this file only works when the script is run out of the
+    repo. Try the env override, then the path, then the usual clone location,
+    and accept the first candidate that really looks like the checkout.
+    """
+    candidates = []
+    if os.environ.get("DOTFILES_DIR"):
+        candidates.append(Path(os.environ["DOTFILES_DIR"]))
+    candidates.extend(SCRIPT_PATH.parents)
+    candidates.append(HOME / "Dotfiles-mine")
+    candidates.append(HOME / "dotfiles")
+
+    for cand in candidates:
+        if (cand / "themes").is_dir() and (cand / "config").is_dir():
+            return cand
+    die("cannot find the dotfiles checkout (looked for themes/ and config/ in: "
+        + ", ".join(str(c) for c in candidates[:6]) + ", ...). "
+        "Set DOTFILES_DIR to the checkout.")
+
+
+SCRIPT_PATH = Path(os.path.realpath(__file__))
+REPO = find_repo()
+THEMES_DIR = REPO / "themes"
+CONFIG = REPO / "config"
+
+STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "theme-current"
+
+# Apps whose config is a real directory rather than a symlink into the repo
+# (nvim and qt6ct write state into them), so they need copying after the repo
+# files are written.
+MIRRORED = {
+    "nvim": CONFIG / "nvim",
+    "qt6ct": CONFIG / "qt6ct",
+}
+
+
+def die(msg: str) -> "None":
+    print(f"theme-apply: {msg}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+# --------------------------------------------------------------------------
+# palettes
+# --------------------------------------------------------------------------
+
+ROLES = (
+    "name", "nvim", "btop",
+    "bg0", "bg1", "bg2", "bg3", "bg4",
+    "fg0", "fg1", "fg2", "fg3",
+    "red", "green", "yellow", "blue", "magenta", "cyan", "orange",
+    "accent", "on_accent", "urgent",
+)
+
+
+def list_themes() -> list[Path]:
+    if not THEMES_DIR.is_dir():
+        return []
+    return sorted(p for p in THEMES_DIR.iterdir() if (p / "palette.conf").is_file())
+
+
+def load_palette(slug: str) -> dict:
+    path = THEMES_DIR / slug / "palette.conf"
+    if not path.is_file():
+        known = ", ".join(p.name for p in list_themes()) or "none"
+        die(f"no theme '{slug}' (have: {known})")
+
+    pal: dict = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        # Only whole-line comments: every value is a #rrggbb colour, so
+        # stripping from the first # would eat the value itself.
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        pal[key.strip()] = value.strip()
+
+    missing = [r for r in ROLES if r not in pal]
+    if missing:
+        die(f"{slug}: palette.conf is missing {', '.join(missing)}")
+
+    for role, value in pal.items():
+        if role in ("name", "nvim", "btop"):
+            continue
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+            die(f"{slug}: {role} is not a #rrggbb colour ({value!r})")
+    return pal
+
+
+def rgb(hex_color: str) -> tuple[int, int, int]:
+    h = hex_color.lstrip("#")
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def rgba(hex_color: str, alpha: float) -> str:
+    r, g, b = rgb(hex_color)
+    return f"rgba({r}, {g}, {b}, {alpha:g})"
+
+
+def qt(hex_color: str) -> str:
+    """qt6ct colours are #aarrggbb."""
+    r, g, b = rgb(hex_color)
+    return f"#ff{r:02x}{g:02x}{b:02x}"
+
+
+def slug_to_camel(slug: str) -> str:
+    return "".join(part.capitalize() for part in re.split(r"[-_]", slug))
+
+
+# --------------------------------------------------------------------------
+# rendered files: pure palette, rewritten in full
+# --------------------------------------------------------------------------
+
+def render_waybar_colors(p: dict) -> str:
+    return f"""/* {p['name']}. Generated by theme-apply from themes/{p['_slug']}/palette.conf --
+   edit the palette, not this file.
+
+   bg0..bg4 and fg0..fg3 are the generic roles; the names after @define-color
+   are the ones style.css references. */
+
+@define-color base {p['bg0']};
+@define-color bg1 {p['bg1']};
+@define-color bg2 {p['bg2']};
+@define-color bg3 {p['bg3']};
+@define-color bg4 {p['bg4']};
+
+@define-color text {p['fg0']};
+@define-color subtext {p['fg1']};
+@define-color overlay2 {p['fg2']};
+@define-color overlay0 {p['fg3']};
+
+/* The bar itself is transparent (see style.css) and the module islands paint
+   these, so the alpha is baked in. */
+@define-color island {rgba(p['bg1'], 0.85)};
+@define-color island_hover {rgba(p['bg2'], 0.9)};
+
+/* The names style.css actually references. */
+@define-color bg {p['bg1']};
+@define-color fg {p['fg0']};
+@define-color ws_inactive {p['bg3']};
+@define-color ws_active {p['accent']};
+@define-color hover {p['bg2']};
+@define-color urgent {p['urgent']};
+@define-color tooltip_bg {p['bg0']};
+@define-color tooltip_border {p['bg3']};
+@define-color battery_warn {p['yellow']};
+@define-color battery_crit {p['urgent']};
+@define-color cpucat {p['cyan']};
+"""
+
+
+def render_rofi_colors(p: dict) -> str:
+    return f"""/* {p['name']}. Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf. */
+* {{
+    bg0     : {p['bg0']};
+    bg1     : {p['bg1']};
+    bg2     : {p['bg2']};
+    bg3     : {p['bg3']};
+
+    fg0     : {p['fg0']};
+    fg1     : {p['fg1']};
+    fg2     : {p['fg2']};
+
+    red     : {p['red']};
+    green   : {p['green']};
+    yellow  : {p['yellow']};
+    blue    : {p['blue']};
+    magenta : {p['magenta']};
+    cyan    : {p['cyan']};
+
+    accent  : {p['accent']};
+    urgent  : {p['urgent']};
+}}
+"""
+
+
+def render_kitty(p: dict) -> str:
+    return f"""# vim:ft=kitty
+# {p['name']}. Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf.
+
+background                {p['bg0']}
+foreground                {p['fg0']}
+selection_background      {p['bg4']}
+selection_foreground      {p['fg0']}
+url_color                 {p['blue']}
+cursor                    {p['fg0']}
+cursor_text_color         {p['bg0']}
+
+# Tabs
+active_tab_background     {p['accent']}
+active_tab_foreground     {p['on_accent']}
+inactive_tab_background   {p['bg2']}
+inactive_tab_foreground   {p['fg1']}
+
+# Windows
+active_border_color       {p['accent']}
+inactive_border_color     {p['bg3']}
+
+# Marks
+mark1_background          {p['accent']}
+mark2_background          {p['blue']}
+mark3_background          {p['green']}
+
+# Normal
+color0  {p['bg3']}
+color1  {p['red']}
+color2  {p['green']}
+color3  {p['yellow']}
+color4  {p['blue']}
+color5  {p['magenta']}
+color6  {p['cyan']}
+color7  {p['fg1']}
+
+# Bright
+color8  {p['bg4']}
+color9  {p['red']}
+color10 {p['green']}
+color11 {p['yellow']}
+color12 {p['blue']}
+color13 {p['magenta']}
+color14 {p['cyan']}
+color15 {p['fg0']}
+
+# Extended
+color16 {p['fg3']}
+color17 {p['red']}
+"""
+
+
+def render_gtk_colors(p: dict) -> str:
+    return f"""/* {p['name']}. Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf. */
+
+@define-color accent_bg_color {p['bg3']};
+@define-color accent_color {p['blue']};
+@define-color accent_fg_color {p['on_accent']};
+
+@define-color window_bg_color {p['bg0']};
+@define-color window_fg_color {p['fg0']};
+
+@define-color view_bg_color {p['bg1']};
+@define-color view_fg_color {p['fg0']};
+
+@define-color headerbar_bg_color {p['bg1']};
+@define-color headerbar_fg_color {p['fg0']};
+
+@define-color card_bg_color {p['bg2']};
+@define-color card_fg_color {p['fg0']};
+
+@define-color popover_bg_color {p['bg1']};
+@define-color popover_fg_color {p['fg0']};
+
+@define-color dialog_bg_color {p['bg2']};
+@define-color dialog_fg_color {p['fg0']};
+
+@define-color sidebar_bg_color {p['bg1']};
+@define-color sidebar_fg_color {p['fg0']};
+
+@define-color destructive_bg_color {p['urgent']};
+@define-color destructive_fg_color {p['on_accent']};
+@define-color destructive_color {p['urgent']};
+
+@define-color error_bg_color {p['urgent']};
+@define-color error_fg_color {p['on_accent']};
+@define-color error_color {p['urgent']};
+
+@define-color success_bg_color {p['green']};
+@define-color success_fg_color {p['on_accent']};
+@define-color success_color {p['green']};
+
+@define-color warning_bg_color {p['yellow']};
+@define-color warning_fg_color {p['on_accent']};
+@define-color warning_color {p['yellow']};
+"""
+
+
+def render_qt6ct(p: dict) -> str:
+    """qt6ct serialises the palette in Qt's QPalette::ColorRole order."""
+    order = [
+        ("Window", p["bg1"]), ("WindowText", p["fg0"]),
+        ("Base", p["bg0"]), ("AlternateBase", p["bg2"]),
+        ("ToolTipBase", p["bg0"]), ("ToolTipText", p["fg0"]),
+        ("Text", p["fg0"]), ("Button", p["bg2"]),
+        ("ButtonText", p["fg0"]), ("BrightText", p["fg0"]),
+        ("Highlight", p["blue"]), ("HighlightedText", p["on_accent"]),
+        ("Link", p["cyan"]), ("LinkVisited", p["magenta"]),
+        ("Light", p["bg3"]), ("Midlight", p["bg4"]),
+        ("Dark", p["bg0"]), ("Shadow", p["bg0"]),
+        ("PlaceholderText", p["fg3"]),
+        ("Accent", p["accent"]), ("AccentText", p["on_accent"]),
+    ]
+    inactive = [
+        ("Window", p["bg1"]), ("WindowText", p["fg1"]),
+        ("Base", p["bg0"]), ("AlternateBase", p["bg2"]),
+        ("ToolTipBase", p["bg0"]), ("ToolTipText", p["fg1"]),
+        ("Text", p["fg1"]), ("Button", p["bg2"]),
+        ("ButtonText", p["fg1"]), ("BrightText", p["fg1"]),
+        ("Highlight", p["bg3"]), ("HighlightedText", p["fg0"]),
+        ("Link", p["fg3"]), ("LinkVisited", p["fg3"]),
+        ("Light", p["bg3"]), ("Midlight", p["bg4"]),
+        ("Dark", p["bg0"]), ("Shadow", p["bg0"]),
+        ("PlaceholderText", p["fg3"]),
+        ("Accent", p["fg3"]), ("AccentText", p["fg0"]),
+    ]
+    disabled = [
+        ("Window", p["bg1"]), ("WindowText", p["fg3"]),
+        ("Base", p["bg0"]), ("AlternateBase", p["bg2"]),
+        ("ToolTipBase", p["bg0"]), ("ToolTipText", p["fg3"]),
+        ("Text", p["fg3"]), ("Button", p["bg2"]),
+        ("ButtonText", p["fg3"]), ("BrightText", p["fg3"]),
+        ("Highlight", p["bg3"]), ("HighlightedText", p["fg0"]),
+        ("Link", p["fg3"]), ("LinkVisited", p["fg3"]),
+        ("Light", p["bg3"]), ("Midlight", p["bg4"]),
+        ("Dark", p["bg0"]), ("Shadow", p["bg0"]),
+        ("PlaceholderText", p["fg3"]),
+        ("Accent", p["fg3"]), ("AccentText", p["fg0"]),
+    ]
+
+    def row(pairs: list) -> str:
+        return ", ".join(qt(c) for _, c in pairs)
+
+    names = ", ".join(n for n, _ in order)
+    return f"""[ColorScheme]
+# {p['name']}. Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf.
+#
+# qt6ct serialises the arrays in Qt's QPalette::ColorRole order:
+#   {names}
+active_colors={row(order)}
+inactive_colors={row(inactive)}
+disabled_colors={row(disabled)}
+"""
+
+
+def render_mako(p: dict) -> str:
+    return f"""# {p['name']}. Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf.
+font=Open Sans 9
+background-color={p['bg0']}
+text-color={p['fg0']}
+border-color={p['accent']}
+border-size=2
+border-radius=10
+padding=12
+margin=8
+default-timeout=5000
+width=360
+icons=1
+max-icon-size=64
+text-alignment=left
+
+[urgency=low]
+background-color={p['bg1']}
+text-color={p['fg2']}
+border-color={p['bg2']}
+default-timeout=4000
+
+[urgency=normal]
+background-color={p['bg0']}
+text-color={p['fg0']}
+border-color={p['accent']}
+default-timeout=6000
+
+[urgency=critical]
+background-color={p['bg1']}
+text-color={p['fg0']}
+border-color={p['urgent']}
+"""
+
+
+def render_wlogout(p: dict) -> str:
+    """Full render: the only non-palette content is the fixed icon paths."""
+    icons = {
+        "lock": "lock.png",
+        "logout": "logout.png",
+        "suspend": "suspend.png",
+        "hibernate": "hibernate.png",
+        "shutdown": "shutdown.png",
+        "reboot": "reboot.png",
+    }
+    rules = "\n".join(
+        f"""  #{name} {{
+      background-image: image(url("/usr/share/wlogout/icons/{file}"), url("/usr/local/share/wlogout/icons/{file}"));
+  }}"""
+        for name, file in icons.items()
+    )
+    return f"""/* {p['name']} Wlogout theme.
+   Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf. */
+* {{
+    background-image: none;
+    box-shadow: none;
+}}
+
+window {{
+    background-color: {rgba(p['bg1'], 0.96)};
+}}
+
+button {{
+    border-radius: 10px;
+    border-color: {p['bg3']};
+    text-decoration-color: {p['fg0']};
+    color: {p['fg0']};
+    background-color: {p['bg1']};
+    border-style: solid;
+    border-width: 1px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 25%;
+}}
+
+button:focus,
+button:active,
+button:hover {{
+    background-color: {p['bg2']};
+    color: {p['accent']};
+    outline-style: none;
+}}
+
+{rules}
+"""
+
+
+def render_lock(p: dict) -> str:
+    return f"""# {p['name']} lock screen used by Niri.
+# Generated by theme-apply -- edit themes/{p['_slug']}/palette.conf.
+font=JetBrainsMono Nerd Font
+color={p['bg0']}
+text-color={p['fg0']}
+indicator-radius=5
+indicator-thickness=2
+inside-color={p['bg2']}
+line-color={p['accent']}
+ring-color={p['accent']}
+"""
+
+
+def render_btop(p: dict) -> str:
+    return f"""# {p['name']} theme for btop++. Generated by theme-apply --
+# edit themes/{p['_slug']}/palette.conf.
+
+# Main background, empty for terminal default
+theme[main_bg]="{p['bg0']}"
+
+# Main text color
+theme[main_fg]="{p['fg0']}"
+
+# Title color for boxes
+theme[title]="{p['fg0']}"
+
+# Highlight color for keyboard shortcuts
+theme[hi_fg]="{p['accent']}"
+
+# Background color of selected item in processes box
+theme[selected_bg]="{p['bg3']}"
+
+# Foreground color of selected item in processes box
+theme[selected_fg]="{p['fg0']}"
+
+# Color of inactive/disabled text
+theme[inactive_fg]="{p['fg3']}"
+
+# Colors for cpu box
+theme[cpu_box]="{p['blue']}"
+theme[cpu_bar]="{p['blue']}"
+theme[cpu_text]="{p['fg0']}"
+
+# Colors for mem box
+theme[mem_box]="{p['magenta']}"
+theme[mem_bar]="{p['magenta']}"
+theme[mem_text]="{p['fg0']}"
+theme[mem_cache]="{p['bg3']}"
+
+# Colors for net box
+theme[net_box]="{p['cyan']}"
+theme[net_text]="{p['fg0']}"
+theme[net_up]="{p['green']}"
+theme[net_down]="{p['blue']}"
+
+# Colors for processes box
+theme[proc_box]="{p['cyan']}"
+theme[proc_misc]="{p['fg3']}"
+theme[proc_bar]="{p['blue']}"
+theme[proc_bar_bg]="{p['bg2']}"
+theme[proc_text]="{p['fg0']}"
+
+# Colors for gpu box
+theme[gpu_box]="{p['magenta']}"
+theme[gpu_text]="{p['fg0']}"
+
+# Colors for temp box
+theme[temp_box]="{p['yellow']}"
+theme[temp_text]="{p['fg0']}"
+theme[temp_start]="{p['green']}"
+theme[temp_mid]="{p['yellow']}"
+theme[temp_end]="{p['urgent']}"
+
+# Colors for fan box
+theme[fan_box]="{p['cyan']}"
+theme[fan_text]="{p['fg0']}"
+theme[fan_speed]="{p['fg0']}"
+theme[fan_start]="{p['green']}"
+theme[fan_mid]="{p['yellow']}"
+theme[fan_end]="{p['urgent']}"
+"""
+
+
+def render_lualine_table(p: dict, indent: str = "\t\t") -> str:
+    rows = [
+        ("base", p["bg0"]), ("mantle", p["bg1"]), ("crust", p["bg0"]),
+        ("surface0", p["bg2"]), ("overlay0", p["fg3"]), ("text", p["fg0"]),
+        ("subtext0", p["fg1"]), ("accent", p["accent"]),
+        ("green", p["green"]), ("orange", p["yellow"]),
+        ("yellow", p["yellow"]), ("red", p["urgent"]), ("blue", p["blue"]),
+    ]
+    body = "".join(f'{indent}\t{k} = "{v}",\n' for k, v in rows)
+    return f"{indent}local colors = {{\n{body}{indent}}}"
+
+
+# --------------------------------------------------------------------------
+# patched files: only their colour properties change
+# --------------------------------------------------------------------------
+
+def patch_gtk4_root(path: Path, p: dict) -> bool:
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+    wanted = {
+        "--window-bg-color": p["bg0"],
+        "--window-fg-color": p["fg0"],
+        "--accent-bg-color": p["bg3"],
+        "--accent-color": p["blue"],
+        "--accent-fg-color": p["on_accent"],
+    }
+    for name, value in wanted.items():
+        s, n = re.subn(rf"({re.escape(name)}\s*:\s*)#[0-9a-fA-F]{{6}}",
+                       rf"\g<1>{value}", s)
+        if n == 0:
+            return False
+    path.write_text(s, encoding="utf-8")
+    return True
+
+
+def patch_fastfetch(path: Path, p: dict) -> bool:
+    """Recolour fastfetch's config in place.
+
+    This file is a module list, not a palette: the logo source, the "break"
+    separators, the per-module types and keyWidth all have to survive, so only
+    the colour values are substituted. It also has to stay strict JSON --
+    fastfetch's own parser rejects // comments despite the .jsonc name.
+    """
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+
+    # The logo's eight-colour ramp, keyed "1".."8".
+    ramp = [p["accent"], p["urgent"], p["orange"], p["yellow"],
+            p["green"], p["cyan"], p["blue"], p["magenta"]]
+    for i, colour in enumerate(ramp, start=1):
+        s, n = re.subn(rf'("{i}"\s*:\s*)"#[0-9a-fA-F]{{6}}"',
+                       rf'\g<1>"{colour}"', s)
+        if n == 0:
+            return False
+
+    # keyColor tints the module's label, color its value.
+    for key, colour in (("keyColor", p["blue"]), ("color", p["fg0"])):
+        s, n = re.subn(rf'("{key}"\s*:\s*)"#[0-9a-fA-F]{{6}}"',
+                       rf'\g<1>"{colour}"', s)
+        if n == 0:
+            return False
+
+    path.write_text(s, encoding="utf-8")
+    return True
+
+
+def patch_matuwall(path: Path, p: dict) -> bool:
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+    wanted = {
+        "tile": p["bg0"] + "ff",
+        "border": p["bg3"] + "ff",
+        "shadow": p["bg0"] + "99",
+        "ring": p["accent"] + "ff",
+        "spinner": p["cyan"] + "ff",
+    }
+    for key, value in wanted.items():
+        s, n = re.subn(rf'(?m)^{key} = "#[0-9a-fA-F]{{8}}"',
+                       f'{key} = "{value}"', s)
+        if n == 0:
+            return False
+    path.write_text(s, encoding="utf-8")
+    return True
+
+
+def patch_niri_effects(path: Path, p: dict) -> bool:
+    """Recolour the focus ring, border and shadow in place.
+
+    The on/off state, widths and shadow metrics are the user's, not the
+    theme's, so only the colour values are touched. The patterns are anchored
+    to the start of a line so that active-color/inactive-color are not matched
+    by the bare `color` rule.
+    """
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+
+    rules = [
+        (r'(?m)^(\s*)active-color "#[0-9a-fA-F]{6}"',
+         rf'\g<1>active-color "{p["accent"]}"'),
+        (r'(?m)^(\s*)inactive-color "#[0-9a-fA-F]{6}"',
+         rf'\g<1>inactive-color "{p["fg3"]}"'),
+        (r'(?m)^(\s*)color "#[0-9a-fA-F]{8}"',
+         rf'\g<1>color "{p["bg0"]}99"'),
+    ]
+    for pattern, repl in rules:
+        s, n = re.subn(pattern, repl, s)
+        if n == 0:
+            return False
+    path.write_text(s, encoding="utf-8")
+    return True
+
+
+def patch_lualine(path: Path, p: dict) -> bool:
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+    new, n = re.subn(
+        r"(?m)^([ \t]*)local colors = \{.*?^[ \t]*\}",
+        lambda m: render_lualine_table(p, m.group(1)),
+        s, count=1, flags=re.S)
+    if n != 1:
+        return False
+    path.write_text(new, encoding="utf-8")
+    return True
+
+
+def patch_key(path: Path, pattern: str, value: str) -> bool:
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+    new, n = re.subn(pattern, value, s, count=1, flags=re.M)
+    if n != 1:
+        return False
+    path.write_text(new, encoding="utf-8")
+    return True
+
+
+# --------------------------------------------------------------------------
+# apply
+# --------------------------------------------------------------------------
+
+def write(path: Path, text: str, written: list) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    written.append(path)
+
+
+def mirror(app: str, written: list) -> None:
+    """Copy a repo config dir to its real (non-symlinked) live counterpart."""
+    src, dst = MIRRORED[app], HOME / ".config" / app
+    if not dst.is_dir():
+        return
+    for path in written:
+        try:
+            rel = path.relative_to(src)
+        except ValueError:
+            continue
+        target = dst / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
+
+
+def run(cmd: list) -> None:
+    try:
+        subprocess.run(cmd, check=False, timeout=10,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def apply(slug: str) -> int:
+    p = load_palette(slug)
+    p["_slug"] = slug
+    camel = slug_to_camel(slug)
+    written: list = []
+    patched: list = []
+    problems: list = []
+
+    def do(fn, *args):
+        if fn(*args):
+            patched.append(args[0])
+        else:
+            problems.append(str(args[0].relative_to(REPO)))
+
+    # --- rendered ---
+    kitty = render_kitty(p)
+    write(CONFIG / "waybar/colors.css", render_waybar_colors(p), written)
+    write(CONFIG / "rofi/colors.rasi", render_rofi_colors(p), written)
+    write(CONFIG / "kitty/current-theme.conf", kitty, written)
+    write(CONFIG / f"kitty/themes/{slug}.conf", kitty, written)
+    write(CONFIG / "gtk-3.0/colors.css", render_gtk_colors(p), written)
+    write(CONFIG / "gtk-4.0/colors.css", render_gtk_colors(p), written)
+    write(CONFIG / f"qt6ct/colors/{camel}.conf", render_qt6ct(p), written)
+    write(CONFIG / "mako/config", render_mako(p), written)
+    write(CONFIG / "wlogout/style.css", render_wlogout(p), written)
+    write(CONFIG / "niri/lock.conf", render_lock(p), written)
+    write(CONFIG / f"btop/themes/{p['btop']}.theme", render_btop(p), written)
+
+    # --- patched ---
+    do(patch_gtk4_root, CONFIG / "gtk-4.0/gtk.css", p)
+    do(patch_matuwall, CONFIG / "matuwall/config.toml", p)
+    do(patch_fastfetch, CONFIG / "fastfetch/config.jsonc", p)
+    do(patch_niri_effects, CONFIG / "niri/config.kdl", p)
+    do(patch_lualine, CONFIG / "nvim/lua/plugins/lualine.lua", p)
+    do(patch_key, CONFIG / "nvim/current-theme.txt", r"^.*$", p["nvim"])
+    do(patch_key, CONFIG / "btop/btop.conf",
+       r'^color_theme = ".*"$', f'color_theme = "{p["btop"]}"')
+    do(patch_key, CONFIG / "qt6ct/qt6ct.conf",
+       r"^color_scheme_path=.*$",
+       f"color_scheme_path=~/.config/qt6ct/colors/{camel}.conf")
+
+    # --- mirror to the real (non-symlinked) config dirs ---
+    mirror("nvim", written)
+    mirror("qt6ct", written)
+    for path in patched:
+        for app, src in MIRRORED.items():
+            try:
+                rel = path.relative_to(src)
+            except ValueError:
+                continue
+            target = HOME / ".config" / app / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text(slug + "\n", encoding="utf-8")
+
+    # --- reload what can be reloaded ---
+    #
+    # SIGUSR2 (reload config), not SIGUSR1 (reload style): under niri a
+    # SIGUSR1 drops the bar onto the Bottom layer, where any window covers
+    # it. SIGUSR2 re-reads the stylesheet and its @import of colors.css and
+    # leaves the bar on the Top layer.
+    run(["pkill", "-USR2", "-x", "waybar"])
+    run(["pkill", "-x", "mako"])                      # config is startup-only
+    subprocess.Popen(["mako"], stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+    niri = os.environ.get("NIRI_SOCKET")
+    if niri:
+        run(["niri", "msg", "action", "load-config-file"])
+
+    print(f"{p['name']} applied.")
+    print(f"  rendered {len(written)} files, patched {len(patched)}")
+    if problems:
+        print("  NOT patched (pattern not found): " + ", ".join(problems))
+    print("  reloaded: waybar, mako, niri")
+    print("  need a restart to pick it up: kitty, nvim, btop, "
+          "and any running GTK/Qt app")
+    return 1 if problems else 0
+
+
+def current() -> str:
+    if STATE.is_file():
+        slug = STATE.read_text(encoding="utf-8").strip()
+        if (THEMES_DIR / slug / "palette.conf").is_file():
+            return slug
+    return ""
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(
+        prog="theme-apply",
+        description="Apply a desktop theme from themes/<slug>/palette.conf")
+    ap.add_argument("theme", nargs="?",
+                    help="theme slug, e.g. catppuccin-mocha")
+    ap.add_argument("--list", action="store_true", help="list theme slugs")
+    ap.add_argument("--current", action="store_true",
+                    help="print the current theme slug")
+    args = ap.parse_args()
+
+    if args.list:
+        for d in list_themes():
+            pal = load_palette(d.name)
+            marker = " *" if d.name == current() else ""
+            print(f"{d.name:20} {pal['name']}{marker}")
+        return 0
+
+    if args.current:
+        print(current())
+        return 0
+
+    if not args.theme:
+        ap.error("give a theme slug, or --list / --current")
+
+    return apply(args.theme)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

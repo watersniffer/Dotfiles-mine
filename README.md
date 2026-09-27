@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a fixed **Catppuccin Mocha** palette.
+My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a swappable palette (**Catppuccin Mocha**, **Gruvbox Dark** or **Tokyo Night**).
 
 ## Contents
 
@@ -92,10 +92,14 @@ Niri is the only session. The installer registers it with SDDM as
 
 The session uses the Kitty terminal, Rofi launcher, Waybar, Mako
 notifications, the Matuwall/awww wallpaper picker and Wlogout. The palette is a
-fixed **Catppuccin Mocha** set (base `#1e1e2e`, mauve accent `#cba6f7`) shared
+palette is defined once per theme in `themes/<slug>/palette.conf` and shared
 by the bar, terminal, launcher, GTK/Qt apps, nvim/lualine, fastfetch, the lock
 screen, the wallpaper picker and notifications; changing the wallpaper does not
-recolour anything. Waybar is a floating island bar: the bar itself is
+recolour anything. Press `Super+T` (**themesw**) to switch: it opens a rofi
+picker listing every theme with the active one marked, re-renders all of those
+files, and reloads the bar, mako and niri. Kitty, nvim, btop and any open
+GTK/Qt app need a restart to follow. `themesw <slug>` switches without the
+picker, and adding a theme means adding one more `palette.conf`. Waybar is a floating island bar: the bar itself is
 transparent and the left, centre (mpris) and right groups are separate rounded
 pills with gaps between them, 35px tall. Windows get 10px rounded corners, no
 border, an x-ray blur and spring animations. `swaylock` is Niri's lock-screen backend; the Sway

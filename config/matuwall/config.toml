@@ -41,6 +41,6 @@ height = 146
 [colors]
 tile = "#1e1e2eff"
 border = "#45475aff"
-shadow = "#11111b99"
+shadow = "#1e1e2e99"
 ring = "#cba6f7ff"
-spinner = "#89dcebff"
+spinner = "#94e2d5ff"
