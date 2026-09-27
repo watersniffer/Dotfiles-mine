@@ -34,7 +34,10 @@
     "clock"
   ],
   "hyprland/workspaces": {
-    "format": "{value}"
+    // {id} is the workspace number, {name} whatever it is called. There is no
+    // {value} in this module -- that is niri/workspaces, and the two modules
+    // do not share a placeholder set, so carrying it over rendered nothing.
+    "format": "{id}"
   },
 
   "custom/media": {

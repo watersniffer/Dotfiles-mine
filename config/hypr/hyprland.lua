@@ -137,6 +137,17 @@ hl.config({
         resize_on_border = false,
         allow_tearing = false,
         layout = "dwindle",
+
+        -- THEME (accent) — niri's focus-ring colour, and (fg3) the inactive
+        -- one. These live INSIDE general, not beside it: in the lua config the
+        -- border colours are general.col.*, and a top-level `col = {}` is
+        -- rejected as an unknown key. border_size is 0 so nothing is drawn;
+        -- these are what a layout that does draw a border would use, and they
+        -- are what theme-apply rewrites.
+        col = {
+            active_border = "rgba(cba6f7ff)",     -- THEME (accent)
+            inactive_border = "rgba(6c7086ff)",   -- THEME (fg3)
+        },
     },
 
     decoration = {
@@ -163,14 +174,6 @@ hl.config({
         },
     },
 
-    -- THEME (accent) — niri's focus-ring colour, and (fg3) the inactive one.
-    -- border_size is 0 so nothing is drawn; these are what a layout that does
-    -- draw a border would use, and they are what theme-apply rewrites.
-    col = {
-        active_border = "rgba(cba6f7ff)",     -- THEME (accent)
-        inactive_border = "rgba(6c7086ff)",   -- THEME (fg3)
-    },
-
     cursor = {
         hotspot_padding = 1,
         min_refresh_rate = 0,
@@ -187,9 +190,13 @@ hl.config({
     input = {
         kb_layout = "us",
         follow_mouse = 1,
-        -- Natural scrolling, matching the niri touchpad block.
-        touchpad = { natural_scroll = true },
-        touch_device = { natural_scroll = true },
+        -- natural_scroll is deliberately off, matching niri. It inverts
+        -- libinput's axes so two-finger scroll runs like a phone, the opposite
+        -- of the wheel. This is the only place it exists in 0.56:
+        -- input.touchdevice is spelled as one word and holds only coordinate
+        -- transforms, so the touch_device spelling from the conf version was
+        -- rejected as an unknown key.
+        touchpad = { natural_scroll = false },
     },
 })
 
@@ -202,26 +209,32 @@ hl.curve("quick", { type = "bezier", points = { { 0.4, 1.2 }, { 0.6, 1 } } })
 hl.curve("snap", { type = "bezier", points = { { 0.3, 1 }, { 0.4, 1 } } })
 hl.curve("bounce", { type = "bezier", points = { { 0.2, 0 }, { 0.1, 1 } } })
 
--- Speed is "higher is faster"; Hyprland's window animations default to 10.
--- These sit at or just above that, deliberately, because the compositor runs
--- on an HD 520 where every animation frame also pays for the 2-pass blur and
--- the 0.90 opacity. niri's equivalents are a 150ms window-open and a
--- stiffness-1000 workspace spring, both of which settle in a few frames.
-hl.animation({ leaf = "global", enabled = true, speed = 12, bezier = "default" })
-hl.animation({ leaf = "border", enabled = true, speed = 10, bezier = "quick" })
-hl.animation({ leaf = "windows", enabled = true, speed = 10, bezier = "bounce" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 9, bezier = "bounce" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 10, bezier = "bounce" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 2, bezier = "quick" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.6, bezier = "quick" })
-hl.animation({ leaf = "fade", enabled = true, speed = 3, bezier = "quick" })
-hl.animation({ leaf = "layers", enabled = true, speed = 8, bezier = "snap" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 8, bezier = "snap", style = "slide" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 8, bezier = "snap", style = "slide" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 9, bezier = "bounce", style = "slide" })
-hl.animation({ leaf = "workspacesIn", enabled = true, speed = 9, bezier = "bounce", style = "slide" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 9, bezier = "quick", style = "slide" })
-hl.animation({ leaf = "zoomFactor", enabled = true, speed = 10, bezier = "quick" })
+-- `speed` is a DURATION in deciseconds, not a rate: speed = 1 is 100ms. It is
+-- easy to read as "higher is faster" and get it exactly backwards, which is
+-- what an earlier version of this file did -- it set windows to 10, i.e. a full
+-- second per window, and that is why the animations felt slow with nothing in
+-- the file to explain it.
+--
+-- These are now short, and tuned down further than upstream's example (windows
+-- 4.79) because this is an HD 520, where every animation frame also pays for
+-- the 2-pass blur and the 0.90 opacity. niri's equivalents are a 150ms
+-- window-open and a stiffness-1000 workspace spring, so 0.15-0.25s is the
+-- right neighbourhood; nothing here should be long enough to notice.
+hl.animation({ leaf = "global", enabled = true, speed = 1.5, bezier = "default" })
+hl.animation({ leaf = "border", enabled = true, speed = 1, bezier = "quick" })
+hl.animation({ leaf = "windows", enabled = true, speed = 2, bezier = "bounce" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.8, bezier = "bounce" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.4, bezier = "quick" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 0.8, bezier = "quick" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 0.6, bezier = "quick" })
+hl.animation({ leaf = "fade", enabled = true, speed = 1.2, bezier = "quick" })
+hl.animation({ leaf = "layers", enabled = true, speed = 1.5, bezier = "snap" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 1.5, bezier = "snap", style = "slide" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 1.2, bezier = "snap", style = "slide" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 1.8, bezier = "bounce", style = "slide" })
+hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.6, bezier = "bounce", style = "slide" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.2, bezier = "quick", style = "slide" })
+hl.animation({ leaf = "zoomFactor", enabled = true, speed = 1, bezier = "quick" })
 
 -------------------
 ---- KEYBINDINGS ---

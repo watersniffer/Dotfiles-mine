@@ -31,11 +31,10 @@ input {
 
     touchpad {
         tap
-        // A flag, not a key with a value: "natural-scroll true" is a parse
-        // error, same as writing "tap true". Disables libinput's axis
-        // inversion so two-finger scroll runs like a phone -- dragging content
-        // down moves the page down, the opposite of the wheel.
-        natural-scroll
+        // natural-scroll is deliberately off. It inverts libinput's axes so
+        // two-finger scroll runs like a phone, which is the opposite of the
+        // wheel. A flag, not a key with a value: "natural-scroll true" is a
+        // parse error, same as writing "tap true".
     }
 
     // Keep the system logind power-button policy instead of letting Niri
@@ -318,12 +317,12 @@ binds {
     // Niri has no special workspace; overview is the closest equivalent.
     Mod+S hotkey-overlay-title="Open the Overview" repeat=false { toggle-overview; }
 
-    // Touchpad equivalents of the wheel workspace binds. These were commented
-    // out while natural-scroll was off, because with it off two-finger scroll
-    // runs opposite to the wheel and they would have moved the wrong way.
-    // natural-scroll is on now, so finger and wheel agree and these are live.
-    Mod+TouchpadScrollDown cooldown-ms=150 { focus-workspace-down; }
-    Mod+TouchpadScrollUp cooldown-ms=150 { focus-workspace-up; }
+    // Touchpad equivalents of the wheel workspace binds, left commented out
+    // because natural-scroll is off: with it off, two-finger scroll runs
+    // opposite to the wheel, so these would move the wrong way. Re-enable them
+    // if you turn natural-scroll back on.
+    // Mod+TouchpadScrollDown cooldown-ms=150 { focus-workspace-down; }
+    // Mod+TouchpadScrollUp cooldown-ms=150 { focus-workspace-up; }
 
     Mod+WheelScrollDown repeat=false cooldown-ms=150 { focus-workspace-down; }
     Mod+WheelScrollUp repeat=false cooldown-ms=150 { focus-workspace-up; }
