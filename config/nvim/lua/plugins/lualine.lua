@@ -19,7 +19,8 @@ return {
 			blue = "#89b4fa",
 		}
 
-		-- 2. Map Monochrome colours to the 'p' variable
+		-- 2. Map the theme's palette to the 'p' variable. theme-apply rewrites
+		-- the local colors table above, so this follows whichever theme is active.
 		local p = {
 			bg = colors.base,
 			bg_dark = colors.mantle,

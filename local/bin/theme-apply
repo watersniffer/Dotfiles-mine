@@ -118,6 +118,16 @@ def load_palette(slug: str) -> dict:
     if missing:
         die(f"{slug}: palette.conf is missing {', '.join(missing)}")
 
+    # nvim and btop name a colorscheme and a file, so neither may contain
+    # whitespace. They are checked because a value with a trailing "# comment"
+    # on the same line parses fine and then fails much later and silently: a
+    # colorscheme that will not load just falls back, per theme.lua.
+    # (name is allowed spaces -- it is a display name.)
+    for role in ("nvim", "btop"):
+        if re.search(r"\s", pal[role]):
+            die(f"{slug}: {role} is {pal[role]!r}, which contains whitespace -- "
+                "put any comment on its own line")
+
     for role, value in pal.items():
         if role in ("name", "nvim", "btop"):
             continue
