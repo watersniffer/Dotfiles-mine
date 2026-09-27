@@ -18,9 +18,23 @@
 set -uo pipefail
 
 APPLY="$HOME/.local/bin/theme-apply"
-if [[ ! -x "$APPLY" ]]; then
-    # running straight out of the repo, before install.sh has copied it
-    APPLY="$(dirname "$(realpath "$0")")/theme-apply"
+
+# install.sh COPIES local/bin rather than symlinking it, so ~/.local/bin can be
+# an older copy of the repo. When that happens the theme switcher keeps running
+# yesterday's theme-apply: the Obsidian wiring is missing, and the paths it
+# patches can name files that have since been renamed or deleted -- which
+# surfaces as a bogus "Theme switch failed" and a half-applied theme.
+#
+# Two places to check, because a stale copy can be in either direction:
+#   - the installed copy is older than the repo one -> use the repo one
+#   - there is no installed copy at all (straight out of the repo) -> repo one
+# Whichever is newer wins, so a working installed copy is not needlessly
+# replaced and a stale one cannot be used by accident.
+REPO_APPLY="$(dirname "$(realpath "$0")")/theme-apply"
+if [[ -x "$REPO_APPLY" ]]; then
+    if [[ ! -x "$APPLY" || "$REPO_APPLY" -nt "$APPLY" ]]; then
+        APPLY="$REPO_APPLY"
+    fi
 fi
 if [[ ! -x "$APPLY" ]]; then
     notify-send --app-name=themesw "Theme switcher is broken" \
