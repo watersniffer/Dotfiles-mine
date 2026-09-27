@@ -41,16 +41,32 @@ fi
 args=("$@")
 
 # Only "img" sets a wallpaper, and only when the caller has not chosen.
+#
+# The flags go in *before* any "--" separator, not at the end. matuwall invokes
+# `awww img -- <path>`, where the separator makes the path unambiguously
+# positional, and awww then reads anything after it as another image path --
+# appending here gave "no such file" and exit status 2, so matuwall silently
+# stopped changing the wallpaper at all.
 if [[ ${args[0]-} == "img" ]]; then
     has_transition=0
-    for a in "${args[@]}"; do
-        case "$a" in
-            --transition-type|-t) has_transition=1 ;;
+    separator=-1
+    for i in "${!args[@]}"; do
+        case "${args[$i]}" in
+            --transition-type|-t) has_transition=1; break ;;
+            --) separator=$i; break ;;
         esac
     done
+
     if (( has_transition == 0 )); then
-        args+=(--transition-type "$DEFAULT_TRANSITION"
+        extra=(--transition-type "$DEFAULT_TRANSITION"
                --transition-fps "$DEFAULT_FPS")
+        if (( separator >= 0 )); then
+            reordered=("${args[@]:0:separator}" "${extra[@]}"
+                       "${args[@]:separator}")
+            args=("${reordered[@]}")
+        else
+            args+=("${extra[@]}")
+        fi
     fi
 fi
 
