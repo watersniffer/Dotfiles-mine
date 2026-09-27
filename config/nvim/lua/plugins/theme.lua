@@ -218,6 +218,14 @@ return {
 		opts = { variant = "main" },
 	},
 	{
+		-- neanias/everforest-nvim, not the old Everforest/everforest.nvim org
+		-- repo, which no longer resolves (git asks for credentials on a 404).
+		"neanias/everforest-nvim",
+		lazy = true,
+		priority = 1000,
+		opts = {},
+	},
+	{
 		dir = vim.fn.stdpath("config"),
 		name = "theme-loader",
 		lazy = false,

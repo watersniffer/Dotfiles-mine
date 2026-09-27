@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a swappable palette (**Catppuccin Mocha**, **Gruvbox Dark** or **Tokyo Night**).
+My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a swappable palette: **Catppuccin Mocha**, **Gruvbox Dark**, **Tokyo Night**, **Rosé Pine**, **Everforest Dark**, **Nord Dark** or **E-ink**.
 
 ## Contents
 

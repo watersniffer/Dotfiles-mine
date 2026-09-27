@@ -152,6 +152,25 @@ def qt(hex_color: str) -> str:
     return f"#ff{r:02x}{g:02x}{b:02x}"
 
 
+def nvim_colorscheme_exists(name: str) -> bool:
+    """Is there a colors/<name>.{lua,vim} for this nvim?
+
+    Worth checking because theme.lua wraps the colorscheme call in a pcall and
+    falls back to tokyonight, so a name that cannot load produces no error at
+    all: switching to Gruvbox silently gave Tokyo Night until this was added.
+    """
+    roots = [HOME / ".config/nvim", HOME / ".local/share/nvim/lazy"]
+    for root in roots:
+        if not root.is_dir():
+            continue
+        candidates = [root / "colors" / f"{name}.lua", root / "colors" / f"{name}.vim"]
+        candidates += [p for p in root.glob(f"*/colors/{name}.lua")]
+        candidates += [p for p in root.glob(f"*/colors/{name}.vim")]
+        if any(c.is_file() for c in candidates):
+            return True
+    return False
+
+
 def slug_to_camel(slug: str) -> str:
     return "".join(part.capitalize() for part in re.split(r"[-_]", slug))
 
@@ -822,6 +841,11 @@ def apply(slug: str) -> int:
 
     print(f"{p['name']} applied.")
     print(f"  rendered {len(written)} files, patched {len(patched)}")
+    if not nvim_colorscheme_exists(p["nvim"]):
+        print(f"  WARNING nvim has no colorscheme named {p['nvim']!r}. theme.lua "
+              f"falls back to tokyonight, so nvim will not match the desktop. "
+              f"Install the plugin, or point the palette's nvim role at one that "
+              f"exists.")
     if problems:
         print("  NOT patched (pattern not found): " + ", ".join(problems))
     print("  reloaded: waybar, mako, niri")
