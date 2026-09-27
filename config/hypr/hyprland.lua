@@ -204,37 +204,48 @@ hl.config({
 ---- ANIMATIONS ------
 ---------------------
 
--- Curves
-hl.curve("quick", { type = "bezier", points = { { 0.4, 1.2 }, { 0.6, 1 } } })
-hl.curve("snap", { type = "bezier", points = { { 0.3, 1 }, { 0.4, 1 } } })
-hl.curve("bounce", { type = "bezier", points = { { 0.2, 0 }, { 0.1, 1 } } })
-
 -- `speed` is a DURATION in deciseconds, not a rate: speed = 1 is 100ms. It is
 -- easy to read as "higher is faster" and get it exactly backwards, which is
--- what an earlier version of this file did -- it set windows to 10, i.e. a full
--- second per window, and that is why the animations felt slow with nothing in
--- the file to explain it.
+-- what an earlier version of this file did -- windows = 10 is a full second per
+-- window, not a fast animation. Two wrong passes in a row: that one was far too
+-- slow, the next (60-200ms) far too fast.
 --
--- These are now short, and tuned down further than upstream's example (windows
--- 4.79) because this is an HD 520, where every animation frame also pays for
--- the 2-pass blur and the 0.90 opacity. niri's equivalents are a 150ms
--- window-open and a stiffness-1000 workspace spring, so 0.15-0.25s is the
--- right neighbourhood; nothing here should be long enough to notice.
-hl.animation({ leaf = "global", enabled = true, speed = 1.5, bezier = "default" })
-hl.animation({ leaf = "border", enabled = true, speed = 1, bezier = "quick" })
-hl.animation({ leaf = "windows", enabled = true, speed = 2, bezier = "bounce" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.8, bezier = "bounce" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.4, bezier = "quick" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 0.8, bezier = "quick" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 0.6, bezier = "quick" })
-hl.animation({ leaf = "fade", enabled = true, speed = 1.2, bezier = "quick" })
-hl.animation({ leaf = "layers", enabled = true, speed = 1.5, bezier = "snap" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 1.5, bezier = "snap", style = "slide" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1.2, bezier = "snap", style = "slide" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 1.8, bezier = "bounce", style = "slide" })
-hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.6, bezier = "bounce", style = "slide" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.2, bezier = "quick", style = "slide" })
-hl.animation({ leaf = "zoomFactor", enabled = true, speed = 1, bezier = "quick" })
+-- This block is now Hyprland's own defaults, copied verbatim from the reference
+-- config in the 0.56.2 binary. Nothing tuned, no custom curves, so "default"
+-- here is literally what a fresh install animates like.
+--
+-- The curves below are part of that same block and are NOT optional: the
+-- defaults reference easeOutQuint, almostLinear, linear and the "easy" spring,
+-- and hl.curve has to be called for each before hl.animation can name it, or
+-- the animation is rejected outright. "default" is the one curve that exists
+-- without being declared.
+hl.curve("easeOutQuint",   { type = "bezier", points = { { 0.23, 1 },    { 0.32, 1 } } })
+hl.curve("linear",         { type = "bezier", points = { { 0, 0 },       { 1, 1 } } })
+hl.curve("almostLinear",   { type = "bezier", points = { { 0.5, 0.5 },   { 0.75, 1 } } })
+hl.curve("quick",          { type = "bezier", points = { { 0.15, 0 },    { 0.1, 1 } } })
+hl.curve("easy",           { type = "spring", mass = 1, stiffness = 238.1191, dampening = 24.21279333 })
+
+hl.animation({ leaf = "global",        enabled = true, speed = 10,   bezier = "default" })
+hl.animation({ leaf = "border",        enabled = true, speed = 5.39, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windows",       enabled = true, speed = 4.79, spring = "easy" })
+hl.animation({ leaf = "windowsIn",     enabled = true, speed = 4.1,  spring = "easy",         style = "popin 87%" })
+hl.animation({ leaf = "windowsOut",    enabled = true, speed = 1.49, bezier = "linear",       style = "popin 87%" })
+hl.animation({ leaf = "fadeIn",        enabled = true, speed = 1.73, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut",       enabled = true, speed = 1.46, bezier = "almostLinear" })
+hl.animation({ leaf = "fade",          enabled = true, speed = 3.03, bezier = "quick" })
+hl.animation({ leaf = "layers",        enabled = true, speed = 3.81, bezier = "easeOutQuint" })
+hl.animation({ leaf = "layersIn",      enabled = true, speed = 4,    bezier = "easeOutQuint", style = "fade" })
+hl.animation({ leaf = "layersOut",     enabled = true, speed = 1.5,  bezier = "linear",       style = "fade" })
+hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 1.79, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.39, bezier = "almostLinear" })
+hl.animation({ leaf = "workspaces",    enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
+hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 1.21, bezier = "almostLinear", style = "fade" })
+-- No fade on the way out. The default is style = "fade", which dissolves the
+-- outgoing workspace; a slide reads as movement instead, so switching looks
+-- like one screen giving way to the next rather than a crossfade. This is the
+-- only default changed from upstream.
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "slide" })
+hl.animation({ leaf = "zoomFactor",    enabled = true, speed = 7,    bezier = "quick" })
 
 -------------------
 ---- KEYBINDINGS ---
