@@ -47,6 +47,15 @@ ZOOM_AMOUNT = 0.06
 DEFAULT_TRANSITION = "lift"
 DEFAULT_DURATION = 620
 TRANSITIONS = ("lift", "rise", "fade", "zoom", "slide", "none")
+# awww's own transitions, reached as "awww:<type>". They are namespaced because
+# two of them (fade, none) also exist above, and silently changing what
+# WALLPAPER_FADE_TRANSITION=fade does would be a nasty surprise. awww is the
+# renamed swww, so these are the animations from that project's README.
+AWWW_PREFIX = "awww:"
+AWWW_TRANSITIONS = (
+    "none", "simple", "fade", "left", "right", "top", "bottom",
+    "wipe", "wave", "grow", "center", "any", "outer", "random",
+)
 # Only these dissolve the frozen frame; lift and rise move it without any
 # opacity change, which is what "no fading" means here.
 FADING_TRANSITIONS = ("fade", "zoom", "slide")
@@ -61,11 +70,11 @@ def ease_out(t: float) -> float:
     return 1.0 - (1.0 - t) ** 3
 
 
-def set_wallpaper(image: str) -> bool:
-    result = subprocess.run(
-        ["awww", "img", image, "--resize", "crop", "--crop-gravity", "center"],
-        capture_output=True,
-    )
+def set_wallpaper(image: str, awww_transition: str = "") -> bool:
+    cmd = ["awww", "img", image, "--resize", "crop", "--crop-gravity", "center"]
+    if awww_transition:
+        cmd += ["--transition-type", awww_transition]
+    result = subprocess.run(cmd, capture_output=True)
     if result.returncode != 0:
         warn(f"awww failed to set {os.path.basename(image)}")
         return False
@@ -417,9 +426,18 @@ def main() -> int:
     disabled = bool(os.environ.get("WALLPAPER_FADE_DISABLE"))
 
     if image is None:
-        warn(f"usage: wallpaper-fade [--transition {'|'.join(TRANSITIONS)}] "
+        warn(f"usage: wallpaper-fade [--transition {'|'.join(TRANSITIONS)}"
+             f"|{AWWW_PREFIX}<{'|'.join(AWWW_TRANSITIONS)}>] "
              f"[--duration MS] <image>")
         return 2
+    if transition.startswith(AWWW_PREFIX):
+        kind = transition[len(AWWW_PREFIX):]
+        if kind not in AWWW_TRANSITIONS:
+            warn(f"unknown awww transition {kind!r}; using fade")
+            kind = "fade"
+        # No overlay and no pre-rendering: awww animates it, which is the whole
+        # point of going through it rather than doing it here.
+        return 0 if set_wallpaper(image, awww_transition=kind) else 1
     if transition not in TRANSITIONS:
         warn(f"unknown transition {transition!r}, using {DEFAULT_TRANSITION}")
         transition = DEFAULT_TRANSITION
