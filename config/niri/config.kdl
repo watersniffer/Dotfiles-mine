@@ -371,8 +371,13 @@ binds {
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
     XF86AudioMute allow-when-locked=true repeat=false { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute allow-when-locked=true repeat=false { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
-    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%+"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%-"; }
+    // Wrapped rather than calling brightnessctl directly, because brightness 0%
+    // is not a dark screen on this panel -- the backlight goes off but the LCD
+    // stays lit. brightness-step treats 0% as the trigger for niri's
+    // power-off-monitors, so the bottom of the range is genuinely black, and the
+    // same key brings the monitor back.
+    XF86MonBrightnessUp allow-when-locked=true { spawn "~/.local/bin/brightness-step" "up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "~/.local/bin/brightness-step" "down"; }
     XF86AudioNext allow-when-locked=true repeat=false { spawn "playerctl" "next"; }
     XF86AudioPause allow-when-locked=true repeat=false { spawn "playerctl" "play-pause"; }
     XF86AudioPlay allow-when-locked=true repeat=false { spawn "playerctl" "play-pause"; }
