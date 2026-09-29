@@ -208,10 +208,8 @@ symlink_dotfiles() {
     # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
-    # (see setup_nvim and setup_qt6ct). dconf and pulse are absent for the same
-    # reason -- they are live per-machine state (a settings database and an
-    # auth cookie), and shipping either in a dotfiles repo publishes one.
-    for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout cava \
+    # (see setup_nvim and setup_qt6ct).
+    for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"

@@ -22,7 +22,7 @@ if ! pgrep -x mako >/dev/null 2>&1; then
 fi
 
 systemctl --user restart xdg-desktop-portal.service >/dev/null 2>&1 || true
-waybar -c "$HOME/.config/waybar/config-niri.jsonc" -s "$HOME/.config/waybar/style-niri.css" >/dev/null 2>&1 &
+waybar -c "$HOME/.config/waybar/config-niri.jsonc" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
 "$HOME/.local/bin/at_startup" >/dev/null 2>&1 &
 
 if ! pgrep -x awww-daemon >/dev/null 2>&1; then
