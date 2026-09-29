@@ -172,3 +172,11 @@ strace
 # --- Misc ---
 plymouth
 fuse2
+
+# The second session. Hyprland, not a fork of niri: a conventional
+# columns WM against niri's scrolling layout. Not the default session --
+# niri is -- but both share kitty, waybar, rofi, mako, awww and all seven
+# themes, so switching changes the window management model and a handful
+# of binds and nothing else.
+hyprland
+xdg-desktop-portal-hyprland

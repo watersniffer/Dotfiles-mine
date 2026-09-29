@@ -209,7 +209,7 @@ symlink_dotfiles() {
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
-    for name in niri kitty waybar rofi mako fastfetch matuwall wlogout \
+    for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
@@ -386,6 +386,17 @@ apply_system_configs() {
             "$DOTFILES_DIR/system/usr/share/wayland-sessions/niri-dotfiles.desktop" \
             /usr/share/wayland-sessions/niri-dotfiles.desktop
         ok "Niri (Dotfiles) session installed."
+    fi
+
+    # Hyprland, the second session. Registered alongside Niri rather than instead
+    # of it, and NOT the default: niri is what the greeter logs you into. Both
+    # desktop files stay in /usr/share/wayland-sessions so the login screen offers
+    # the choice, and both share the same scripts, themes and apps.
+    if [[ -f "$DOTFILES_DIR/system/usr/share/wayland-sessions/hyprland-dotfiles.desktop" ]]; then
+        sudo install -D -o root -g root -m 0644 \
+            "$DOTFILES_DIR/system/usr/share/wayland-sessions/hyprland-dotfiles.desktop" \
+            /usr/share/wayland-sessions/hyprland-dotfiles.desktop
+        ok "Hyprland session installed."
     fi
 
     # SDDM theme: pinned GitHub source, installed root-owned. The theme is

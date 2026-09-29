@@ -1,0 +1,92 @@
+// Waybar for the Hyprland session. Generated from config-niri.jsonc -- do not
+// edit by hand, or the two bars drift apart. The only two changes from the niri
+// version are marked below; everything else is byte-identical so the bar looks
+// and behaves the same in both sessions.
+//
+// 1. niri/workspaces -> hyprland/workspaces: a different module.
+// 2. the workspace format is {id}, not {value}. {value} is a niri-only
+//    placeholder -- the Hyprland module has {id} and {name} and no {value}, so
+//    carrying it across renders the label empty and the numbers do not appear.
+//
+// Regenerate with: config/waybar/make-config-hypr.py
+{
+  // Off deliberately. It reloads the bar's style whenever style.css changes,
+  // and under niri that style reload drops the bar onto the Bottom layer,
+  // where every window covers it. Editing the palette is not lost either way:
+  // themesw sends SIGUSR2, which re-reads the stylesheet and keeps the layer.
+  "reload_style_on_change": false,
+  "layer": "top",
+  "position": "top",
+  "spacing": 5,
+  // Attached to the top edge: no floating margins, and a real 34px height
+  // (it used to be 1 here, with the visible height coming from the CSS
+  // min-height instead).
+  "height": 35,
+
+  "modules-left": ["hyprland/workspaces", "custom/cpucat"],
+  // custom/media rather than mpris: the mpris module always renders a label,
+  // so its island pill showed up as an empty capsule whenever nothing was
+  // playing. hide-empty-text removes the module instead, so the pill only
+  // exists while there is something to show.
+  "modules-center": ["custom/media"],
+  "modules-right": [
+    "tray",
+    "wireplumber",
+    "backlight",
+    "battery",
+    "clock"
+  ],
+  "hyprland/workspaces": {
+    // {id} is the workspace number, {name} whatever it is called. There is no
+    // {value} in this module -- that is niri/workspaces, and the two modules do
+    // not share a placeholder set, so carrying it over rendered nothing.
+    "format": "{id}"
+  },
+
+  "custom/media": {
+    "exec": "bash ~/.config/waybar/scripts/media-title.sh",
+    "interval": 2,
+    "hide-empty-text": true,
+    "max-length": 40
+  },
+
+  "tray": {
+    "icon-size": 14,
+    "spacing": 4
+  },
+  "custom/cpucat": {
+    "exec": "bash ~/.config/waybar/scripts/catloop.sh"
+  },
+  "wireplumber": {
+    "scroll-step": 5,
+    "format": " {icon} {volume}%",
+    "format-muted": "󰝟 muted",
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "format-icons": {
+      "default": ["󰕿", "󰖀", "󰕾"],
+      "headphones": "󰋋",
+      "headset": "󰋎"
+    }
+  },
+
+  "backlight": {
+    "format": " {icon} {percent}% ",
+    "format-icons": ["󰃞", "󰃟", "󰃠"]
+  },
+
+  "battery": {
+    "states": { "warning": 30, "critical": 15 },
+    "format": "{icon} {capacity}% ",
+    "format-charging": "󰂄 {capacity}% ",
+    "format-plugged": "󱟦 {capacity}% ",
+    "format-full": "󰁹 {capacity}% ",
+    "format-icons": [
+      "󰂎", "󰁺", "󰁻", "󰁼", "󰁽",
+      "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"
+    ]
+  },
+
+  "clock": {
+    "format": "{:%m-%d-%Y %I:%M %p}"
+  }
+}
