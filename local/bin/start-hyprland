@@ -2,10 +2,16 @@
 #
 # Environment wrapper for the Hyprland session, started by SDDM.
 #
-# This exists only to get a usable session out of a stock Hyprland config.
-# Everything Hyprland itself draws or binds comes from
-# config/hypr/hyprland.lua, which is Hyprland's own shipped example config
-# (/usr/share/hypr/hyprland.lua) used unmodified.
+# The session runs end-4's illogical-impulse rice, which lives in
+# ~/.config/hypr and ~/.config/quickshell as real directories. It is
+# deliberately NOT in this repo and NOT symlinked from it: the rice is a large
+# upstream project with its own update path, and folding it in here would mean
+# re-merging it on every pull.
+#
+# config/hypr/hyprland.lua in this repo is kept only as the stock Hyprland
+# example config, so there is a working fallback if the rice is ever removed.
+# The launcher points at ~/.config/hypr/hyprland.lua -- the rice -- not at the
+# repo copy.
 #
 # The exports below are not compositor settings -- they are the same ones
 # start-niri sets, and without them .bashrc never runs (SDDM launches a desktop
