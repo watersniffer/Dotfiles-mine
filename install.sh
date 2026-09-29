@@ -208,8 +208,12 @@ symlink_dotfiles() {
     # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
-    # (see setup_nvim and setup_qt6ct).
-    for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout \
+    # (see setup_nvim and setup_qt6ct). hypr is absent for a different reason:
+    # it is deliberately left entirely to the Arch package, so that
+    # ~/.config/hypr does not exist and Hyprland falls back to the config it
+    # ships in /usr/share/hypr. Symlinking it here would put a dotfiles config
+    # back in front of a session that is meant to be stock.
+    for name in niri kitty waybar rofi mako fastfetch matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi \
                 chillpill-shell; do
         if [[ -d "$conf_dir/$name" ]]; then
@@ -389,16 +393,12 @@ apply_system_configs() {
         ok "Niri (Dotfiles) session installed."
     fi
 
-    # Hyprland, the second session. Registered alongside Niri rather than instead
-    # of it, and NOT the default: niri is what the greeter logs you into. Both
-    # desktop files stay in /usr/share/wayland-sessions so the login screen offers
-    # the choice, and both share the same scripts, themes and apps.
-    if [[ -f "$DOTFILES_DIR/system/usr/share/wayland-sessions/hyprland-dotfiles.desktop" ]]; then
-        sudo install -D -o root -g root -m 0644 \
-            "$DOTFILES_DIR/system/usr/share/wayland-sessions/hyprland-dotfiles.desktop" \
-            /usr/share/wayland-sessions/hyprland-dotfiles.desktop
-        ok "Hyprland session installed."
-    fi
+    # Hyprland is deliberately NOT registered here. It is installed from the
+    # Arch package and left exactly as it ships: its own hyprland.desktop entry
+    # in /usr/share/wayland-sessions, its own /usr/share/hypr/hyprland.lua, and
+    # no ~/.config/hypr at all so it falls back to that. The greeter session is
+    # set to the package's entry further down rather than to a dotfiles one.
+    # Nothing in this repo manages Hyprland any more.
 
     # SDDM theme: pinned GitHub source, installed root-owned. The theme is
     # Qt6-only and relies on the virtualkeyboard QML module.

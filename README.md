@@ -120,8 +120,9 @@ unique. Those two commits are preserved as tags so nothing becomes unreachable:
 
 - `backup-keep/niri-setup` — the tuned Niri session (exact `1366x768@60.016`
   panel mode, touchpad workspace scrolling, hot-key overlay titles, hot corner)
-- `backup-keep/hyprland-setup` — the old Hyprland setup, kept for reference only
-  (Hyprland has since been removed entirely)
+- `backup-keep/hyprland-setup` — an old Hyprland setup, kept for reference only.
+  Hyprland is installed from the Arch package and left stock again: its config
+  lives in `/usr/share/hypr/hyprland.lua` and this repo keeps no `config/hypr`.
 
 Full history is in `main`; any earlier state can be recovered by commit hash
 from there.
