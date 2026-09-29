@@ -208,12 +208,8 @@ symlink_dotfiles() {
     # --- Config directories (symlinked so live edits flow back into the repo) ---
     local conf_dir="$DOTFILES_DIR/config"
     # nvim and qt6ct are deliberately absent: applications write state into them
-    # (see setup_nvim and setup_qt6ct). hypr is absent for a different reason:
-    # it is deliberately left entirely to the Arch package, so that
-    # ~/.config/hypr does not exist and Hyprland falls back to the config it
-    # ships in /usr/share/hypr. Symlinking it here would put a dotfiles config
-    # back in front of a session that is meant to be stock.
-    for name in niri kitty waybar rofi mako fastfetch matuwall wlogout \
+    # (see setup_nvim and setup_qt6ct).
+    for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout \
                 xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi \
                 chillpill-shell; do
         if [[ -d "$conf_dir/$name" ]]; then

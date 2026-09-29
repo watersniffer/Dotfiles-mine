@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Hyprland
+Comment=Stock Hyprland (example config), alongside Niri
+Exec=/home/water/.local/bin/start-hyprland
+TryExec=/home/water/.local/bin/start-hyprland
+Type=Application
+DesktopNames=Hyprland
+Keywords=tiling;wayland;compositor;hyprland;

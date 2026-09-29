@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# Environment wrapper for the Hyprland session, started by SDDM.
+#
+# The session runs this repo's own config: config/hypr/hyprland.lua, linked
+# into ~/.config/hypr by install.sh like every other app here. Editing the repo
+# file is therefore the way to change the session, and there is no second copy
+# to keep in step.
+#
+# That file is Hyprland's shipped example config (/usr/share/hypr/hyprland.lua)
+# used unmodified, apart from two program names: the example points Mod+Shift+E
+# at dolphin and Mod+Slash at hyprlauncher, neither of which is installed, so
+# those binds would have failed silently. They are nemo and rofi. Every Hyprland
+# setting -- gaps, borders, opacity, blur, animations, layout -- is stock.
+#
+# The exports below are not compositor settings -- they are the same ones
+# start-niri sets, and without them .bashrc never runs (SDDM launches a desktop
+# entry directly), so ~/.local/bin is missing from PATH and every helper script
+# would be unreachable.
+set -euo pipefail
+
+unset WAYLAND_DISPLAY DISPLAY WAYLAND_SOCKET NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE
+export XDG_CURRENT_DESKTOP=Hyprland
+export XDG_SESSION_DESKTOP=Hyprland
+export XDG_SESSION_TYPE=wayland
+
+export PATH="$HOME/.local/bin:$HOME/.local/share/flatpak/exports/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
+
+# wl-paste refuses to start if these are absent.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+# WAYLAND_DISPLAY is deliberately NOT set here, matching start-niri. It was
+# hardcoded to wayland-1, which is only correct when this is the only graphical
+# session: if anything else already holds that display the launcher's helpers
+# would talk to the wrong compositor, and if it is free but numbered higher the
+# export would point at nothing. Hyprland creates and exports its own.
+
+exec /usr/bin/Hyprland -c "$HOME/.config/hypr/hyprland.lua"
