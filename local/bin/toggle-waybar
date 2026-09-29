@@ -9,9 +9,22 @@ else
         waybar_config=$WAYBAR_CONFIG
     elif [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
         waybar_config="$HOME/.config/waybar/config-niri.jsonc"
+    elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" || "${desktop,,}" == hyprland* ]]; then
+        waybar_config="$HOME/.config/waybar/config-hypr.jsonc"
     else
-        waybar_config="$HOME/.config/waybar/config.jsonc"
+        # Nothing matched, so guessing a name would only produce a bar that
+        # fails to start. Say so rather than taking the existing one down.
+        echo "toggle-waybar: not a niri or hyprland session (XDG_CURRENT_DESKTOP=${desktop:-unset});" >&2
+        echo "  set WAYBAR_CONFIG to a config file to override" >&2
+        exit 1
     fi
 
+    if [[ ! -r "$waybar_config" ]]; then
+        echo "toggle-waybar: $waybar_config is missing" >&2
+        exit 1
+    fi
+
+    # Both sessions share one stylesheet; only the config differs, because
+    # waybar's workspace module is compositor-specific.
     setsid waybar -c "$waybar_config" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
 fi

@@ -974,6 +974,45 @@ def patch_niri_effects(path: Path, p: dict) -> bool:
     return True
 
 
+def hypr_rgba(hex_color: str, alpha_hex: str = "ff") -> str:
+    """Hyprland's colour form: rgba() with hex channels, not decimals.
+
+    Waybar and GTK take rgba(30, 30, 46, 0.6); Hyprland takes rgba(1e1e2eff).
+    The two are not interchangeable, hence a second helper rather than reusing
+    rgba().
+    """
+    return f"rgba({hex_color.lstrip('#')}{alpha_hex})"
+
+
+def patch_hyprland_palette(path: Path, p: dict) -> bool:
+    """Recolour the `col_*` locals near the top of the Hyprland config.
+
+    That block is the only part of the file that is theme-derived: the layout,
+    opacity, gaps, rounding, shadow metrics and the keybinds are all the user's
+    choices and are left alone. Each local is matched by name, so the order they
+    appear in does not matter and an unused palette entry is harmless.
+    """
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+
+    wanted = {
+        "col_bg0": p["bg0"],
+        "col_bg1": p["bg1"],
+        "col_bg3": p["bg3"],
+        "col_fg0": p["fg0"],
+        "col_accent": p["accent"],
+        "col_urgent": p["urgent"],
+    }
+    for name, colour in wanted.items():
+        s, n = re.subn(rf'(?m)^(local {name}\s*=\s*)"rgba\([0-9a-fA-F]+\)"',
+                       rf'\g<1>"{hypr_rgba(colour)}"', s)
+        if n == 0:
+            return False
+    path.write_text(s, encoding="utf-8")
+    return True
+
+
 def patch_lualine(path: Path, p: dict) -> bool:
     if not path.is_file():
         return False
@@ -1213,6 +1252,7 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     do(patch_matuwall, CONFIG / "matuwall/config.toml", p)
     do(patch_fastfetch, CONFIG / "fastfetch/config.jsonc", p)
     do(patch_niri_effects, CONFIG / "niri/config.kdl", p)
+    do(patch_hyprland_palette, CONFIG / "hypr/hyprland.lua", p)
     do(patch_lualine, CONFIG / "nvim/lua/plugins/lualine.lua", p)
     do(patch_key, CONFIG / "nvim/current-theme.txt", r"^.*$", p["nvim"])
     do(patch_key, CONFIG / "btop/btop.conf",
@@ -1283,6 +1323,14 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     if niri:
         run(["niri", "msg", "action", "load-config-file"])
 
+    # Hyprland reads its palette from the config file, so it needs a reload.
+    # Only when a session is actually up: hyprctl without an instance to talk
+    # to would either fail or, worse, be run against whatever session happens to
+    # be listening. The palette is written either way, so logging in after a
+    # theme switch already shows the right colours.
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        run(["hyprctl", "reload"])
+
 
     # --- wallpaper ---
     #
@@ -1340,8 +1388,11 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # fixed name, so this stays honest if the config is ever loaded outside a
     # session (e.g. by install.sh) rather than reporting a reload that did not
     # happen.
-    compositor = "niri" if os.environ.get("NIRI_SOCKET") else "none"
-    print(f"  reloaded: waybar, mako, {compositor}")
+    reloaded = [n for n, cond in (("niri", os.environ.get("NIRI_SOCKET")),
+                                   ("hyprland",
+                                    os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")))
+                if cond]
+    print(f"  reloaded: waybar, mako, {', '.join(reloaded) if reloaded else 'none'}")
     print("  need a restart to pick it up: kitty, nvim, btop, "
           "and any running GTK/Qt app")
     return 1 if problems else 0
