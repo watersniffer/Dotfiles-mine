@@ -111,23 +111,22 @@ hl.window_rule({
 ------------------------
 ---- ANIMATIONS --------
 ------------------------
--- Mirrors niri's animations block. Niri has named curves and springs; Hyprland
--- has beziers and a duration in deciseconds, so the curves below are the
--- standard css approximations of the ones niri names, and the springs become
--- short durations on a fast curve.
+-- Deliberately empty: animations are left at Hyprland's own defaults.
 --
--- A curve must be declared here before an animation can name it: hl.animation
--- resolves bezier by string and rejects one it has not been told about.
-hl.curve("ease-out-expo",  { type = "bezier", points = { { 0.16, 1 }, { 0.3, 1 } } })
-hl.curve("ease-out-cubic", { type = "bezier", points = { { 0.33, 1 }, { 0.68, 1 } } })
-hl.curve("spring-1000",    { type = "bezier", points = { { 0.05, 0.9 }, { 0.1, 1.05 } } })
-hl.curve("spring-900",     { type = "bezier", points = { { 0.05, 0.9 }, { 0.15, 1.05 } } })
-
-hl.animation({ leaf = "windowsIn",  enabled = true, speed = 1.5, bezier = "ease-out-expo",  style = "popin" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.2, bezier = "ease-out-cubic" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 1.5, bezier = "spring-1000" })
-hl.animation({ leaf = "fade",       enabled = true, speed = 1.5, bezier = "spring-900" })
-hl.animation({ leaf = "border",     enabled = true, speed = 1.0, bezier = "spring-900" })
+-- This block used to mirror niri's animations block, converting its named
+-- curves and springs into beziers and durations. That worked, but the result
+-- was much faster than anything Hyprland ships -- 1.2 to 1.5 deciseconds
+-- against a default set that runs from 1.21 up to 10 -- so windows and
+-- workspaces snapped rather than moved.
+--
+-- With no animation block here, every leaf takes the shipped default, and
+-- animations stay enabled because that is the default for animations.enabled
+-- too. Nothing needs to be restated to keep them on.
+--
+-- If they ever do need to be set explicitly, /usr/share/hypr/hyprland.lua
+-- carries Hyprland's own set under the heading "Default curves and
+-- animations", with the curves (easeOutQuint, almostLinear, quick, linear,
+-- easeInOutCubic and the easy spring) declared just above it.
 
 ------------------------
 ---- KEYBINDINGS --------
