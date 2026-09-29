@@ -438,7 +438,9 @@ def render_waybar_colors(p: dict) -> str:
    edit the palette, not this file.
 
    bg0..bg4 and fg0..fg3 are the generic roles; the names after @define-color
-   are the ones style.css references. */
+   are the ones style.css references. Both the niri bar's style-niri.css and
+   the Hyprland bar's style.css import this one file and use disjoint names, so
+   every name either references is defined here. */
 
 @define-color base {p['bg0']};
 @define-color bg1 {p['bg1']};
@@ -468,6 +470,20 @@ def render_waybar_colors(p: dict) -> str:
 @define-color battery_warn {p['yellow']};
 @define-color battery_crit {p['urgent']};
 @define-color cpucat {p['cyan']};
+
+/* The Hyprland session's bar (config.jsonc + style.css, from the hyprzepyx
+   rice) imports this same file but names its colors after the Material palette
+   instead. Those names are defined here from the same palette, so switching
+   themes restyles both bars rather than leaving the Hyprland one referencing
+   colors that no longer exist -- which GTK renders as unset, i.e. an unstyled
+   black bar. Keep both blocks: style-niri.css and style.css share this file. */
+@define-color background {p['bg0']};
+@define-color on_background {p['fg0']};
+@define-color surface {p['bg1']};
+@define-color surface_variant {p['bg3']};
+@define-color surface_container {p['bg2']};
+@define-color primary {p['accent']};
+@define-color tertiary {p['blue']};
 """
 
 

@@ -1,112 +1,83 @@
-@import url("colors.css");
+@import "colors.css";
 
 * {
-    font-family: "JetBrainsMono Nerd Font", sans-serif;
-    font-weight: 800;
-    font-size: 10px;
-    color: @fg;
+    border: none;
+    border-radius: 0px;
+    font-family: "JetBrainsMono Nerd Font";  /* upstream asked for "SF Pro Dispay" (a typo for SF Pro Display) and "JetBrainsMono Nerd Font Propo"; neither is installed, so both bars use this instead */
+    padding: 0;
+    margin: 0;
+    min-width: 10px;
 }
 
-/* Make main bar transparent so empty spaces disappear */
 window#waybar {
-    background: transparent;
-    border-radius: 10px;
-    border: 0px;
-    margin: 0px;
-    padding: 2px 6px;
-    min-height: 26px;
+    background-color: alpha(@background, 0.8);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.922);
 }
-
-/* Apply translucent background specifically to the widget sections, so the
-   gaps between them show the wallpaper. Catppuccin mantle with alpha rather
-   than the pure black this used to be.
-
-   .modules-center is deliberately NOT in this list. A module group with
-   nothing in it still paints its own padding, so styling it left an empty
-   capsule in the middle of the bar whenever nothing was playing. The media
-   module carries its own pill instead, via hide-empty-text. */
-.modules-left,
-.modules-right,
-#custom-media {
-    background: @island;
-    border-radius: 8px;
-    padding: 2px 8px;
-    margin: 2px 4px;
-}
-
-/* WORKSPACES */
-
-#workspaces button {
-    padding: 0px 1px;
-    margin: 2px 1px;
-    border-radius: 0;
-    background: transparent;
-    color: @ws_inactive;
-}
-
-/* active workspace */
-#workspaces button.active {
-    border-bottom: 2px solid @ws_active;
-}
-
-/* hover */
-#workspaces button:hover {
-    background: @hover;
-}
-
-/* urgent */
-#workspaces button.urgent {
-    background: @urgent;
-}
-
-/* Niri exposes the focused workspace separately from the active one. */
-#workspaces button.active,
-#workspaces button.focused {
-    border-bottom: 2px solid @ws_active;
-}
-
-#custom-media {
-    font-weight: 700;
-}
-
-/* RIGHT SIDE STATES */
-
-#battery.warning {
-    background: rgba(170, 170, 170, 0.12);
-    color: @battery_warn;
-    padding: 1px 3px;
-}
-
-#battery.critical {
-    background: rgba(221, 221, 221, 0.2);
-    color: @battery_crit;
-    padding: 1px 3px;
-}
-
-#wireplumber.muted {
-    opacity: 0.6;
-}
-
-/*  TOOLTIP  */
 
 tooltip {
-    background: @tooltip_bg;
-    border: 1px solid @tooltip_border;
+    background: transparent;
+    border: 1px solid @primary;
+    border-radius: 3px;
 }
 
 tooltip label {
-    color: @fg;
-    font-size: 11px;
+    color: @on_background;
 }
 
-#custom-launcher {
+#workspaces {
+    min-width: 0;
+    margin: 20px;
+    transition: all 0.3s ease-in-out;
 }
 
-#custom-cpucat {
-  font-family: "Waycat", monospace;
-  font-size: 17px;
-  font-weight: bold;
-  color: @cpucat;
-  padding-left: 4px;
-  padding-right: 6px;
+#workspaces button {
+    color: transparent;
+    background: linear-gradient(100deg, @surface_variant 0%, @surface_container 100%);
+    transition: all 0.3s ease-in-out;
+    min-width: 0;
+    margin: 5px 0;
+    border-radius: 3px;
 }
+
+#workspaces button.active {
+    background: linear-gradient(100deg, @primary 0%, @tertiary 100%);
+    color: transparent;
+    transition: all 0.3s ease-in-out;
+    font-size: 13px;
+    border-radius: 9999px;
+    min-height: 80px;
+}
+
+#workspaces button:hover {
+    background: linear-gradient(100deg, @tertiary 0%, @primary 100%);
+    color: transparent;
+    border-radius: 16px;
+    background-size: 400% 400%;
+    transition: all 0.3s ease-in-out;
+}
+
+#clock {
+    color: @primary;
+    font-family: "JetBrainsMono Nerd Font";  /* upstream asked for "PP Neue Machina", not installed */
+    font-weight: 600;
+    font-size: 28px;
+    margin: 8px 5px 1 5px;
+}
+
+#network, #custom-notifications, #pulseaudio {
+    background: @surface_container;
+    padding: 4px 12px;
+    border-radius: 5px;
+    margin: 5px;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 16px;
+}
+
+#tray {
+    background: @surface;
+    margin: 5px;
+    border-radius: 28px;
+    padding: 0px 12px;
+}
+
