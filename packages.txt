@@ -26,6 +26,11 @@ geoclue
 
 # --- Terminal / Shell ---
 kitty
+# Custom kitty shaders (the cursor tail) are .slang sources, and kitty compiles
+# them with slangc. Without this the shaders are present but every one of them
+# fails at startup with "slang shader compiler (slangc) was not found", and the
+# option is silently inert rather than an error you would notice.
+shader-slang
 tmux
 starship
 fastfetch
