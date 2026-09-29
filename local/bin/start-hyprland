@@ -2,34 +2,22 @@
 #
 # Environment wrapper for the Hyprland session, started by SDDM.
 #
-# Mirrors local/bin/start-niri exactly -- same exports, same order, same reason.
-# SDDM launches a desktop entry directly, so .bashrc never runs and ~/.local/bin
-# is absent from PATH, which makes every bind that calls a script in there
-# (themesw, wallpaper-switcher, powerprofile, brightness-step, toggle-waybar)
-# fail with "command not found".
+# This exists only to get a usable session out of a stock Hyprland config.
+# Everything Hyprland itself draws or binds comes from
+# config/hypr/hyprland.lua, which is Hyprland's own shipped example config
+# (/usr/share/hypr/hyprland.lua) used unmodified.
 #
-# The one difference is deliberate: the compositor config lives at
-# config/hypr/hyprland.lua rather than config/niri/config.kdl. Hyprland 0.56 is
-# lua-first, and its lua config is the only place the window rules, animations
-# and hyprcursor settings can be expressed correctly.
-#
-# Waybar gets config-hypr.jsonc rather than config-niri.jsonc for one reason:
-# the workspace module is hyprland/workspaces instead of niri/workspaces, and
-# {value} is a niri-only placeholder that renders as nothing in the Hyprland
-# module -- it has to be {id}. The custom/media module is kept either way.
+# The exports below are not compositor settings -- they are the same ones
+# start-niri sets, and without them .bashrc never runs (SDDM launches a desktop
+# entry directly), so ~/.local/bin is missing from PATH and every helper script
+# would be unreachable.
+set -euo pipefail
 
 unset WAYLAND_DISPLAY DISPLAY WAYLAND_SOCKET NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE
 export XDG_CURRENT_DESKTOP=Hyprland
 export XDG_SESSION_DESKTOP=Hyprland
 export XDG_SESSION_TYPE=wayland
-export QT_QPA_PLATFORMTHEME=qt6ct
-export QT_STYLE_OVERRIDE=kvantum
-export QT_SCALE_FACTOR=0.92
-export XCURSOR_SIZE=22
-export XCURSOR_THEME=Bibata-Modern-Classic
-export EDITOR=nvim
-export VISUAL=nvim
-export TERMINAL=kitty
+
 export PATH="$HOME/.local/bin:$HOME/.local/share/flatpak/exports/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin"
 
 # wl-paste refuses to start if these are absent.

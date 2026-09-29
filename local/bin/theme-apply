@@ -974,44 +974,6 @@ def patch_niri_effects(path: Path, p: dict) -> bool:
     return True
 
 
-def patch_hypr_effects(path: Path, p: dict) -> bool:
-    """Recolour Hyprland's shadow, active border and inactive border.
-
-    The same three roles niri's focus ring uses, so the two sessions match.
-    Each pattern matches one exact spelling rather than a bare colour:
-    `active_border` and `inactive_border` are similar enough that a loose rule
-    would rewrite the wrong one, and the shadow colour is rgba (0xAARRGGBB)
-    here rather than niri's 8-digit hex, so the byte order has to be assembled
-    rather than substituted.
-
-    The target is hyprland.lua, where every value is a quoted Lua string, so each
-    pattern matches the opening quote and stops before the closing one. The
-    border colours are general.col.* -- a top-level col = {} is rejected by
-    0.56 -- but the leading whitespace is not anchored so the indentation is
-    left alone. The values are marked THEME in the config; do not reword them.
-    """
-    if not path.is_file():
-        return False
-    s = path.read_text(encoding="utf-8")
-
-    r, g, b = rgb(p["bg0"])
-    shadow = f"0x{r:02x}{g:02x}{b:02x}99"          # bg0 at 60%, same as niri
-
-    rules = [
-        (r'(?m)^(\s*color = ")0x[0-9a-fA-F]{8}', rf'\g<1>{shadow}'),
-        (r'(?m)^(\s*active_border = "rgba\()[0-9a-fA-F]{6}',
-         rf'\g<1>{p["accent"].lstrip("#")}'),
-        (r'(?m)^(\s*inactive_border = "rgba\()[0-9a-fA-F]{6}',
-         rf'\g<1>{p["fg3"].lstrip("#")}'),
-    ]
-    for pattern, repl in rules:
-        s, n = re.subn(pattern, repl, s)
-        if n == 0:
-            return False
-    path.write_text(s, encoding="utf-8")
-    return True
-
-
 def patch_lualine(path: Path, p: dict) -> bool:
     if not path.is_file():
         return False
@@ -1251,7 +1213,6 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     do(patch_matuwall, CONFIG / "matuwall/config.toml", p)
     do(patch_fastfetch, CONFIG / "fastfetch/config.jsonc", p)
     do(patch_niri_effects, CONFIG / "niri/config.kdl", p)
-    do(patch_hypr_effects, CONFIG / "hypr/hyprland.lua", p)
     do(patch_lualine, CONFIG / "nvim/lua/plugins/lualine.lua", p)
     do(patch_key, CONFIG / "nvim/current-theme.txt", r"^.*$", p["nvim"])
     do(patch_key, CONFIG / "btop/btop.conf",
@@ -1322,20 +1283,6 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     if niri:
         run(["niri", "msg", "action", "load-config-file"])
 
-    # Hyprland, so Super+T restyles whichever session is running.
-    # HYPRLAND_INSTANCE_SIGNATURE only exists inside a Hyprland session, so this
-    # is a no-op under niri and vice versa. "config-only" because only colour
-    # values changed and a full reload would restart every animation.
-    #
-    # Guarded on the file existing: a running Hyprland holds the path it was
-    # started with, and reloading a path that is not there is not something to
-    # trigger at a keystroke.
-    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
-        hypr_conf = next((f for f in (CONFIG / "hypr/hyprland.lua",
-                                      CONFIG / "hypr/hyprland.conf")
-                          if f.is_file()), None)
-        if hypr_conf is not None:
-            run(["hyprctl", "reload", "config-only"])
 
     # --- wallpaper ---
     #
@@ -1393,8 +1340,7 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # fixed name, so this stays honest if the config is ever loaded outside a
     # session (e.g. by install.sh) rather than reporting a reload that did not
     # happen.
-    compositor = ("hyprland" if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
-                  else "niri" if os.environ.get("NIRI_SOCKET") else "none")
+    compositor = "niri" if os.environ.get("NIRI_SOCKET") else "none"
     print(f"  reloaded: waybar, mako, {compositor}")
     print("  need a restart to pick it up: kitty, nvim, btop, "
           "and any running GTK/Qt app")
