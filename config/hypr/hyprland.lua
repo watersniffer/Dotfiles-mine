@@ -234,7 +234,7 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(home .. "/.local/bin/themesw"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(home .. "/.local/bin/wallpaper-switcher"))
 hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd(home .. "/.local/bin/wallpaper-switcher all"))
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(home .. "/.local/bin/toggle-waybar"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(home .. "/.local/bin/toggle-chillpill"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(home .. "/.local/bin/powerprofile"))
 hl.bind(mainMod .. " + U", hl.dsp.exec_cmd("wlogout"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(
@@ -278,16 +278,25 @@ hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"),       { locked = tr
 ------------------------
 ---- AUTOSTART ---------
 ------------------------
--- Mirrors local/bin/niri-startup, in the same order.
+-- Mirrors local/bin/niri-startup, with the bar swapped for ChillPill-Shell.
+--
+-- The niri session still uses waybar; this is the Hyprland session's bar, and
+-- ChillPill needs no stylesheet or generated colour file of its own -- it reads
+-- config/chillpill-shell/config.jsonc.
+--
+-- mako is deliberately NOT started here, unlike in niri. Only one process can
+-- own org.freedesktop.Notifications, and ChillPill registers itself as the
+-- notification server and draws its own popups. Leaving mako running means it
+-- wins the name and ChillPill's notification module stays permanently dead.
 hl.on("hyprland.start", function()
     hl.exec_cmd("pkill -x dunst 2>/dev/null; true")
-    hl.exec_cmd("mako")
     hl.exec_cmd("systemctl --user restart xdg-desktop-portal.service")
-    hl.exec_cmd('waybar -c "' .. home .. '/.config/waybar/config-hypr.jsonc"'
-                .. ' -s "' .. home .. '/.config/waybar/style.css"')
+    hl.exec_cmd("chillpill-shell")
     hl.exec_cmd(home .. "/.local/bin/at_startup")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("awww restore")
+    -- ChillPill has no system-tray module, so nm-applet is the only way to
+    -- reach tray apps here. Without a bar to host it its icon floats.
     hl.exec_cmd("nm-applet")
     hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1")
