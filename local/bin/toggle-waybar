@@ -10,11 +10,7 @@ else
     elif [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
         waybar_config="$HOME/.config/waybar/config-niri.jsonc"
     elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" || "${desktop,,}" == hyprland* ]]; then
-        # The Hyprland session's bar is ChillPill-Shell, not waybar, so there is
-        # no waybar config for it to start.
-        echo "toggle-waybar: the Hyprland session uses ChillPill-Shell." >&2
-        echo "  use toggle-chillpill to start or stop that bar." >&2
-        exit 1
+        waybar_config="$HOME/.config/waybar/config-hypr.jsonc"
     else
         # Nothing matched, so guessing a name would only produce a bar that
         # fails to start. Say so rather than taking the existing one down.
