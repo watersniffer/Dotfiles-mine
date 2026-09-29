@@ -28,6 +28,11 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/flatpak/exports/bin:/usr/local/
 
 # wl-paste refuses to start if these are absent.
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-export WAYLAND_DISPLAY=wayland-1
+
+# WAYLAND_DISPLAY is deliberately NOT set here, matching start-niri. It was
+# hardcoded to wayland-1, which is only correct when this is the only graphical
+# session: if anything else already holds that display the launcher's helpers
+# would talk to the wrong compositor, and if it is free but numbered higher the
+# export would point at nothing. Hyprland creates and exports its own.
 
 exec /usr/bin/Hyprland -c "$HOME/.config/hypr/hyprland.lua"
