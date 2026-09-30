@@ -34,8 +34,10 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HOME = Path.home()
@@ -653,6 +655,100 @@ def patch_firefox_chrome(path: Path, p: dict) -> bool:
         # rule reads them.
         s = block + "\n\n" + s
     path.write_text(s, encoding="utf-8")
+    return True
+
+
+# dankcalendar's custom-theme keys, in the order its QML reads them. Taken from
+# buildCustomTheme/buildDmsTheme in the QML embedded in /usr/bin/dcal rather than
+# guessed: it merges whatever is present over the built-in preset, so anything
+# omitted keeps the preset's value and a short file is safe.
+DANKCAL_THEME = {
+    "primary": "accent",
+    "primaryText": "on_accent",
+    "primaryContainer": "bg3",
+    "secondary": "magenta",
+    "secondaryContainer": "bg2",
+    "tertiary": "cyan",
+    "tertiaryContainer": "bg2",
+    "surface": "bg1",
+    "surfaceText": "fg0",
+    "surfaceVariant": "bg2",
+    "surfaceVariantText": "fg1",
+    "surfaceTint": "accent",
+    "surfaceBright": "bg2",
+    "surfaceDim": "bg0",
+    "background": "bg0",
+    "backgroundText": "fg0",
+    "outline": "bg3",
+    "outlineVariant": "bg2",
+    "surfaceContainerLowest": "bg0",
+    "surfaceContainerLow": "bg0",
+    "surfaceContainer": "bg1",
+    "surfaceContainerHigh": "bg2",
+    "surfaceContainerHighest": "bg3",
+    "inverseSurface": "fg0",
+    "inverseOnSurface": "bg0",
+    "onSurface": "fg0",
+    "onSurfaceVariant": "fg1",
+}
+
+# Where the generated theme goes. The calendar keeps its whole state in
+# ~/.config/dankcal, which is not in this repo, so the file is written there
+# rather than symlinked -- the same bargain as Firefox's userChrome.css.
+DANKCAL_DIR = HOME / ".config/dankcal"
+DANKCAL_THEME_FILE = DANKCAL_DIR / "custom-theme.json"
+
+
+def render_dankcal_theme(p: dict) -> str:
+    """The custom theme dankcalendar reads from customThemeFile.
+
+    Only a "dark" block is written, and themeMode is forced to dark alongside
+    it: every palette in themes/ is a dark one, so a light block would be dead
+    weight and a light themeMode would ask the calendar to render a palette that
+    does not exist. The reader in dcal is
+    customColorsForMode(), which uses raw.dark when not in light mode and
+    tolerates the light key simply being absent.
+
+    The palette roles are mapped the same way waybar's colors.css maps them, so
+    the calendar ends up the same colour as the bar rather than a third scheme.
+    """
+    lines = ['  "dark": {']
+    items = [f'    "{k}": "{p[role]}"' for k, role in DANKCAL_THEME.items()]
+    lines.append(",\n".join(items))
+    lines.append("  }")
+    return "{\n" + "\n".join(lines) + "\n}\n"
+
+
+def patch_dankcal(path: Path, p: dict) -> bool:
+    """Write dankcalendar's theme file and point its settings at it.
+
+    ui-settings.json is the application's own state, not ours, so only the three
+    keys that select the colour source are touched and everything else -- every
+    reminder, calendar and view preference -- is left exactly as it is. It is
+    read and rewritten as JSON rather than patched textually, because the app
+    rewrites this file itself and a hand-maintained marker would not survive
+    that.
+
+    The alternative sources are both dead ends: "preset" is a fixed palette
+    (blue, out of the box) and cannot follow the system, and the default branch
+    is the matugen path, whose tooling this repo removed in 077269d.
+    """
+    if not path.is_file():
+        return False
+    try:
+        s = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return False
+    DANKCAL_DIR.mkdir(parents=True, exist_ok=True)
+    DANKCAL_THEME_FILE.write_text(render_dankcal_theme(p), encoding="utf-8")
+    if (s.get("colorSource") == "custom"
+            and s.get("customThemeFile") == str(DANKCAL_THEME_FILE)
+            and s.get("themeMode") == "dark"):
+        return True
+    s["colorSource"] = "custom"
+    s["customThemeFile"] = str(DANKCAL_THEME_FILE)
+    s["themeMode"] = "dark"
+    path.write_text(json.dumps(s, indent=4, sort_keys=True) + "\n", encoding="utf-8")
     return True
 
 
@@ -1408,6 +1504,9 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     ff = firefox_profile()
     if ff is not None:
         do(patch_firefox_chrome, ff / "chrome/userChrome.css", p)
+    # dankcalendar keeps its palette in a custom theme file inside its own
+    # config dir, selected by three keys in the ui-settings.json it owns.
+    do(patch_dankcal, HOME / ".config/dankcal/ui-settings.json", p)
     # No Hyprland entry, deliberately. It is left as the Arch package ships it,
     # reading its config from /usr/share/hypr/hyprland.lua, so there is no file
     # in this repo to recolour -- a branch here would only report the config as
@@ -1504,6 +1603,35 @@ def apply(slug: str, wallpaper: bool = True) -> int:
                          stderr=subprocess.DEVNULL, start_new_session=True)
         ashell_restarted = True
 
+    # dankcalendar reads its palette once, at startup, from the custom theme
+    # file patched above. There is no settings watcher in dcal, so like ashell it
+    # has to be restarted for the new colours to land. dcal run --session is what
+    # the shipped dcal.service uses, and it forks the quickshell shell as a
+    # child, so the parent is what gets signalled.
+    #
+    # Scoped to the specific process on purpose: quickshell is this app's own
+    # runtime, and a bare `pkill qs` would take every quickshell shell on the
+    # machine with it.
+    dcal_restarted = False
+    dcal_bin = shutil.which("dcal")
+    if (dcal_bin
+            and (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("WAYLAND_SOCKET"))
+            and subprocess.run(["pgrep", "-f", "dankcal-shell"],
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL).returncode == 0):
+        parents = subprocess.run(["pgrep", "-f", "dcal run --session"],
+                                  capture_output=True, text=True).stdout.split()
+        for pid in parents:
+            try:
+                os.kill(int(pid), signal.SIGTERM)
+            except (ProcessLookupError, PermissionError, ValueError):
+                pass
+        time.sleep(2)
+        subprocess.Popen([dcal_bin, "run", "--session", "--hidden"],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+        dcal_restarted = True
+
     niri = os.environ.get("NIRI_SOCKET")
     if niri:
         run(["niri", "msg", "action", "load-config-file"])
@@ -1575,6 +1703,8 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # ashell only restarts when a bar was actually up, so say which happened
     # rather than always listing it.
     reloaded.append("ashell (restarted)" if ashell_restarted else "ashell (not running)")
+    reloaded.append("dankcalendar (restarted)" if dcal_restarted
+                    else "dankcalendar (not running)")
     print(f"  reloaded: {', '.join(reloaded)}, {compositor}")
     print("  need a restart to pick it up: kitty, nvim, btop, "
           "and any running GTK/Qt app")
