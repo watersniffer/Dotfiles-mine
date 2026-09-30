@@ -489,9 +489,15 @@ def render_ashell_palette(p: dict) -> str:
       danger_color           urgent   waybar's @battery_crit / @urgent
       workspace_colors       [accent]  waybar's @ws_active
 
-    The bar surface is transparent and the islands are painted in bg1 at 0.85
-    alpha, so the wallpaper shows through a little exactly as it does under
-    waybar. Only the bar is translucent; menus and the OSD stay opaque.
+    The bar surface is Solid, not ashell's transparent default. That default
+    was why a theme switch looked like nothing happening: the bar showed the
+    desktop through it, and the only coloured things were the module islands,
+    which are painted in bg1 -- dark in all seven palettes -- over an already
+    dark desktop. Measured across catppuccin and gruvbox the bar background
+    came out byte-identical, #090a0e in both, and the palette reached only
+    about 1% of the pixels through the text. Solid puts the palette on the bar
+    itself so a switch is obvious, while 0.9 still lets a little wallpaper
+    through. Menus and the OSD stay opaque.
     """
     return f"""[appearance]
 # WaycatMono is JetBrainsMono Nerd Font with Waycat's A-L cat glyphs merged
@@ -508,13 +514,16 @@ danger_color = "{p['urgent']}"
 text_color = "{p['fg0']}"
 workspace_colors = [ "{p['accent']}" ]
 
+[appearance.bar]
+surface = "solid"
+
 [appearance.background_color]
 base = "{p['bg1']}"
 weak = "{p['bg2']}"
 strong = "{p['bg3']}"
 
 [appearance.opacity]
-bar = 0.85
+bar = 0.95
 """
 
 
@@ -569,62 +578,72 @@ def firefox_profile() -> Path | None:
     return None
 
 
-# This profile's userChrome.css is hand-written and defines its own colours as
-# bare "R, G, B" triplets rather than hex, which is why it never followed the
-# theme. Each name is a variable in that file, and the value is the palette key
-# it should take.
+# Firefox's own custom properties, which its built-in stylesheets really do
+# consume. This is the list that matters, and the earlier attempt at theming was
+# built on a false premise: the profile's userChrome.css defines its own
+# --accent-color, --tab-color and friends, but nothing in the file ever reads
+# them -- var(--accent-color) appears zero times -- and the file has almost no
+# hardcoded colour either, plus two -moz-mac-vibrant-titlebar-* lines that are
+# macOS appearance values and do nothing on Linux. So it was never painting the
+# window at all; Firefox was drawing its default theme and the :root block was
+# dead code. Recolouring those unused properties was correct and invisible.
+#
+# These are the properties Firefox's own theme CSS reads, so setting them
+# actually repaints the toolbar, urlbar, tabs and menus.
 FIREFOX_VARS = {
-    "--accent-color": "accent",
-    "--secondary-accent-color": "accent",
-    "--third-accent-color": "accent",
-    "--tab-color": "bg2",
-    "--tab-text": "fg0",
-    "--light-color": "fg0",
-    "--dark-color": "bg0",
-    "--url-back": "bg1",
-    "--caption-min-color": "yellow",
-    "--caption-max-color": "blue",
-    "--caption-close-color": "urgent",
+    "--toolbar-bgcolor": "bg0",
+    "--toolbar-color": "fg0",
+    "--toolbar-box-bgcolor": "bg0",
+    "--toolbar-box-text-color": "fg0",
+    "--toolbar-field-background-color": "bg1",
+    "--toolbar-field-color": "fg0",
+    "--toolbar-field-border-color": "bg3",
+    "--toolbar-field-focus-background-color": "bg1",
+    "--toolbar-field-focus-color": "fg0",
+    "--toolbar-field-focus-border-color": "accent",
+    "--toolbar-field-separator-color": "bg3",
+    "--tab-selected-bgcolor": "bg1",
+    "--lwt-accent-color": "accent",
+    "--lwt-text-color": "fg0",
 }
-# The three without which the file has no theme at all, so a miss on any of
-# these means the patch did not really happen and has to be reported.
-FIREFOX_CORE = ("--accent-color", "--tab-color", "--tab-text")
+
+FIREFOX_BEGIN = "/* >>> dotfiles theme-apply >>> */"
+FIREFOX_END = "/* <<< dotfiles theme-apply <<< */"
 
 
 def patch_firefox_chrome(path: Path, p: dict) -> bool:
-    """Recolour the :root block of Firefox's userChrome.css.
+    """Repaint Firefox from the palette by setting its own CSS properties.
 
-    Deliberately not using Firefox's own --toolbar-* variables: this profile's
-    userChrome.css predates that and paints everything through its own custom
-    properties, so recolouring those is what actually changes the window.
-    Rewriting only the values leaves every hand-written rule -- the tab shape,
-    the titlebar padding, the urlbar -- exactly as it was, which is the same
-    bargain patch_gtk4_root makes.
+    The generated block is fenced by markers and rewritten in place on every
+    theme switch, so the hand-written half of the file -- the tab shapes, the
+    titlebar padding, the urlbar radius, the vibrancy rules -- is never touched
+    and never duplicated. Without the fences this would have to append, and a
+    second theme switch would leave two conflicting :root blocks behind.
 
-    Also pins the chrome font. fontconfig already resolves sans-serif to
-    JetBrainsMono Nerd Font, so Firefox's UI would follow, but setting
-    --ui-font-family makes it explicit in the one file this already owns
-    rather than depending on a system-wide default staying put.
+    --ui-font-family is set in the same block, since it is a Firefox property
+    too. fontconfig already resolves sans-serif to JetBrainsMono Nerd Font, so
+    this is belt and braces, but it keeps the font a property of the theme
+    rather than of a system-wide default that could change.
     """
     if not path.is_file():
         return False
     s = path.read_text(encoding="utf-8")
-    hit: set[str] = set()
+    body = [FIREFOX_BEGIN, ":root {"]
+    body.append('    --ui-font-family: "JetBrainsMono Nerd Font";')
     for name, key in FIREFOX_VARS.items():
-        r, g, b = rgb(p[key])
-        s, n = re.subn(rf"({re.escape(name)}\s*:\s*)\d+\s*,\s*\d+\s*,\s*\d+",
-                       rf"\g<1>{r}, {g}, {b}", s)
-        if n:
-            hit.add(name)
-    missing = [n for n in FIREFOX_CORE if n not in hit]
-    if missing:
-        return False
-    if "--ui-font-family" not in s:
-        m = re.search(r":root\s*\{", s)
-        if m:
-            s = (s[:m.end()]
-                 + '\n    --ui-font-family: "JetBrainsMono Nerd Font";'
-                 + s[m.end():])
+        body.append(f"    {name}: {p[key]};")
+    body.append("}")
+    body.append(FIREFOX_END)
+    block = "\n".join(body)
+
+    if FIREFOX_BEGIN in s and FIREFOX_END in s:
+        pre = s[:s.index(FIREFOX_BEGIN)]
+        post = s[s.index(FIREFOX_END) + len(FIREFOX_END):]
+        s = pre + block + post
+    else:
+        # Prepended, so the properties are established before any hand-written
+        # rule reads them.
+        s = block + "\n\n" + s
     path.write_text(s, encoding="utf-8")
     return True
 

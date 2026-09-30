@@ -505,5 +505,18 @@ hl.window_rule({
     float = true,
 })
 
+-- kitty is excluded from blur rather than relying on decoration.blur being off
+-- globally. That setting lives in config/hypr/hyprland-gui.lua, which hyprmod
+-- rewrites from its own state and has twice left blur enabled on a machine
+-- where the committed config has it off; when that happens every window goes
+-- frosted again. A rule here cannot be undone by that, and it also keeps the
+-- blur off kitty specifically without costing any other window the effect.
+hl.window_rule({
+    name     = "kitty-no-blur",
+    match    = { class = "^(kitty|kitty-wayland)$" },
+    no_blur  = true,
+    no_shadow = true,
+})
+
 -- HyprMod managed settings
 require("hyprland-gui")
