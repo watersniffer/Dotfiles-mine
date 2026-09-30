@@ -536,6 +536,99 @@ def patch_ashell_palette(path: Path, p: dict) -> bool:
     return True
 
 
+def firefox_profile() -> Path | None:
+    """The profile Firefox is actually using, or None if it is not installed.
+
+    profiles.ini names a default two different ways and on this machine they
+    disagree: [Profile0] carries Default=1 but points at an empty profile,
+    while the [Install*] section's Default= is the profile the running install
+    opens, and the only one holding chrome/userChrome.css. The install section
+    is checked first for that reason, with the flagged profile as a fallback.
+    """
+    ini = HOME / ".mozilla/firefox/profiles.ini"
+    if not ini.is_file():
+        return None
+    install_default = profile_default = None
+    section = ""
+    for raw in ini.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1]
+            continue
+        if "=" not in line:
+            continue
+        key, _, val = (part.strip() for part in line.partition("="))
+        if key == "Default" and section.startswith("Install"):
+            install_default = val
+        elif key == "Default" and val == "1" and section.startswith("Profile"):
+            profile_default = val
+    base = HOME / ".mozilla/firefox"
+    for cand in (install_default, profile_default):
+        if cand and (base / cand / "prefs.js").is_file():
+            return base / cand
+    return None
+
+
+# This profile's userChrome.css is hand-written and defines its own colours as
+# bare "R, G, B" triplets rather than hex, which is why it never followed the
+# theme. Each name is a variable in that file, and the value is the palette key
+# it should take.
+FIREFOX_VARS = {
+    "--accent-color": "accent",
+    "--secondary-accent-color": "accent",
+    "--third-accent-color": "accent",
+    "--tab-color": "bg2",
+    "--tab-text": "fg0",
+    "--light-color": "fg0",
+    "--dark-color": "bg0",
+    "--url-back": "bg1",
+    "--caption-min-color": "yellow",
+    "--caption-max-color": "blue",
+    "--caption-close-color": "urgent",
+}
+# The three without which the file has no theme at all, so a miss on any of
+# these means the patch did not really happen and has to be reported.
+FIREFOX_CORE = ("--accent-color", "--tab-color", "--tab-text")
+
+
+def patch_firefox_chrome(path: Path, p: dict) -> bool:
+    """Recolour the :root block of Firefox's userChrome.css.
+
+    Deliberately not using Firefox's own --toolbar-* variables: this profile's
+    userChrome.css predates that and paints everything through its own custom
+    properties, so recolouring those is what actually changes the window.
+    Rewriting only the values leaves every hand-written rule -- the tab shape,
+    the titlebar padding, the urlbar -- exactly as it was, which is the same
+    bargain patch_gtk4_root makes.
+
+    Also pins the chrome font. fontconfig already resolves sans-serif to
+    JetBrainsMono Nerd Font, so Firefox's UI would follow, but setting
+    --ui-font-family makes it explicit in the one file this already owns
+    rather than depending on a system-wide default staying put.
+    """
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+    hit: set[str] = set()
+    for name, key in FIREFOX_VARS.items():
+        r, g, b = rgb(p[key])
+        s, n = re.subn(rf"({re.escape(name)}\s*:\s*)\d+\s*,\s*\d+\s*,\s*\d+",
+                       rf"\g<1>{r}, {g}, {b}", s)
+        if n:
+            hit.add(name)
+    missing = [n for n in FIREFOX_CORE if n not in hit]
+    if missing:
+        return False
+    if "--ui-font-family" not in s:
+        m = re.search(r":root\s*\{", s)
+        if m:
+            s = (s[:m.end()]
+                 + '\n    --ui-font-family: "JetBrainsMono Nerd Font";'
+                 + s[m.end():])
+    path.write_text(s, encoding="utf-8")
+    return True
+
+
 def render_rofi_colors(p: dict) -> str:
     r, g, b = rgb(p["bg1"])
     r0, g0, b0 = rgb(p["bg0"])
@@ -1281,6 +1374,13 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # ashell's palette lives in config.toml's [appearance] section, so only
     # that section is regenerated; the layout above it is the user's.
     do(patch_ashell_palette, CONFIG / "ashell/config.toml", p)
+    # Firefox's palette lives in the :root block of a hand-written userChrome.css
+    # inside the profile, not in a config dir this repo owns, so the profile is
+    # resolved from profiles.ini rather than symlinked. Nothing is written when
+    # Firefox is not installed, and that is not a failure.
+    ff = firefox_profile()
+    if ff is not None:
+        do(patch_firefox_chrome, ff / "chrome/userChrome.css", p)
     # No Hyprland entry, deliberately. It is left as the Arch package ships it,
     # reading its config from /usr/share/hypr/hyprland.lua, so there is no file
     # in this repo to recolour -- a branch here would only report the config as
