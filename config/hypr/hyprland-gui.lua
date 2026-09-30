@@ -7,11 +7,11 @@ hl.env("XCURSOR_SIZE", "21")
 -- Settings
 hl.config({
     decoration = {
-        active_opacity = 0.95,
+        active_opacity = 1.0,
         blur = {
-            enabled = true,
+            enabled = false,
         },
-        inactive_opacity = 0.95,
+        inactive_opacity = 1.0,
         rounding = 14,
         shadow = {
             color = "0xee1a1a1a",

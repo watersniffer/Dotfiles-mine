@@ -437,7 +437,14 @@ hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"),       { locked = tr
 -- itself, so there is no Hyprland-specific bar config to point it at.
 hl.on("hyprland.start", function()
     hl.exec_cmd("pkill -x dunst 2>/dev/null; true")
-    hl.exec_cmd("mako")
+    -- mako is deliberately not started here. It used to be, but there is only
+    -- one org.freedesktop.Notifications bus name and ashell needs it for the
+    -- notification dropdown in the bar. Launching both means ashell logs
+    -- "Bus name already owned" and silently receives no notifications, so the
+    -- dropdown stays empty while mako does the popping -- the two features are
+    -- mutually exclusive, not additive. ashell does both jobs now, toasts
+    -- included. Verified: with mako running, ashell never gets the name; with
+    -- mako stopped, mako then fails with "Failed to acquire service name".
     hl.exec_cmd("systemctl --user restart xdg-desktop-portal.service")
     -- ashell's palette lives in the [appearance] section of a config.toml that
     -- is also hand-edited and committed, so anything that rewrites that file

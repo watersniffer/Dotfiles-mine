@@ -28,7 +28,7 @@ layer = "Top"
 [modules]
 left = [ "Workspaces", "cpucat" ]
 center = [ "MediaPlayer", "MediaPrev", "MediaPlayPause", "MediaNext" ]
-right = [ [ "Tray", "Settings", "Tempo" ] ]
+right = [ [ "Tray", "Notifications", "Settings", "Tempo" ] ]
 
 # -- workspaces --------------------------------------------------------------
 # waybar's hyprland/workspaces shows the focused monitor's workspaces with the
@@ -93,6 +93,35 @@ audio_sources_more_cmd = "pavucontrol"
 wifi_more_cmd = "nm-connection-editor"
 bluetooth_more_cmd = "blueman-manager"
 
+# -- notifications ----------------------------------------------------------
+# The Notifications module is the notification centre: its button opens a
+# dropdown listing everything that has come in, and the list is what you scroll
+# when you missed one. It sits between Tray and Settings because both of those
+# are dropdown-style buttons and this belongs with them.
+#
+# This required giving up mako, and that was not a preference. There is exactly
+# one org.freedesktop.Notifications bus name, so the daemon and a notification
+# history cannot both have it: ashell asks for the name with
+# AllowReplacement | ReplaceExisting, mako holds it, and ashell only logs
+# "Bus name already owned" and carries on without ever receiving Notify. The
+# dropdown would have been a permanently empty button. Verified both ways --
+# with mako stopped, ashell took the name and mako then refused to start with
+# "Failed to acquire service name: File exists".
+#
+# So ashell is the daemon, which means it also has to do the popups, hence
+# toast = true. With toast = false and mako gone, notifications would have gone
+# nowhere at all.
+[notifications]
+toast = true
+toast_position = "TopRight"
+toast_timeout = 5000
+toast_limit = 5
+toast_max_height = 150
+show_bodies = true
+show_timestamps = true
+format = "%H:%M"
+grouped = false
+
 # -- tempo (clock) -----------------------------------------------------------
 # waybar's clock format, as a chrono strftime string.
 [tempo]
@@ -113,20 +142,20 @@ font_name = "WaycatMono"
 # The bar is shorter than waybar's was, so the text is scaled down a little to
 # keep it from filling the bar.
 scale_factor = 0.85
-primary_color = "#a7c080"
-success_color = "#a7c080"
-warning_color = "#dbbc7f"
-danger_color = "#e67e80"
-text_color = "#d3c6aa"
-workspace_colors = [ "#a7c080" ]
+primary_color = "#fabd2f"
+success_color = "#b8bb26"
+warning_color = "#fabd2f"
+danger_color = "#fb4934"
+text_color = "#fbf1c7"
+workspace_colors = [ "#fabd2f" ]
 
 [appearance.bar]
 surface = "transparent"
 
 [appearance.background_color]
-base = "#343f44"
-weak = "#3d484d"
-strong = "#475258"
+base = "#3c3836"
+weak = "#504945"
+strong = "#665c54"
 
 [appearance.opacity]
 bar = 0.95
