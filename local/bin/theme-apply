@@ -489,15 +489,23 @@ def render_ashell_palette(p: dict) -> str:
       danger_color           urgent   waybar's @battery_crit / @urgent
       workspace_colors       [accent]  waybar's @ws_active
 
-    The bar surface is Solid, not ashell's transparent default. That default
-    was why a theme switch looked like nothing happening: the bar showed the
-    desktop through it, and the only coloured things were the module islands,
-    which are painted in bg1 -- dark in all seven palettes -- over an already
-    dark desktop. Measured across catppuccin and gruvbox the bar background
-    came out byte-identical, #090a0e in both, and the palette reached only
-    about 1% of the pixels through the text. Solid puts the palette on the bar
-    itself so a switch is obvious, while 0.9 still lets a little wallpaper
-    through. Menus and the OSD stay opaque.
+    The bar surface stays Transparent, which is what draws each module as its
+    own capsule with the desktop showing between them.
+
+    It was Solid for a while, on the theory that a transparent bar is why a
+    theme switch looked like nothing happening: measured across catppuccin and
+    gruvbox the bar background came out byte-identical, #090a0e in both, with
+    the palette reaching about 1% of the pixels through the text. That was a
+    real measurement but the wrong fix -- Solid paints the palette across the
+    full width, which merges the capsules into one continuous rectangle and
+    loses the shape entirely.
+
+    So the theme is carried by the capsules instead, and base is bg2 rather
+    than bg1 for that reason: bg1 is dark in all seven palettes and sits almost
+    on top of a dark desktop, so the capsules disappeared into it. bg2 is one
+    step lighter in every palette, which is enough for the capsules to read as
+    separate shapes carrying the theme, with the wallpaper still visible in the
+    gaps. Menus and the OSD stay opaque.
     """
     return f"""[appearance]
 # WaycatMono is JetBrainsMono Nerd Font with Waycat's A-L cat glyphs merged
@@ -515,12 +523,12 @@ text_color = "{p['fg0']}"
 workspace_colors = [ "{p['accent']}" ]
 
 [appearance.bar]
-surface = "solid"
+surface = "transparent"
 
 [appearance.background_color]
-base = "{p['bg1']}"
-weak = "{p['bg2']}"
-strong = "{p['bg3']}"
+base = "{p['bg2']}"
+weak = "{p['bg3']}"
+strong = "{p['bg4']}"
 
 [appearance.opacity]
 bar = 0.95
