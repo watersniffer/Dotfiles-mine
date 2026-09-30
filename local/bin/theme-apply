@@ -1351,6 +1351,32 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     run(["pkill", "-x", "mako"])                      # config is startup-only
     subprocess.Popen(["mako"], stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
+
+    # ashell is the one bar that cannot be signalled into re-reading its
+    # config, so a theme switch has to restart it. ashell 0.10.0 reads
+    # config.toml exactly once, in Ashell::new: main.rs contains no
+    # watch/notify/inotify at all, and `ashell msg` exposes eleven commands
+    # (volume, brightness, airplane, idle) with no reload among them. The
+    # reload path exists but is dead code -- Message::ConfigChanged ->
+    # refresh_config -> init_theme -- and nothing in the source ever
+    # constructs that message, which is why the README's "hot-reload" claim
+    # does not hold for this version.
+    #
+    # Both guards matter. Restarting only when a bar is actually up keeps a
+    # theme switch in the niri session from starting one, and requiring a
+    # Wayland display means that if this ever runs somewhere it cannot bring
+    # ashell back up, the existing bar is left alone rather than killed.
+    ashell_restarted = False
+    if (shutil.which("ashell")
+            and (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("WAYLAND_SOCKET"))
+            and subprocess.run(["pgrep", "-x", "ashell"],
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL).returncode == 0):
+        run(["pkill", "-x", "ashell"])
+        subprocess.Popen([shutil.which("ashell")], stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
+        ashell_restarted = True
+
     niri = os.environ.get("NIRI_SOCKET")
     if niri:
         run(["niri", "msg", "action", "load-config-file"])
@@ -1418,7 +1444,11 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # session (e.g. by install.sh) rather than reporting a reload that did not
     # happen. Niri is the only compositor this repo configures.
     compositor = "niri" if os.environ.get("NIRI_SOCKET") else "none"
-    print(f"  reloaded: waybar, mako, {compositor}")
+    reloaded = ["waybar", "mako"]
+    # ashell only restarts when a bar was actually up, so say which happened
+    # rather than always listing it.
+    reloaded.append("ashell (restarted)" if ashell_restarted else "ashell (not running)")
+    print(f"  reloaded: {', '.join(reloaded)}, {compositor}")
     print("  need a restart to pick it up: kitty, nvim, btop, "
           "and any running GTK/Qt app")
     return 1 if problems else 0
