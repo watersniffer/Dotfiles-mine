@@ -19,6 +19,12 @@ WAYCAT_PATH = "/home/water/.local/share/fonts/Waycat.ttf"
 OUT_PATH = sys.argv[1] if len(sys.argv) > 1 else "/tmp/WaycatMono.ttf"
 CAT_CHARS = "ABCDEFGHIJKL"
 NEW_FAMILY = "WaycatMono"
+# The cat glyphs go in the Private Use Area, NOT over A-L. ashell renders all
+# bar text with one global font, so putting the cat over A-L would turn every
+# A-L letter in every menu (calendar, WiFi, Bluetooth, ...) into a cat. In the
+# PUA the glyphs are reachable only by the cpucat module, which maps its frame
+# letters A-L onto these codepoints (see catloop-json.sh).
+PUA_BASE = 0xE000
 
 base = TTFont(BASE_PATH)
 waycat = TTFont(WAYCAT_PATH)
@@ -36,7 +42,7 @@ waycat_glyphset = waycat.getGlyphSet()
 
 glyph_order = base.getGlyphOrder()
 
-for char in CAT_CHARS:
+for i, char in enumerate(CAT_CHARS):
     wc_name = waycat_cmap[ord(char)]
     # Draw Waycat's glyph into a new TTGlyph, scaled to the base upem.
     pen = TTGlyphPen(base_glyf)
@@ -47,7 +53,7 @@ for char in CAT_CHARS:
     new_name = f"waycat{char}"
     # __setitem__ appends new_name to glyf.glyphOrder (== glyph_order) for us.
     base_glyf[new_name] = glyph
-    base_cmap[ord(char)] = new_name
+    base_cmap[PUA_BASE + i] = new_name
     aw, lsb = waycat_hmtx[wc_name]
     base_hmtx[new_name] = (round(aw * scale), round(lsb * scale))
 

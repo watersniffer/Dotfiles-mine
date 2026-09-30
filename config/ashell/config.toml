@@ -27,7 +27,7 @@ layer = "Top"
 
 [modules]
 left = [ "Workspaces", "cpucat" ]
-center = [ "media" ]
+center = [ "MediaPlayer", "MediaPrev", "MediaPlayPause", "MediaNext" ]
 right = [ [ "Tray", "Settings", "Tempo" ] ]
 
 # -- workspaces --------------------------------------------------------------
@@ -48,10 +48,29 @@ name = "cpucat"
 type = "Text"
 listen_cmd = "bash ~/.config/ashell/scripts/catloop-json.sh"
 
+# -- media player ------------------------------------------------------------
+# The built-in MediaPlayer module shows the title (truncated) and opens a
+# menu with the full track info and play/pause/next/prev. The three buttons
+# beside it are the same controls as always-visible bar buttons, so the media
+# area is title + transport without having to open the menu.
+[media_player]
+indicator_format = "Text"
+max_text_length = 20
+
 [[CustomModule]]
-name = "media"
-type = "Text"
-listen_cmd = "bash ~/.config/ashell/scripts/media-json.sh"
+name = "MediaPrev"
+icon = "󰒮"
+command = "playerctl previous"
+
+[[CustomModule]]
+name = "MediaPlayPause"
+icon = "󰐊"
+command = "playerctl play-pause"
+
+[[CustomModule]]
+name = "MediaNext"
+icon = "󰒭"
+command = "playerctl next"
 
 # -- settings ----------------------------------------------------------------
 # The three indicators mirror waybar's wireplumber / backlight / battery, in
@@ -87,6 +106,9 @@ clock_format = "%m-%d-%Y %I:%M %p"
 # in (see scripts/merge-waycat-font.py), so the cpucat module renders the cat
 # while every other glyph keeps the bar's font.
 font_name = "WaycatMono"
+# The bar is shorter than waybar's was, so the text is scaled down a little to
+# keep it from filling the bar.
+scale_factor = 0.85
 primary_color = "#cba6f7"
 success_color = "#a6e3a1"
 warning_color = "#f9e2af"

@@ -498,6 +498,9 @@ def render_ashell_palette(p: dict) -> str:
 # in (see scripts/merge-waycat-font.py), so the cpucat module renders the cat
 # while every other glyph keeps the bar's font.
 font_name = "WaycatMono"
+# The bar is shorter than waybar's was, so the text is scaled down a little to
+# keep it from filling the bar.
+scale_factor = 0.85
 primary_color = "{p['accent']}"
 success_color = "{p['green']}"
 warning_color = "{p['yellow']}"
