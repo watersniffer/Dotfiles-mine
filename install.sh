@@ -244,6 +244,13 @@ symlink_dotfiles() {
         fi
 
         cp -a "$DOTFILES_DIR/local/bin/." "$HOME/.local/bin/"
+        # Record where the repo lives. The scripts above are copies rather than
+        # symlinks on purpose, so anything that needs to reach the repo copy
+        # later -- themesw preferring a newer theme-apply over the installed one
+        # -- cannot work it out from its own path, because realpath "$0" lands
+        # back in ~/.local/bin. This file is the only reliable pointer.
+        mkdir -p "$HOME/.local/state"
+        printf '%s\n' "$DOTFILES_DIR" > "$HOME/.local/state/dotfiles-dir"
         # startup/ is fully repo-managed: mirror it exactly so retired scripts
         # stop running instead of merging forever. The full backup above makes
         # this replacement recoverable.

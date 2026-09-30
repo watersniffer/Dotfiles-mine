@@ -30,8 +30,24 @@ APPLY="$HOME/.local/bin/theme-apply"
 #   - there is no installed copy at all (straight out of the repo) -> repo one
 # Whichever is newer wins, so a working installed copy is not needlessly
 # replaced and a stale one cannot be used by accident.
-REPO_APPLY="$(dirname "$(realpath "$0")")/theme-apply"
-if [[ -x "$REPO_APPLY" ]]; then
+REPO_APPLY=""
+# Two candidates, because the $0-relative one alone is not enough. install.sh
+# *copies* these scripts into ~/.local/bin rather than symlinking them (that
+# directory also holds machine-local tools which must survive), so when
+# themesw is run the normal way, realpath "$0" lands back in ~/.local/bin and
+# the repo-relative candidate resolves to the same stale copy the guard is
+# supposed to be checking -- the comparison was against itself and could never
+# fire. ~/.local/state/dotfiles-dir is written by install.sh and is the only
+# thing that reliably points at the repo from here.
+DOTFILES_DIR_FILE="$HOME/.local/state/dotfiles-dir"
+if [[ -r "$DOTFILES_DIR_FILE" ]]; then
+    _dd="$(<"$DOTFILES_DIR_FILE")"
+    [[ -x "$_dd/local/bin/theme-apply" ]] && REPO_APPLY="$_dd/local/bin/theme-apply"
+fi
+if [[ -z "$REPO_APPLY" ]]; then
+    REPO_APPLY="$(dirname "$(realpath "$0")")/theme-apply"
+fi
+if [[ -x "$REPO_APPLY" && "$REPO_APPLY" != "$APPLY" ]]; then
     if [[ ! -x "$APPLY" || "$REPO_APPLY" -nt "$APPLY" ]]; then
         APPLY="$REPO_APPLY"
     fi
