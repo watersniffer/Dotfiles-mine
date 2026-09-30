@@ -439,7 +439,14 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("pkill -x dunst 2>/dev/null; true")
     hl.exec_cmd("mako")
     hl.exec_cmd("systemctl --user restart xdg-desktop-portal.service")
-    hl.exec_cmd("ashell")
+    -- ashell's palette lives in the [appearance] section of a config.toml that
+    -- is also hand-edited and committed, so anything that rewrites that file
+    -- silently reverts the bar's colours while every other app keeps the new
+    -- palette. Re-derive it from the theme in the state file before the bar
+    -- starts, which makes the bar self-healing. Separated by ';' rather than
+    -- '&&' on purpose: if the repair fails for any reason, ashell must still
+    -- come up, because no bar at all is worse than a stale-coloured one.
+    hl.exec_cmd("/home/water/.local/bin/theme-apply --ashell-only >/dev/null 2>&1; ashell")
     hl.exec_cmd("/home/water/.local/bin/at_startup")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("awww restore")

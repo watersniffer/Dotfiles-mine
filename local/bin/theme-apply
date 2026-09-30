@@ -1480,6 +1480,11 @@ def main() -> int:
                     help="recolour the apps but leave the wallpaper alone; by "
                          "default a theme change also applies a wallpaper from "
                          "that theme's own folder")
+    ap.add_argument("--ashell-only", action="store_true",
+                    help="regenerate just ashell's [appearance] from the theme "
+                         "currently in the state file, and change nothing else; "
+                         "the session runs this before starting the bar so a "
+                         "stale config cannot survive a login")
     args = ap.parse_args()
 
     if args.list:
@@ -1505,6 +1510,26 @@ def main() -> int:
         folder = load_palette(args.wallpapers_for).get("wallpapers", "").strip()
         if folder:
             print(folder)
+        return 0
+
+    if args.ashell_only:
+        # Regenerate just ashell's [appearance] from the theme in the state
+        # file, and touch nothing else. This exists because that section lives
+        # inside a file which is also hand-edited and committed, so anything
+        # that rewrites config.toml -- a `git restore`, another agent writing
+        # the file back from a copy it read earlier -- silently reverts the
+        # live theme colours while every other app keeps the new palette. The
+        # session runs this before starting the bar, which makes the bar
+        # self-healing instead of depending on the last write having stuck.
+        slug = current()
+        if not slug:
+            print("  no theme recorded in the state file, leaving ashell alone")
+            return 1
+        path = CONFIG / "ashell/config.toml"
+        if not patch_ashell_palette(path, load_palette(slug)):
+            print(f"  could not patch {path}: no [appearance] section found")
+            return 1
+        print(f"  ashell palette synced to {slug}")
         return 0
 
     if not args.theme:
