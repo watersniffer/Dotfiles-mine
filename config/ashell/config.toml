@@ -60,21 +60,40 @@ max_text_length = 20
 # -- media transport ----------------------------------------------------------
 # The three buttons are the same controls as always-visible bar buttons, so
 # the media area is title + transport without having to open the menu.
+#
+# They only appear when something is actually loaded, and that is done through
+# the `icons` regex map rather than by hiding the module. ashell collapses a
+# module to zero width only when it is type Text; a Button always draws its
+# icon, so there is no way to make one of these genuinely absent. What a Button
+# does support is swapping the icon by regex against the listen_cmd's `alt`
+# field, and with no match it falls back to StaticIcon::None, whose glyph is the
+# empty string. So: no `icon` key at all, and the glyph lives in the map keyed
+# on "playing", which scripts/media-state.sh emits only while a player is on the
+# bus. Left over when idle is ashell's own 1-unit padding on the icon
+# container -- a couple of pixels, hardcoded in custom_module.rs, unreachable
+# from config.
+#
+# Paused counts as loaded, deliberately: there is still something to skip back
+# to, and hiding the controls on pause would mean resuming needs a click on the
+# title first.
 
 [[CustomModule]]
 name = "MediaPrev"
-icon = "󰒮"
 command = "playerctl previous"
+listen_cmd = "bash ~/.config/ashell/scripts/media-state.sh"
+icons = { "^playing$" = "󰒮" }
 
 [[CustomModule]]
 name = "MediaPlayPause"
-icon = "󰐊"
 command = "playerctl play-pause"
+listen_cmd = "bash ~/.config/ashell/scripts/media-state.sh"
+icons = { "^playing$" = "󰐊" }
 
 [[CustomModule]]
 name = "MediaNext"
-icon = "󰒭"
 command = "playerctl next"
+listen_cmd = "bash ~/.config/ashell/scripts/media-state.sh"
+icons = { "^playing$" = "󰒭" }
 
 # -- settings ----------------------------------------------------------------
 # The three indicators mirror waybar's wireplumber / backlight / battery, in
