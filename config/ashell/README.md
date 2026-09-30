@@ -16,14 +16,21 @@ so editing files here takes effect immediately — ashell hot-reloads its config
 
 ## Why ashell is built from source
 
-ashell 0.10.0 cannot show playback position. Its MediaPlayer menu has a volume
-slider but no progress bar, there is no config option for one, and MPRIS exposes
-no signal that would make it cheap to add. `patches/0001-media-player-progress-bar.patch`
-adds a progress bar to each player card in that menu.
+Two things stock 0.10.0 cannot do, neither of which is expressible in
+`config.toml`:
 
-The patch is small but not free, so it is worth knowing what it does:
+- **No playback progress.** The MediaPlayer menu has a volume slider but no
+  progress bar, and MPRIS exposes no signal that would make one cheap to add.
+- **No artwork for web players.** Cover art is read from `mpris:artUrl`, which
+  web players usually leave unset — Firefox, for instance, reports only a title
+  and a URL. YouTube and anime sites do advertise a poster, just not in the one
+  place ashell looks.
 
-- Reads `mpris:length` out of the cached metadata and polls `Position` once a
+`patches/0001-media-player-progress-and-artwork.patch` adds both.
+
+### Progress bar
+
+- Reads `mpris:length` from the cached metadata and polls `Position` once a
   second **while the menu is open** (nothing is drawn when it is closed, so
   there is no point polling then).
 - Polls *every* player, keyed by MPRIS service name, not just the one shown in
@@ -33,6 +40,30 @@ The patch is small but not free, so it is worth knowing what it does:
   from an internal cache that only `PropertiesChanged` signals refresh, and
   MPRIS never emits one for `Position`. The cached getter returns the value read
   once at startup, frozen forever, so polling through it silently does nothing.
+
+### Text in the dropdown
+
+The dropdown shows the **full** title, artist and album; long values wrap onto
+more lines. The bar indicator is a separate code path and still clips to
+`max_text_length` (20 in `config.toml`), because the bar has no room to wrap.
+
+### Artwork
+
+- If a player has no `mpris:artUrl` but does have a `xesam:url`, the page is
+  fetched once and its `og:image` (or `twitter:image`) is used as the cover.
+  This is what makes Anikoto and YouTube show real posters.
+- The discovered URL is written back into `art_url`, so the existing download,
+  cache-eviction and rendering paths are reused unchanged.
+- **This means the bar makes an outbound HTTP request** to the media page
+  whenever a track with no artwork starts — e.g. `anikotv.to`. It is deduped per
+  page URL, a page that yields nothing is never retried, it carries a plain
+  browser user-agent (several of these sites 403 otherwise), and the read is
+  capped at 2 MiB so a multi-megabyte page is abandoned rather than fully
+  downloaded.
+- When no artwork can be found at all (radio streams publish neither an
+  `mpris:artUrl` nor an `og:image`), the card draws a generated tile whose colour
+  and initial come from a hash of the track name, so the row is never left with a
+  blank gap.
 
 Rebuild after changing any patch:
 
@@ -56,7 +87,9 @@ build — rebase it by hand rather than skipping it.
   font, so Waycat's A–N would otherwise appear as cats throughout the UI. The
   merged `WaycatMono` puts the cat frames at U+E000–E00B and
   `catloop-json.sh` maps frame letters to those code points.
-- **No thumbnail in the menu.** Cover art comes from `mpris:artUrl`, which most
-  sources (web video, radio streams) do not provide. Nothing to fix.
 - **The progress bar jumps for radio streams.** A stream's `mpris:length` is the
   current track's, and the position resets whenever the track changes.
+- **A tile with a single letter instead of a poster.** That is the fallback for
+  media that genuinely has no artwork, not a failed fetch — a fetch that is
+  still in flight shows a "loading cover" line first, and a real poster replaces
+  the tile as soon as it lands.
