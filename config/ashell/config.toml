@@ -113,20 +113,20 @@ font_name = "WaycatMono"
 # The bar is shorter than waybar's was, so the text is scaled down a little to
 # keep it from filling the bar.
 scale_factor = 0.85
-primary_color = "#cba6f7"
-success_color = "#a6e3a1"
-warning_color = "#f9e2af"
-danger_color = "#f38ba8"
-text_color = "#cdd6f4"
-workspace_colors = [ "#cba6f7" ]
+primary_color = "#a7c080"
+success_color = "#a7c080"
+warning_color = "#dbbc7f"
+danger_color = "#e67e80"
+text_color = "#d3c6aa"
+workspace_colors = [ "#a7c080" ]
 
 [appearance.bar]
-surface = "solid"
+surface = "transparent"
 
 [appearance.background_color]
-base = "#181825"
-weak = "#313244"
-strong = "#45475a"
+base = "#343f44"
+weak = "#3d484d"
+strong = "#475258"
 
 [appearance.opacity]
 bar = 0.95

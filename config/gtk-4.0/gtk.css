@@ -3,9 +3,9 @@
 @import url("colors.css");
 
 :root {
-    --window-bg-color: #1e1e2e;
-    --window-fg-color: #cdd6f4;
-    --accent-bg-color: #45475a;
-    --accent-color: #89b4fa;
-    --accent-fg-color: #1e1e2e;
+    --window-bg-color: #2d353b;
+    --window-fg-color: #d3c6aa;
+    --accent-bg-color: #3d484d;
+    --accent-color: #7fbbb3;
+    --accent-fg-color: #2d353b;
 }
