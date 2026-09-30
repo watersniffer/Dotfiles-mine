@@ -27,7 +27,7 @@ layer = "Top"
 
 [modules]
 left = [ "Workspaces", "cpucat" ]
-center = [ "MediaPlayer", "MediaPrev", "MediaPlayPause", "MediaNext" ]
+center = [ "MediaPlayer", "MediaProgress", "MediaPrev", "MediaPlayPause", "MediaNext" ]
 right = [ [ "Tray", "Settings", "Tempo" ] ]
 
 # -- workspaces --------------------------------------------------------------
@@ -56,6 +56,14 @@ listen_cmd = "bash ~/.config/ashell/scripts/catloop-json.sh"
 [media_player]
 indicator_format = "Text"
 max_text_length = 20
+
+# Text-based progress indicator ("14:31 / 23:40"). The built-in MediaPlayer
+# menu has a volume slider but no progress bar, so this fills the gap without
+# rebuilding ashell. Collapses when nothing is playing.
+[[CustomModule]]
+name = "MediaProgress"
+type = "Text"
+listen_cmd = "bash ~/.config/ashell/scripts/media-progress.sh"
 
 [[CustomModule]]
 name = "MediaPrev"
