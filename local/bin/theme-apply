@@ -516,7 +516,12 @@ def render_ashell_palette(p: dict) -> str:
 font_name = "WaycatMono"
 # The bar is shorter than waybar's was, so the text is scaled down a little to
 # keep it from filling the bar.
-scale_factor = 0.85
+#
+# Raised from 0.85 to 0.90 to add roughly 2px of bar height. ashell derives the
+# bar's height from the font size times this scale -- there is no height key in
+# [appearance] (verified against the 0.10.0 schema: bar takes surface, radius and
+# margin only), so this is the lever that makes the bar taller.
+scale_factor = 0.9
 primary_color = "{p['accent']}"
 success_color = "{p['green']}"
 warning_color = "{p['yellow']}"
@@ -526,6 +531,11 @@ workspace_colors = [ "{p['accent']}" ]
 
 [appearance.bar]
 surface = "transparent"
+# Roundness of the bar's own ends. Was unset, so this was ashell's default, which
+# is noticeably rounder than wanted. 4 matches the workspace corner rounding used
+# elsewhere in this config and reads as a bar rather than a pill.
+radius = 4
+margin = 4
 
 [appearance.background_color]
 base = "{p['bg2']}"

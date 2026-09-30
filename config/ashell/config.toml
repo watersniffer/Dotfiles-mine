@@ -4,13 +4,13 @@
 #
 #   waybar                  ->  ashell
 #   hyprland/workspaces     ->  Workspaces
-#   custom/cpucat           ->  CustomModule "cpucat"   (listen_cmd, catloop.sh)
-#   custom/media            ->  CustomModule "media"    (listen_cmd, media-title.sh)
 #   tray                    ->  Tray
 #   wireplumber             ->  Settings "Audio" indicator
 #   backlight               ->  Settings "Brightness" indicator
 #   battery                 ->  Settings "Battery" indicator
 #   clock                   ->  Tempo
+#   custom/cpucat           ->  removed; was a Text module, see [modules]
+#   custom/media            ->  MediaPlayer, with transport in its menu
 #
 # The Settings module is more than the three indicators it shows in the bar:
 # its button opens the panel that also carries WiFi, Bluetooth, audio
@@ -26,8 +26,27 @@ position = "Top"
 layer = "Top"
 
 [modules]
-left = [ "Workspaces", "cpucat" ]
-center = [ "MediaPlayer", "MediaPrev", "MediaPlayPause", "MediaNext" ]
+# cpucat was removed from the bar entirely: the module is out of [modules] and its
+# [[CustomModule]] block below is gone too, so there is no leftover listen_cmd
+# definition to confuse the next reader. It was a Text module driving
+# scripts/catloop-json.sh, which forks waybar's catloop.sh to animate a sleeping
+# cat in the top-left.
+#
+# Both scripts are still on disk and still work -- catloop-json.sh under
+# config/ashell/scripts/, catloop.sh under config/waybar/scripts/. To bring the
+# cat back: add "cpucat" to the list below and restore the [[CustomModule]] block
+# from git history (it is one name, one type, one listen_cmd line). The font work
+# for it is also still in place: install.sh still merges the cat glyphs into
+# WaycatMono via scripts/merge-waycat-font.py, so the cat would render correctly
+# rather than as plain letters.
+#
+# The three transport buttons were moved into the MediaPlayer dropdown, so the
+# center of the bar is now just the track title. They used to be separate
+# CustomModule buttons here, which meant three extra interactive elements in the
+# bar for controls the media menu already offers. See the [media_player] comment
+# below for why they could never have been hidden when idle.
+left = [ "Workspaces" ]
+center = [ "MediaPlayer" ]
 right = [ [ "Tray", "Notifications", "Settings", "Tempo" ] ]
 
 # -- workspaces --------------------------------------------------------------
@@ -37,63 +56,33 @@ right = [ [ "Tray", "Notifications", "Settings", "Tempo" ] ]
 [workspaces]
 visibility_mode = "MonitorSpecific"
 
-# -- custom modules ----------------------------------------------------------
-# Both are Text modules driven by listen_cmd, not polls: the scripts stream
-# frames / titles and ashell re-renders on each line. An empty Text module
-# renders as zero-width, so "media" collapses when nothing is playing -- the
-# same "hide when empty" behaviour waybar gets from "hide-empty-text": true.
-
-[[CustomModule]]
-name = "cpucat"
-type = "Text"
-listen_cmd = "bash ~/.config/ashell/scripts/catloop-json.sh"
-
 # -- media player ------------------------------------------------------------
-# The built-in MediaPlayer module shows the title (truncated) and opens a
-# menu with the full track info and play/pause/next/prev. The three buttons
-# beside it are the same controls as always-visible bar buttons, so the media
-# area is title + transport without having to open the menu.
+# The built-in MediaPlayer module shows the title (truncated) and opens a menu
+# with the full track info plus play/pause, next and previous.
+#
+# The three transport buttons that used to sit beside it in the bar are gone; the
+# menu is where they live now. They had been CustomModule type Button, because
+# that was the only way to put an icon in the bar that runs playerctl. That
+# arrangement had two problems worth recording, since it is why they are not
+# coming back as bar buttons:
+#
+#   A Button cannot be hidden. ashell collapses a module to zero width only when
+#   it is type Text, so a Button always draws its icon and always keeps its 1-unit
+#   container padding (hardcoded in custom_module.rs, no config reaches it). The
+#   earlier attempt to hide them until something was playing -- an `icons` regex
+#   keyed on a listen_cmd frame, falling back to StaticIcon::None whose glyph is
+#   "" -- therefore left a couple of pixels on screen even when idle. It needed
+#   scripts/media-state.sh, a process polling every second, to achieve nothing
+#   visible.
+#
+#   They were always interactive with nothing loaded. playerctl no-ops when no
+#   player is on the bus, so pressing them did nothing, but they looked live.
+#
+# The menu ashell opens already offers the same three controls over the same
+# player, so nothing was lost by moving them there.
 [media_player]
 indicator_format = "Text"
 max_text_length = 20
-
-# -- media transport ----------------------------------------------------------
-# The three buttons are the same controls as always-visible bar buttons, so
-# the media area is title + transport without having to open the menu.
-#
-# They only appear when something is actually loaded, and that is done through
-# the `icons` regex map rather than by hiding the module. ashell collapses a
-# module to zero width only when it is type Text; a Button always draws its
-# icon, so there is no way to make one of these genuinely absent. What a Button
-# does support is swapping the icon by regex against the listen_cmd's `alt`
-# field, and with no match it falls back to StaticIcon::None, whose glyph is the
-# empty string. So: no `icon` key at all, and the glyph lives in the map keyed
-# on "playing", which scripts/media-state.sh emits only while a player is on the
-# bus. Left over when idle is ashell's own 1-unit padding on the icon
-# container -- a couple of pixels, hardcoded in custom_module.rs, unreachable
-# from config.
-#
-# Paused counts as loaded, deliberately: there is still something to skip back
-# to, and hiding the controls on pause would mean resuming needs a click on the
-# title first.
-
-[[CustomModule]]
-name = "MediaPrev"
-command = "playerctl previous"
-listen_cmd = "bash ~/.config/ashell/scripts/media-state.sh"
-icons = { "^playing$" = "󰒮" }
-
-[[CustomModule]]
-name = "MediaPlayPause"
-command = "playerctl play-pause"
-listen_cmd = "bash ~/.config/ashell/scripts/media-state.sh"
-icons = { "^playing$" = "󰐊" }
-
-[[CustomModule]]
-name = "MediaNext"
-command = "playerctl next"
-listen_cmd = "bash ~/.config/ashell/scripts/media-state.sh"
-icons = { "^playing$" = "󰒭" }
 
 # -- settings ----------------------------------------------------------------
 # The three indicators mirror waybar's wireplumber / backlight / battery, in
@@ -101,9 +90,14 @@ icons = { "^playing$" = "󰒭" }
 # audio sink/source picking and the power menu.
 [settings]
 indicators = [ "Audio", "Brightness", "Battery" ]
-audio_indicator_format = "IconAndPercentage"
-brightness_indicator_format = "IconAndPercentage"
-battery_format = "IconAndPercentage"
+# Icon-only. These were IconAndPercentage, which put a number next to each of the
+# three indicators -- three numbers permanently in the bar, for values that are
+# also readable by looking at the slider in the panel behind this button. The
+# audio and brightness panel behind the Settings button already has working
+# sliders, so the numbers were duplicating what one click away already showed.
+audio_indicator_format = "Icon"
+brightness_indicator_format = "Icon"
+battery_format = "Icon"
 # The same lock command the Hyprland keybind uses.
 lock_cmd = "swaylock -C /home/water/.config/niri/lock.conf -f"
 # The panel's "more" buttons open the real apps.
@@ -160,21 +154,31 @@ clock_format = "%m-%d-%Y %I:%M %p"
 font_name = "WaycatMono"
 # The bar is shorter than waybar's was, so the text is scaled down a little to
 # keep it from filling the bar.
-scale_factor = 0.85
-primary_color = "#fabd2f"
-success_color = "#b8bb26"
-warning_color = "#fabd2f"
-danger_color = "#fb4934"
-text_color = "#fbf1c7"
-workspace_colors = [ "#fabd2f" ]
+#
+# Raised from 0.85 to 0.90 to add roughly 2px of bar height. ashell derives the
+# bar's height from the font size times this scale -- there is no height key in
+# [appearance] (verified against the 0.10.0 schema: bar takes surface, radius and
+# margin only), so this is the lever that makes the bar taller.
+scale_factor = 0.9
+primary_color = "#f2f2f2"
+success_color = "#bdbdbd"
+warning_color = "#c8c8c8"
+danger_color = "#ffffff"
+text_color = "#f2f2f2"
+workspace_colors = [ "#f2f2f2" ]
 
 [appearance.bar]
 surface = "transparent"
+# Roundness of the bar's own ends. Was unset, so this was ashell's default, which
+# is noticeably rounder than wanted. 4 matches the workspace corner rounding used
+# elsewhere in this config and reads as a bar rather than a pill.
+radius = 4
+margin = 4
 
 [appearance.background_color]
-base = "#3c3836"
-weak = "#504945"
-strong = "#665c54"
+base = "#1a1a1a"
+weak = "#262626"
+strong = "#3d3d3d"
 
 [appearance.opacity]
 bar = 0.95
