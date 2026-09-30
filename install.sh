@@ -210,7 +210,8 @@ symlink_dotfiles() {
     # nvim and qt6ct are deliberately absent: applications write state into them
     # (see setup_nvim and setup_qt6ct).
     for name in niri hypr kitty waybar rofi mako fastfetch matuwall wlogout \
-                xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi; do
+                xdg-desktop-portal gtk-3.0 gtk-4.0 btop Kvantum xsettingsd yazi \
+                ashell; do
         if [[ -d "$conf_dir/$name" ]]; then
             link_item "$conf_dir/$name" "$HOME/.config/$name"
         fi
@@ -307,6 +308,17 @@ DESKTOP
     mkdir -p "$HOME/.local/share/fonts"
     [[ -f "$DOTFILES_DIR/config/waybar/scripts/fonts/Skulltype.ttf" ]] && cp -f "$DOTFILES_DIR/config/waybar/scripts/fonts/Skulltype.ttf" "$HOME/.local/share/fonts/"
     [[ -f "$DOTFILES_DIR/config/waybar/scripts/fonts/Waycat.ttf" ]]    && cp -f "$DOTFILES_DIR/config/waybar/scripts/fonts/Waycat.ttf" "$HOME/.local/share/fonts/"
+    # WaycatMono: JetBrainsMono Nerd Font with Waycat's A-L cat glyphs merged
+    # in. ashell renders all bar text with one global font, so the cpucat module
+    # cannot be given its own font the way waybar's per-module CSS does; this
+    # merged font is how the cat keeps its Waycat glyphs while every other
+    # glyph keeps the bar's font. Needs python3-fonttools.
+    if [[ -f "$HOME/.local/share/fonts/Waycat.ttf" ]] && \
+       [[ -f /usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf ]]; then
+        python3 "$DOTFILES_DIR/config/ashell/scripts/merge-waycat-font.py" \
+            "$HOME/.local/share/fonts/WaycatMono.ttf" 2>/dev/null || \
+            warn "WaycatMono font could not be generated; the cpucat module will fall back to plain letters"
+    fi
     fc-cache -f 2>/dev/null || true
 
     # --- Wallpaper directory ---

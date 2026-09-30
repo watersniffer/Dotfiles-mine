@@ -432,14 +432,14 @@ hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"),       { locked = tr
 ------------------------
 ---- AUTOSTART ---------
 ------------------------
--- local/bin/niri-startup in the same order, with the bar pointed at the
--- Hyprland variant of your waybar config.
+-- local/bin/niri-startup in the same order, with ashell as the bar. ashell
+-- reads ~/.config/ashell/config.toml by default and detects the compositor
+-- itself, so there is no Hyprland-specific bar config to point it at.
 hl.on("hyprland.start", function()
     hl.exec_cmd("pkill -x dunst 2>/dev/null; true")
     hl.exec_cmd("mako")
     hl.exec_cmd("systemctl --user restart xdg-desktop-portal.service")
-    hl.exec_cmd('waybar -c "/home/water/.config/waybar/config-hypr.jsonc"'
-                .. ' -s "/home/water/.config/waybar/style.css"')
+    hl.exec_cmd("ashell")
     hl.exec_cmd("/home/water/.local/bin/at_startup")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("awww restore")

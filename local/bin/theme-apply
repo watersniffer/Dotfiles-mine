@@ -471,6 +471,68 @@ def render_waybar_colors(p: dict) -> str:
 """
 
 
+def render_ashell_palette(p: dict) -> str:
+    """The [appearance] section of ashell's config.toml.
+
+    ashell has no separate palette file: its colours live in the [appearance]
+    section of config.toml, so that section is regenerated from the palette the
+    same way colors.css is. The mapping follows waybar's colors.css, because
+    the bar is meant to look the same:
+
+      background_color.base  bg1   the module islands (waybar's @island is bg1)
+      background_color.weak  bg2   hover
+      background_color.strong bg3
+      text_color             fg0   waybar's @fg
+      primary_color          accent  waybar's @ws_active
+      success_color          green
+      warning_color          yellow  waybar's @battery_warn
+      danger_color           urgent   waybar's @battery_crit / @urgent
+      workspace_colors       [accent]  waybar's @ws_active
+
+    The bar surface is transparent and the islands are painted in bg1 at 0.85
+    alpha, so the wallpaper shows through a little exactly as it does under
+    waybar. Only the bar is translucent; menus and the OSD stay opaque.
+    """
+    return f"""[appearance]
+# WaycatMono is JetBrainsMono Nerd Font with Waycat's A-L cat glyphs merged
+# in (see scripts/merge-waycat-font.py), so the cpucat module renders the cat
+# while every other glyph keeps the bar's font.
+font_name = "WaycatMono"
+primary_color = "{p['accent']}"
+success_color = "{p['green']}"
+warning_color = "{p['yellow']}"
+danger_color = "{p['urgent']}"
+text_color = "{p['fg0']}"
+workspace_colors = [ "{p['accent']}" ]
+
+[appearance.background_color]
+base = "{p['bg1']}"
+weak = "{p['bg2']}"
+strong = "{p['bg3']}"
+
+[appearance.opacity]
+bar = 0.85
+"""
+
+
+def patch_ashell_palette(path: Path, p: dict) -> bool:
+    """Regenerate the [appearance] section of ashell's config.toml in place.
+
+    The palette is the only theme-dependent part of the file, so just that
+    section is rewritten and the layout above it is left untouched. The section
+    runs to the end of the file, which makes the replacement a clean slice.
+    """
+    if not path.is_file():
+        return False
+    s = path.read_text(encoding="utf-8")
+    marker = "\n[appearance]\n"
+    idx = s.find(marker)
+    if idx == -1:
+        return False
+    path.write_text(s[:idx] + "\n" + render_ashell_palette(p), encoding="utf-8")
+    return True
+
+
 def render_rofi_colors(p: dict) -> str:
     r, g, b = rgb(p["bg1"])
     r0, g0, b0 = rgb(p["bg0"])
@@ -1213,6 +1275,9 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     do(patch_matuwall, CONFIG / "matuwall/config.toml", p)
     do(patch_fastfetch, CONFIG / "fastfetch/config.jsonc", p)
     do(patch_niri_effects, CONFIG / "niri/config.kdl", p)
+    # ashell's palette lives in config.toml's [appearance] section, so only
+    # that section is regenerated; the layout above it is the user's.
+    do(patch_ashell_palette, CONFIG / "ashell/config.toml", p)
     # No Hyprland entry, deliberately. It is left as the Arch package ships it,
     # reading its config from /usr/share/hypr/hyprland.lua, so there is no file
     # in this repo to recolour -- a branch here would only report the config as

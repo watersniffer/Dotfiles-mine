@@ -156,6 +156,10 @@ gcc
 make
 npm
 python
+# Needed only by config/ashell/scripts/merge-waycat-font.py, which builds the
+# WaycatMono font (JetBrainsMono + Waycat's cat glyphs) that ashell's cpucat
+# module needs, since ashell cannot give one module its own font.
+python-fonttools
 jq
 tree-sitter-cli
 socat
