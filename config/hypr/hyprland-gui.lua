@@ -5,44 +5,19 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("XCURSOR_SIZE", "21")
 
 -- Settings
---
--- The frosted look is done by the hyprglass plugin, not by Hyprland's own blur.
--- hyprglass models each window as a thick glass slab: it samples the desktop
--- behind the window, gaussian-blurs it, then adds edge refraction, chromatic
--- aberration, a fresnel rim, a specular highlight and a lens dome on top. That
--- is what "liquid glass" actually means, and Hyprland's decoration.blur on its
--- own only ever produced a flat smear.
---
--- Hyprland's blur is therefore switched OFF below. It is not needed: hyprglass
--- does a better job and, with manage_window_blur on (the default), it sets
--- noblur on the windows it glasses so the two cannot stack. Leaving both would
--- mean paying for two blurs per frame on an Intel HD 520 with 4 cores.
---
--- The window itself still has to be transparent for any of this to be visible.
--- For kitty that is background_opacity in its own config; without it the glass
--- is drawn under an opaque surface and you see nothing but a solid block, which
--- is what "it just looks opaque" was.
-
 hl.config({
     decoration = {
         active_opacity = 1.0,
-        inactive_opacity = 1.0,
-        -- hyprglass draws the effect; Hyprland's own blur stays off so the frame
-        -- is not blurred twice. Turn this back on only if hyprglass ever fails to
-        -- load, since it is the fallback that at least looks frosted.
         blur = {
             enabled = false,
         },
-        -- Required. hyprglass draws into the decoration layer below the window,
-        -- and it needs the shadow pass present in the pipeline; it auto-enables
-        -- shadows at load if they are missing, but setting it here means that
-        -- happens from config rather than as a side effect.
+        inactive_opacity = 1.0,
+        rounding = 14,
         shadow = {
+            color = "0xee1a1a1a",
             enabled = true,
             range = 0,
-            color = 0x00000000,
         },
-        rounding = 14,
     },
     general = {
         border_size = 0,
@@ -53,59 +28,6 @@ hl.config({
             },
         },
         gaps_out = 7,
-        layout = "dwindle",
+        layout = "master",
     },
 })
-
--- hyprglass, configured.
---
--- Wrapped in a guard because the plugin has to be loaded before it can be
--- configured, and on a machine where hyprglass is not installed hl.plugin is
--- simply absent. Without the guard the whole file would error out here.
-if hl.plugin.hyprglass then
-    local hg = hl.plugin.hyprglass
-
-    hg.config({
-        default_theme = "dark",
-        -- "clear" is the transparent glass plate, which is the liquid-glass look
-        -- rather than a solid block. The built-in default preset is "default",
-        -- whose glass_opacity is 1.0 -- an opaque slab, which is the other half
-        -- of why this looked solid.
-        default_preset = "clear",
-    })
-
-    -- Defined here rather than left to the built-in "clear" so the values are
-    -- visible and adjustable in one place.
-    --
-    -- glass_opacity is the plate itself. At 1.0 nothing behind shows through, so
-    -- this is the single most important number in the whole effect.
-    -- blur_strength scales the radius (value * 12px). 1.5 gives roughly 18px,
-    -- enough to read as frosted without turning the text behind it to mush.
-    -- tint_color's alpha is the tint strength, so the last two hex digits are
-    -- the dial -- 22 is very faint, aa is a clear blue cast.
-    hg.preset("clear", {
-        glass_opacity = 0.72,
-        blur_strength = 1.5,
-        tint_color = 0x8899aa22,
-        -- The edge treatment is what separates "blurred rectangle" from "glass".
-        -- These are the defaults, set out so they can be dialled back if the
-        -- edges look like a rendering artefact rather than a rim.
-        edge_thickness = 0.06,
-        refraction_strength = 0.6,
-        chromatic_aberration = 0.5,
-        fresnel_strength = 0.6,
-        specular_strength = 0.8,
-        lens_distortion = 0.5,
-        dark = { brightness = 0.82 },
-    })
-
-    -- Glass on the bar as well, so it does not sit on the desktop as an opaque
-    -- strip. Layer glass hooks Hyprland's renderLayer, which is a private
-    -- internal, so this is the fragile part of the effect and the first thing to
-    -- turn off if a Hyprland update makes the compositor misbehave. The mask
-    -- threshold keeps it off the bar's shadow.
-    hg.config({
-        layers = { enabled = true },
-    })
-    hg.layer("waybar", { preset = "subtle", mask_threshold = 0.05 })
-end
