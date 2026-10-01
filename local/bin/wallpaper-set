@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+#
+# wallpaper-set -- set the desktop wallpaper with hyprpaper.
+#
+# Replaces matuwall as the backend. hyprpaper is mpv-based, so unlike a plain
+# image setter it renders animated wallpapers (webp, gif, video) as well as
+# stills, which is why it was chosen.
+#
+#   wallpaper-set FILE          set that image
+#   wallpaper-set RANDOM        a random image from the wallpaper folder
+#
+# Everything else -- which folder, the picker, the theme mapping -- still belongs
+# to wallpaper-switcher; this script is only the part that talks to the backend.
+
+set -uo pipefail
+
+SELF=$(basename "$0")
+WALL_ROOT="$HOME/Pictures/Wallpapers"
+
+say()  { printf '%s: %s\n' "$SELF" "$*" >&2; }
+die()  { say "$*"; exit 1; }
+
+command -v hyprctl >/dev/null 2>&1 || die "hyprctl not found"
+
+# A folder of pictures is what Super+W opens. Anything else -- including the
+# random pick with no argument -- falls back to the ALL folder so there is always
+# somewhere to choose from.
+if [[ ${1:-} == RANDOM || ${1:-} == random ]]; then
+    dir="$WALL_ROOT/ALL"
+    shift
+    mapfile -t candidates < <(find "$dir" -maxdepth 1 -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
+           -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.mp4' \) 2>/dev/null)
+    if (( ${#candidates[@]} == 0 )); then
+        say "no images in $dir"
+        exit 0
+    fi
+    set -- "${candidates[RANDOM % ${#candidates[@]}]}"
+fi
+
+# matuwall's --hook substitution convention is not documented clearly enough to
+# rely on: its man page says the hook "replace/append on_apply" without stating
+# whether the image is appended to argv or substituted into a placeholder. So take
+# the last argument that names a file that actually exists, which is correct under
+# either convention, and also tolerate the placeholder being passed literally.
+args=("$@")
+for (( i = ${#args[@]}-1; i >= 0; i-- )); do
+    a=${args[i]}
+    if [[ $a == "{}" ]]; then
+        continue                       # unsubstituted placeholder
+    fi
+    if [[ -f $a ]]; then
+        img=$a
+        break
+    fi
+done
+
+if [[ -z ${img:-} ]]; then
+    # No path arrived (RANDOM was used, or the hook passed something unexpected):
+    # fall back to the argument list as given, which is the documented usage.
+    if [[ -n ${1:-} ]]; then
+        img=$1
+    else
+        die "usage: wallpaper-set FILE|RANDOM"
+    fi
+fi
+
+[[ -f $img ]] || die "no such file: $img"
+
+# hyprpaper takes the path as-is. MPV decides the video/no-video branch, so an
+# animated webp or an mp4 needs no special handling here.
+hyprctl hyprpaper reload "$img" >/dev/null 2>&1 \
+    || die "hyprpaper refused $img"
+
+printf '%s\n' "$img"
+exit 0

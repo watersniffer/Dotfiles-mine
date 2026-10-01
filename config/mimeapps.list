@@ -15,6 +15,7 @@ application/pdf=zen.desktop
 x-scheme-handler/about=helium.desktop
 x-scheme-handler/unknown=helium.desktop
 x-scheme-handler/mailspring=Mailspring.desktop
+x-scheme-handler/mailto=helium.desktop
 
 [Added Associations]
 x-scheme-handler/http=zen.desktop;

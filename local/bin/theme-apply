@@ -1617,15 +1617,30 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     # Wayland display means that if this ever runs somewhere it cannot bring
     # ashell back up, the existing bar is left alone rather than killed.
     ashell_restarted = False
-    if (shutil.which("ashell")
-            and (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("WAYLAND_SOCKET"))
-            and subprocess.run(["pgrep", "-x", "ashell"],
-                               stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL).returncode == 0):
-        run(["pkill", "-x", "ashell"])
-        subprocess.Popen([shutil.which("ashell")], stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, start_new_session=True)
-        ashell_restarted = True
+    waybar_restyled = False
+    if (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("WAYLAND_SOCKET")):
+        # waybar, not ashell: the bar is waybar since the rice switch, and waybar
+        # re-reads its stylesheet on SIGUSR2 without a restart. SIGUSR1 and
+        # SIGUSR2 were checked against the installed waybar's docs rather than
+        # assumed, because getting this wrong means a theme switch that silently
+        # does nothing.
+        if shutil.which("waybar") and subprocess.run(
+                ["pgrep", "-x", "waybar"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL).returncode == 0:
+            # SIGUSR2 reloads style.css and keeps the layer, which matters under
+            # niri: a plain style reload drops the bar onto the Bottom layer.
+            run(["pkill", "-USR2", "-x", "waybar"])
+            waybar_restyled = True
+        elif (shutil.which("ashell") and subprocess.run(
+                ["pgrep", "-x", "ashell"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL).returncode == 0):
+            # Still there as a fallback, for a session that has not been switched.
+            run(["pkill", "-x", "ashell"])
+            subprocess.Popen([shutil.which("ashell")], stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL, start_new_session=True)
+            ashell_restarted = True
 
     # dankcalendar reads its palette once, at startup, from the custom theme
     # file patched above. There is no settings watcher in dcal, so like ashell it
@@ -1726,7 +1741,9 @@ def apply(slug: str, wallpaper: bool = True) -> int:
     reloaded = ["waybar", "mako"]
     # ashell only restarts when a bar was actually up, so say which happened
     # rather than always listing it.
-    reloaded.append("ashell (restarted)" if ashell_restarted else "ashell (not running)")
+    reloaded.append("waybar (style reloaded)" if waybar_restyled
+                  else ("ashell (restarted)" if ashell_restarted
+                        else "bar (not running)"))
     reloaded.append("dankcalendar (restarted)" if dcal_restarted
                     else "dankcalendar (not running)")
     print(f"  reloaded: {', '.join(reloaded)}, {compositor}")

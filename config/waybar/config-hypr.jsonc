@@ -1,91 +1,117 @@
-// Waybar config for the Hyprland session.
+// Zeibytes/most-racist-rice waybar config, adapted rather than copied as-is.
 //
-// Generated from config-niri.jsonc, the bar this machine already uses. Waybar's
-// workspace module is the only compositor-specific part, so the whole file is
-// that config with two changes and nothing else:
+// Four changes from upstream, all of them things that would simply not work here:
 //
-//   1. niri/workspaces  ->  hyprland/workspaces
-//   2. its format token {value} -> {id}, which is what hyprland/workspaces
-//      interpolates
+//   custom/cpucat exec   upstream hardcodes /home/zei/...; rewritten to this
+//                        machine's ~/.config/waybar/scripts/catloop.sh
+//   modules-right        "tray" was missing upstream, so no tray icons at all
+//   mpris "player"       pinned to spotify upstream, which is not installed --
+//                        that pin is why media never appears, so it is removed
+//                        and any MPRIS player is accepted
+//   trailing commas      stripped, since JSONC-with-commas will not parse as JSON
 //
-// The custom modules (cpucat, media) and everything else are untouched: none of
-// them talk to compositor IPC, and style.css never names a module, so the same
-// stylesheet styles both bars.
+// Colours are NOT here: style.css @imports colors.css, which theme-apply
+// generates from themes/<slug>/palette.conf. That is why switching theme with
+// Super+T still restyles this bar.
+// height is 34, not 30: waybar's hyprland/workspaces module has a
+// hard 34px minimum that no font-size or padding change gets under.
+// Measured with a stripped-down config: an empty modules-right and a clock-only
+// one both honour height 30; adding hyprland/workspaces puts the floor at 34
+// regardless. Asking for 30 just logs a warning and is ignored, so it asks for 34.
 {
-  // Off deliberately. It reloads the bar's style whenever style.css changes,
-  // and under niri that style reload drops the bar onto the Bottom layer,
-  // where every window covers it. Editing the palette is not lost either way:
-  // themesw sends SIGUSR2, which re-reads the stylesheet and keeps the layer.
-  "reload_style_on_change": false,
   "layer": "top",
   "position": "top",
-  "spacing": 5,
-  // Attached to the top edge: no floating margins, and a real 34px height
-  // (it used to be 1 here, with the visible height coming from the CSS
-  // min-height instead).
-  "height": 35,
-
-  "modules-left": ["hyprland/workspaces", "custom/cpucat"],
-  // custom/media rather than mpris: the mpris module always renders a label,
-  // so its island pill showed up as an empty capsule whenever nothing was
-  // playing. hide-empty-text removes the module instead, so the pill only
-  // exists while there is something to show.
-  "modules-center": ["custom/media"],
+  "spacing": 2,
+  "height": 34,
+  "margin-top": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
   "modules-right": [
     "tray",
     "wireplumber",
     "backlight",
     "battery",
-    "clock"
+    "clock",
+    "custom/power"
   ],
+  "custom/tab": {
+    "format": "[Z]",
+    "on-click": "rofi -show drun"
+  },
   "hyprland/workspaces": {
-    "format": "{id}"
+    "format": "{name}",
+    "on-click": "activate",
+    "sort-by-number": true
   },
-
-  "custom/media": {
-    "exec": "bash ~/.config/waybar/scripts/media-title.sh",
-    "interval": 2,
-    "hide-empty-text": true,
-    "max-length": 40
+  "mpris": {
+    "format": "  {artist} - {title} ",
+    "format-paused": " \udb81\udc0a {artist} - {title} ",
+    "max-length": 37,
+    "tooltip": true
   },
-
   "tray": {
-    "icon-size": 14,
-    "spacing": 4
-  },
-  "custom/cpucat": {
-    "exec": "bash ~/.config/waybar/scripts/catloop.sh"
+    "icon-size": 16,
+    "spacing": 6
   },
   "wireplumber": {
     "scroll-step": 5,
     "format": " {icon} {volume}%",
-    "format-muted": "󰝟 muted",
-    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "format-muted": "\udb81\udf5f muted",
+    "on-click": "pavucontrol",
     "format-icons": {
-      "default": ["󰕿", "󰖀", "󰕾"],
-      "headphones": "󰋋",
-      "headset": "󰋎"
+      "default": [
+        "\udb81\udd7f",
+        "\udb81\udd80",
+        "\udb81\udd7e"
+      ],
+      "headphones": "\udb80\udecb",
+      "headset": "\udb80\udece"
     }
   },
-
   "backlight": {
+    "device": "intel_backlight",
     "format": " {icon} {percent}% ",
-    "format-icons": ["󰃞", "󰃟", "󰃠"]
-  },
-
-  "battery": {
-    "states": { "warning": 30, "critical": 15 },
-    "format": "{icon} {capacity}% ",
-    "format-charging": "󰂄 {capacity}% ",
-    "format-plugged": "󱟦 {capacity}% ",
-    "format-full": "󰁹 {capacity}% ",
     "format-icons": [
-      "󰂎", "󰁺", "󰁻", "󰁼", "󰁽",
-      "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"
+      "\udb80\udcde",
+      "\udb80\udcdf",
+      "\udb80\udce0"
     ]
   },
-
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon} {capacity}% ",
+    "format-charging": "\udb80\udc84 {capacity}% ",
+    "format-plugged": "\udb85\udfe6 {capacity}% ",
+    "format-full": "\udb80\udc79 {capacity}% ",
+    "format-icons": [
+      "\udb80\udc8e",
+      "\udb80\udc7a",
+      "\udb80\udc7b",
+      "\udb80\udc7c",
+      "\udb80\udc7d",
+      "\udb80\udc7e",
+      "\udb80\udc7f",
+      "\udb80\udc80",
+      "\udb80\udc81",
+      "\udb80\udc82",
+      "\udb80\udc79"
+    ]
+  },
   "clock": {
-    "format": "{:%m-%d-%Y %I:%M %p}"
-  }
+    "format": "{:%m-%d-%Y %H:%M} "
+  },
+  "custom/power": {
+    "format": "\u23fb",
+    "on-click": "wlogout",
+    "tooltip": true
+  },
+  "modules-center": [
+    "mpris"
+  ]
 }

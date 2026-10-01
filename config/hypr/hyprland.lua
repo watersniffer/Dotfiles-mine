@@ -402,13 +402,11 @@ end
 
 -- --- the ~/.local/bin helpers: theme, wallpaper, clipboard, power, lock ---
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("/home/water/.local/bin/themesw"))
+-- Super+W opens the picker on ~/Pictures/Wallpapers. wallpaper-switcher no longer
+-- maps folders through themes/<slug>/palette.conf: it points at that one folder,
+-- which is where hand-picked wallpapers go.
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("/home/water/.local/bin/wallpaper-switcher"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-waybar"))
--- The Luscious album folder. wallpaper-switcher only resolves folders that a
--- theme names in themes/<slug>/palette.conf, and Luscious is not a theme, so
--- matuwall is called with --directory directly rather than faking one.
-hl.bind(mainMod .. " + N",
-    hl.dsp.exec_cmd("matuwall --directory /home/water/Pictures/Wallpapers/Luscious"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("/home/water/.local/bin/powerprofile"))
 hl.bind(mainMod .. " + U", hl.dsp.exec_cmd("wlogout"))
 -- The clipboard: the wl-paste watcher in autostart records history into
@@ -479,7 +477,13 @@ hl.on("hyprland.start", function()
     -- starts, which makes the bar self-healing. Separated by ';' rather than
     -- '&&' on purpose: if the repair fails for any reason, ashell must still
     -- come up, because no bar at all is worse than a stale-coloured one.
-    hl.exec_cmd("/home/water/.local/bin/theme-apply --ashell-only >/dev/null 2>&1; ashell")
+    hl.exec_cmd("/home/water/.local/bin/theme-apply --ashell-only >/dev/null 2>&1")
+    -- the bar is waybar since the rice switch; --config picks the session's
+    -- file, and SIGUSR2 restyles without dropping the layer under niri.
+    hl.exec_cmd("waybar -c /home/water/.config/waybar/config-hypr.jsonc -s /home/water/.config/waybar/style.css")
+    -- hyprpaper paints the wallpaper and renders animated ones, which awww
+    -- and matuwall's own backends do not.
+    hl.exec_cmd("hyprpaper")
     hl.exec_cmd("/home/water/.local/bin/at_startup")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("awww restore")

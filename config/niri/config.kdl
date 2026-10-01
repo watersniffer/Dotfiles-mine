@@ -253,10 +253,6 @@ binds {
     // missing or still empty is reported rather than opening an empty picker.
     Mod+W repeat=false { spawn-sh "~/.local/bin/wallpaper-switcher"; }
     Mod+Shift+W repeat=false { spawn-sh "~/.local/bin/toggle-waybar"; }
-    // The Luscious album folder. wallpaper-switcher only resolves folders that a
-    // theme names, and Luscious is not a theme, so matuwall is called with
-    // --directory directly.
-    Mod+N repeat=false { spawn-sh "matuwall --directory ~/Pictures/Wallpapers/Luscious"; }
     // Cycle the power profile: power-saver -> balanced -> performance.
     Mod+P repeat=false { spawn-sh "~/.local/bin/powerprofile"; }
     // The logout menu moved here when Super+P was given back to the power

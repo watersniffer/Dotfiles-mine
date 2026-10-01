@@ -28,6 +28,6 @@ hl.config({
             },
         },
         gaps_out = 7,
-        layout = "master",
+        layout = "dwindle",
     },
 })

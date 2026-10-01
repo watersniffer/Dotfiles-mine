@@ -1,67 +1,64 @@
 #!/usr/bin/env bash
 #
-# Open the wallpaper picker on the folder that belongs to a theme.
+# Open a wallpaper picker on ~/Pictures/Wallpapers.
 #
-#   wallpaper-switcher            the current theme's folder
-#   wallpaper-switcher <slug>     that theme's folder, without switching to it
+# Simplified from the theme-aware version this replaced. It used to resolve a
+# folder per theme from themes/<slug>/palette.conf and fall back to an ALL folder;
+# the picker now points at one folder of hand-picked wallpapers, so that mapping
+# is gone.
 #
-# There is no "every wallpaper" mode. The ALL folder it used to fall back to held
-# a mixed collection of 284 files -- most of them theme wallpapers that had been
-# copied into one place -- and was removed, along with its keybind. Each theme
-# folder and any folder you add yourself is picked by naming it explicitly.
+#   wallpaper-switcher            the picker on ~/Pictures/Wallpapers
+#   wallpaper-switcher <folder>   a subfolder of it, by name
 #
-# Each theme names its own folder in themes/<slug>/palette.conf, so the mapping
-# lives beside the palette rather than in a table here. theme-apply prints it:
-# --wallpapers for the theme in use, --wallpapers-for for any other.
+# matuwall still does the choosing and the preview, but its own backends are
+# sweetbg / awww / auto -- none of which render an animated wallpaper. So it is
+# started with its awww backend purely for the picking UI, and --no-hooks stops it
+# painting, because what paints is local/bin/wallpaper-set calling hyprpaper.
+# hyprpaper is mpv-based, which is why it was chosen: it renders animated webp,
+# gif and video as well as stills.
 #
-# A theme whose folder is missing or still empty would otherwise open an empty
-# picker, so that is reported rather than silently showing something else. It was
-# a fallback to ALL before that folder was removed.
+# The two-step handoff matters. matuwall's on_apply hook runs after it has already
+# handed the file to awww, so a hook cannot switch backends; the apply has to come
+# from outside it. That is why the picker is not doing the setting here.
 
 set -uo pipefail
 
+SELF=$(basename "$0")
 WALL_ROOT="$HOME/Pictures/Wallpapers"
 
-APPLY="$HOME/.local/bin/theme-apply"
-if [[ ! -x "$APPLY" ]]; then
-    # running straight out of the repo, before install.sh has copied it
-    APPLY="$(dirname "$(realpath "$0")")/theme-apply"
-fi
-if [[ ! -x "$APPLY" ]]; then
-    echo "wallpaper-switcher: theme-apply not found" >&2
-    exit 1
-fi
+say() { printf '%s: %s\n' "$SELF" "$*" >&2; }
 
 count_images() {
     find "$1" -maxdepth 1 -type f \
         \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' \
-           -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.avif' \) \
-        2>/dev/null | wc -l
+           -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.avif' \
+           -o -iname '*.mp4' \) 2>/dev/null | wc -l
 }
 
 target=${1:-}
-
 if [[ -z $target ]]; then
-    folder=$("$APPLY" --wallpapers)
-    if [[ -z $folder ]]; then
-        echo "wallpaper-switcher: the current theme names no wallpaper folder" >&2
-        exit 1
-    fi
+    dir="$WALL_ROOT"
 else
-    folder=$("$APPLY" --wallpapers-for "$target")
-    if [[ -z $folder ]]; then
-        echo "wallpaper-switcher: no wallpaper folder for '$target'" >&2
-        exit 1
-    fi
+    case $target in
+        */*|.|..) say "give a subfolder name, not a path"; exit 2 ;;
+    esac
+    dir="$WALL_ROOT/$target"
 fi
 
-dir="$WALL_ROOT/$folder"
-
-if [[ ! -d $dir ]] || [[ $(count_images "$dir") -eq 0 ]]; then
-    reason="does not exist"
-    [[ -d $dir ]] && reason="has no images in it yet"
-    echo "wallpaper-switcher: '$folder' $reason" >&2
+if [[ ! -d $dir ]]; then
+    say "$dir does not exist"
     exit 1
 fi
 
-exec matuwall --directory "$dir"
+if [[ $(count_images "$dir") -eq 0 ]]; then
+    say "$dir has no images in it yet"
+    exit 1
+fi
+
+command -v hyprpaper >/dev/null 2>&1 || say "hyprpaper is not installed; animated wallpapers will not work"
+
+# -b awww is only here so matuwall has a backend it can talk to while picking;
+# --no-hooks stops it applying, so it never hands the file to awww behind
+# hyprpaper's back. local/bin/wallpaper-set is what actually sets it.
+exec matuwall --directory "$dir" --no-hooks -b awww \
+     --hook "$HOME/.local/bin/wallpaper-set {}"
