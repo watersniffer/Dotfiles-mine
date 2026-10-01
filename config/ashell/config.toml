@@ -40,14 +40,53 @@ layer = "Top"
 # WaycatMono via scripts/merge-waycat-font.py, so the cat would render correctly
 # rather than as plain letters.
 #
+# DankCal is a CustomModule Button beside the media title. It runs `dcal show`,
+# which shows the calendar window if dcal is already running and launches it if
+# not, so one keypress is a toggle without needing a separate close path.
+#
 # The three transport buttons were moved into the MediaPlayer dropdown, so the
-# center of the bar is now just the track title. They used to be separate
-# CustomModule buttons here, which meant three extra interactive elements in the
-# bar for controls the media menu already offers. See the [media_player] comment
-# below for why they could never have been hidden when idle.
+# center of the bar is now just the track title plus this. They used to be
+# separate CustomModule buttons here, which meant three extra interactive
+# elements in the bar for controls the media menu already offers. See the
+# [media_player] comment below for why they could never have been hidden when
+# idle.
 left = [ "Workspaces" ]
-center = [ "MediaPlayer" ]
+center = [ "MediaPlayer", "DankCal" ]
 right = [ [ "Tray", "Notifications", "Settings", "Tempo" ] ]
+
+# -- dank calendar -----------------------------------------------------------
+# A button that shows DankCalendar. `dcal show` is idempotent in the useful
+# direction: it raises the window when dcal is up and starts it when it is not.
+# `dcal open` would also work, but show is the one documented for this.
+#
+# Right-click restarts dcal instead, because a quickshell UI that has wedged
+# will not respond to a raise and a plain restart is the thing that fixes it.
+# Middle-click goes to the account manager for adding a calendar.
+#
+# There is no icon key issue here the way there was for the media buttons: this
+# is a Button with an icon, which is exactly what ashell draws icons for.
+# `dcal ipc ui.toggle` rather than `dcal show`: show only ever raises, so a
+# second press did nothing and the calendar could not be dismissed from the bar.
+# ui.toggle hides it too. Verified -- mapped windows went 0 -> 2 -> 0 over three
+# calls, each returning {"ok": true}. The view argument (month|week|day|agenda) is
+# passed explicitly so it opens on the whole month, which is the quick-glance one.
+#
+# Why a separate window and not a dropdown drawn inside the bar: ashell cannot
+# embed another application. A CustomModule is either type Text (renders a string
+# from listen_cmd) or type Button (runs a command), and its 11 config fields are
+# name/type/command/listen_cmd/icons/alert plus the four mouse bindings -- there is
+# no content, panel or embed field anywhere. The dropdowns ashell draws can only
+# contain ashell's own panels. DankCalendar is a separate Wayland client
+# (WM_CLASS com.danklinux.dankcalendar) and its window size comes from dcal's own
+# config in ~/.config/dankcal, which has no width/height key. A real dropdown needs
+# the Quickshell shell, where a PanelWindow can host a calendar as panel content.
+#
+[[CustomModule]]
+name = "DankCal"
+command = "dcal ipc ui.toggle view=month"
+icon = ""
+on_right_click = "dcal restart"
+on_middle_click = "dcal account"
 
 # -- workspaces --------------------------------------------------------------
 # waybar's hyprland/workspaces shows the focused monitor's workspaces with the
