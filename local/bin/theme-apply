@@ -514,14 +514,15 @@ def render_ashell_palette(p: dict) -> str:
 # in (see scripts/merge-waycat-font.py), so the cpucat module renders the cat
 # while every other glyph keeps the bar's font.
 font_name = "WaycatMono"
-# The bar is shorter than waybar's was, so the text is scaled down a little to
-# keep it from filling the bar.
+# This is the lever for BOTH font size and bar height: ashell lays the bar out
+# from the font size times this scale, and there is no height key in [appearance]
+# (verified against the 0.10.0 schema: bar takes surface, radius and margin only).
+# The two move together, so a smaller font means a shorter bar -- measured on this
+# machine: 0.90 gives a 34px bar and 0.70 a 23px one.
 #
-# Raised from 0.85 to 0.90 to add roughly 2px of bar height. ashell derives the
-# bar's height from the font size times this scale -- there is no height key in
-# [appearance] (verified against the 0.10.0 schema: bar takes surface, radius and
-# margin only), so this is the lever that makes the bar taller.
-scale_factor = 0.9
+# 0.75 for a smaller font. It was 0.85 originally, raised to 0.90 while chasing
+# a taller bar, and lowered again on request.
+scale_factor = 0.75
 primary_color = "{p['accent']}"
 success_color = "{p['green']}"
 warning_color = "{p['yellow']}"

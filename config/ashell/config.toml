@@ -85,29 +85,26 @@ indicator_format = "Text"
 max_text_length = 20
 
 # -- settings ----------------------------------------------------------------
-# The three indicators mirror waybar's wireplumber / backlight / battery, in
-# the same order. The panel behind the Settings button adds WiFi, Bluetooth,
-# audio sink/source picking and the power menu.
-[settings]
-indicators = [ "Audio", "Brightness", "Battery" ]
-# The audio/brightness/battery indicators were asked to become icon-only, and
-# ashell 0.10 cannot do that. Its SettingsFormat enum is exactly:
+# Only Audio is in the bar now. Brightness and Battery were dropped from this
+# list, which is the only way to get their percentages out of it.
+#
+# The formats below are still configured, and still apply to the Settings panel,
+# but nothing in the bar renders them any more. Why they were dropped rather than
+# reformatted: ashell 0.10's SettingsFormat enum is exactly
 #
 #   Value, Percentage, IconAndPercentage, IconAndValue, IconAndTime, IconAndName
 #
-# There is no bare "Icon". Naming one does not error -- it silently falls back to
-# ashell's own default of IconAndPercentage, which is why an earlier attempt at
-# "Icon" left the 100% sitting there and looked like the change had not applied.
-# "Percentage" is accepted but still shows the icon.
+# so there is no icon-only option. Naming a bare "Icon" does not error -- it
+# silently falls back to ashell's own default of IconAndPercentage, which is why
+# an earlier attempt at "Icon" left "100%" sitting in the bar and looked like the
+# change had not applied. Every icon-bearing value also carries a number.
 #
-# Every remaining value pairs the icon with a number, so the only way to get the
-# percentages out of the bar is to drop the indicators from it. That is not done
-# here on purpose: the Settings button's panel already opens with working volume
-# and brightness sliders one click away, so these are redundant rather than
-# broken, and removing them loses at-a-glance battery state.
-#
-# To get a bar with no numbers, delete entries from the indicators list below and
-# the panel keeps its sliders.
+# Nothing is lost: the panel behind the Settings button still opens with working
+# volume and brightness sliders, one click away. Put "Brightness" or "Battery"
+# back into the indicators list above to have them in the bar again, number and
+# all -- there is no way to have the icon without the number.
+[settings]
+indicators = [ "Audio" ]
 audio_indicator_format = "IconAndPercentage"
 brightness_indicator_format = "IconAndPercentage"
 battery_format = "IconAndPercentage"
@@ -165,14 +162,15 @@ clock_format = "%m-%d-%Y %I:%M %p"
 # in (see scripts/merge-waycat-font.py), so the cpucat module renders the cat
 # while every other glyph keeps the bar's font.
 font_name = "WaycatMono"
-# The bar is shorter than waybar's was, so the text is scaled down a little to
-# keep it from filling the bar.
+# This is the lever for BOTH font size and bar height: ashell lays the bar out
+# from the font size times this scale, and there is no height key in [appearance]
+# (verified against the 0.10.0 schema: bar takes surface, radius and margin only).
+# The two move together, so a smaller font means a shorter bar -- measured on this
+# machine: 0.90 gives a 34px bar and 0.70 a 23px one.
 #
-# Raised from 0.85 to 0.90 to add roughly 2px of bar height. ashell derives the
-# bar's height from the font size times this scale -- there is no height key in
-# [appearance] (verified against the 0.10.0 schema: bar takes surface, radius and
-# margin only), so this is the lever that makes the bar taller.
-scale_factor = 0.9
+# 0.75 for a smaller font. It was 0.85 originally, raised to 0.90 while chasing
+# a taller bar, and lowered again on request.
+scale_factor = 0.75
 primary_color = "#f2f2f2"
 success_color = "#bdbdbd"
 warning_color = "#c8c8c8"
