@@ -1,0 +1,148 @@
+#!/bin/bash
+#
+# Desktop theme switcher.
+#
+#   themesw              open the picker (this is what Super+T is bound to)
+#   themesw <slug>       apply that theme directly, no picker
+#   themesw --list       list the available themes
+#   themesw --current    print the slug of the theme in use
+#
+# The picker is rofi, fed the display name of every theme under themes/. The
+# theme in use is marked, so you can see where you are before picking.
+#
+# All the work is done by theme-apply, which renders every app's config from
+# the chosen palette and applies a wallpaper from that theme's own folder. This
+# script is only the front-end, and says which wallpaper landed in the
+# notification so the change is not silent.
+
+set -uo pipefail
+
+APPLY="$HOME/.local/bin/theme-apply"
+
+# install.sh COPIES local/bin rather than symlinking it, so ~/.local/bin can be
+# an older copy of the repo. When that happens the theme switcher keeps running
+# yesterday's theme-apply: the Obsidian wiring is missing, and the paths it
+# patches can name files that have since been renamed or deleted -- which
+# surfaces as a bogus "Theme switch failed" and a half-applied theme.
+#
+# Two places to check, because a stale copy can be in either direction:
+#   - the installed copy is older than the repo one -> use the repo one
+#   - there is no installed copy at all (straight out of the repo) -> repo one
+# Whichever is newer wins, so a working installed copy is not needlessly
+# replaced and a stale one cannot be used by accident.
+REPO_APPLY=""
+# Two candidates, because the $0-relative one alone is not enough. install.sh
+# *copies* these scripts into ~/.local/bin rather than symlinking them (that
+# directory also holds machine-local tools which must survive), so when
+# themesw is run the normal way, realpath "$0" lands back in ~/.local/bin and
+# the repo-relative candidate resolves to the same stale copy the guard is
+# supposed to be checking -- the comparison was against itself and could never
+# fire. ~/.local/state/dotfiles-dir is written by install.sh and is the only
+# thing that reliably points at the repo from here.
+DOTFILES_DIR_FILE="$HOME/.local/state/dotfiles-dir"
+if [[ -r "$DOTFILES_DIR_FILE" ]]; then
+    _dd="$(<"$DOTFILES_DIR_FILE")"
+    [[ -x "$_dd/local/bin/theme-apply" ]] && REPO_APPLY="$_dd/local/bin/theme-apply"
+fi
+if [[ -z "$REPO_APPLY" ]]; then
+    REPO_APPLY="$(dirname "$(realpath "$0")")/theme-apply"
+fi
+if [[ -x "$REPO_APPLY" && "$REPO_APPLY" != "$APPLY" ]]; then
+    if [[ ! -x "$APPLY" || "$REPO_APPLY" -nt "$APPLY" ]]; then
+        APPLY="$REPO_APPLY"
+    fi
+fi
+if [[ ! -x "$APPLY" ]]; then
+    notify-send --app-name=themesw "Theme switcher is broken" \
+        "theme-apply not found next to $0"
+    exit 1
+fi
+
+# The informational flags are theme-apply's job.
+case "${1-}" in
+    --list)    exec "$APPLY" --list ;;
+    --current) exec "$APPLY" --current ;;
+esac
+
+# An explicit slug skips the picker entirely.
+if [[ $# -gt 0 ]]; then
+    exec "$APPLY" "$@"
+fi
+
+# --- build the picker list ------------------------------------------------
+#
+# theme-apply --list prints "<slug> <display name>" per theme, with the theme
+# in use marked with a trailing asterisk.
+listing=$("$APPLY" --list)
+if [[ -z $listing ]]; then
+    notify-send --app-name=themesw "No themes found" \
+        "themes/ has no palette.conf in any of its subdirectories"
+    exit 1
+fi
+
+slugs=()
+labels=()
+while read -r slug rest; do
+    slugs+=("$slug")
+    if [[ $rest == *"*" ]]; then
+        labels+=("${rest% *} (active)")
+    else
+        labels+=("$rest")
+    fi
+done <<< "$listing"
+
+# --- show it --------------------------------------------------------------
+#
+# rofi's dmenu mode, not -show script: rofi 2.0.0 here has no script mode.
+# dmenu prints the chosen line, so the label is mapped back to its slug. The
+# labels are the themes' display names, which are unique.
+# -p only: rofi 2.0's dmenu already shows a search row, so adding -mesg as well
+# puts "Theme" on a line of its own above the list.
+picked=$(printf '%s\n' "${labels[@]}" | rofi -dmenu -p "Theme")
+[[ -z $picked ]] && exit 0     # escaped out of the picker
+
+selected=""
+for i in "${!labels[@]}"; do
+    if [[ ${labels[$i]} == "$picked" ]]; then
+        selected=${slugs[$i]}
+        break
+    fi
+done
+[[ -z $selected ]] && exit 0
+
+# Re-picking the theme already in use would rewrite every file for nothing.
+if [[ $selected == "$("$APPLY" --current)" ]]; then
+    exit 0
+fi
+
+# --- apply, and say so ----------------------------------------------------
+if output=$("$APPLY" "$selected" 2>&1); then
+    # theme-apply reports the wallpaper on one line, as
+    # "  wallpaper: <file>  (of <folder>)". Pulled out and put first, because
+    # the wallpaper changing under you with no explanation is the surprising
+    # part of a theme switch; the restart note is the predictable part.
+    # The warning shape is matched too: the output of a successful switch is
+    # captured here and never printed, so a wallpaper that failed to apply
+    # would otherwise be completely silent.
+    body="kitty, nvim, btop and any open GTK/Qt app need a restart"
+    # BRE, so the capture is \( \) and the literal parens around "of ..." stay
+    # unescaped -- writing \)$ here is an unmatched group-close and sed bails
+    # out with no output at all, which looks exactly like "nothing matched".
+    # The capture is .* and not [^ ]* because these filenames contain spaces
+    # ("29. Catppuccin Mocha.png"); what separates the name from the folder is
+    # the two spaces before "(of", and a greedy .* takes the last one, so the
+    # whole name is kept.
+    wall=$(sed -n \
+        -e 's/^  wallpaper: \(.*\)  (of .*)$/wallpaper: \1/p' \
+        -e 's/^  wallpaper: WARNING \(.*\) did not apply.*$/wallpaper FAILED: \1/p' \
+        <<< "$output")
+    [[ -n $wall ]] && body="$wall"$'\n'"$body"
+
+    notify-send --app-name=themesw --icon=preferences-desktop-theme \
+        "$(head -1 <<< "$output")" \
+        "$body"
+else
+    notify-send --app-name=themesw --icon=gtk-dialog-error \
+        "Theme switch failed" "$output"
+    exit 1
+fi

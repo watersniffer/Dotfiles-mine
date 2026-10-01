@@ -1,0 +1,11 @@
+/* Kripton structure with a fixed Catppuccin Mocha palette. */
+@import url("file:///usr/share/themes/Kripton/gtk-4.0/gtk-dark.css");
+@import url("colors.css");
+
+:root {
+    --window-bg-color: #2e3440;
+    --window-fg-color: #eceff4;
+    --accent-bg-color: #434c5e;
+    --accent-color: #88c0d0;
+    --accent-fg-color: #2e3440;
+}

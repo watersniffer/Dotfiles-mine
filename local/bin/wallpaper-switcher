@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+# Open the wallpaper picker on the folder that belongs to a theme.
+#
+#   wallpaper-switcher            the current theme's folder
+#   wallpaper-switcher <slug>     that theme's folder, without switching to it
+#
+# There is no "every wallpaper" mode. The ALL folder it used to fall back to held
+# a mixed collection of 284 files -- most of them theme wallpapers that had been
+# copied into one place -- and was removed, along with its keybind. Each theme
+# folder and any folder you add yourself is picked by naming it explicitly.
+#
+# Each theme names its own folder in themes/<slug>/palette.conf, so the mapping
+# lives beside the palette rather than in a table here. theme-apply prints it:
+# --wallpapers for the theme in use, --wallpapers-for for any other.
+#
+# A theme whose folder is missing or still empty would otherwise open an empty
+# picker, so that is reported rather than silently showing something else. It was
+# a fallback to ALL before that folder was removed.
+
+set -uo pipefail
+
+WALL_ROOT="$HOME/Pictures/Wallpapers"
+
+APPLY="$HOME/.local/bin/theme-apply"
+if [[ ! -x "$APPLY" ]]; then
+    # running straight out of the repo, before install.sh has copied it
+    APPLY="$(dirname "$(realpath "$0")")/theme-apply"
+fi
+if [[ ! -x "$APPLY" ]]; then
+    echo "wallpaper-switcher: theme-apply not found" >&2
+    exit 1
+fi
+
+count_images() {
+    find "$1" -maxdepth 1 -type f \
+        \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' \
+           -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.avif' \) \
+        2>/dev/null | wc -l
+}
+
+target=${1:-}
+
+if [[ -z $target ]]; then
+    folder=$("$APPLY" --wallpapers)
+    if [[ -z $folder ]]; then
+        echo "wallpaper-switcher: the current theme names no wallpaper folder" >&2
+        exit 1
+    fi
+else
+    folder=$("$APPLY" --wallpapers-for "$target")
+    if [[ -z $folder ]]; then
+        echo "wallpaper-switcher: no wallpaper folder for '$target'" >&2
+        exit 1
+    fi
+fi
+
+dir="$WALL_ROOT/$folder"
+
+if [[ ! -d $dir ]] || [[ $(count_images "$dir") -eq 0 ]]; then
+    reason="does not exist"
+    [[ -d $dir ]] && reason="has no images in it yet"
+    echo "wallpaper-switcher: '$folder' $reason" >&2
+    exit 1
+fi
+
+exec matuwall --directory "$dir"
