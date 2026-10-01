@@ -90,14 +90,27 @@ max_text_length = 20
 # audio sink/source picking and the power menu.
 [settings]
 indicators = [ "Audio", "Brightness", "Battery" ]
-# Icon-only. These were IconAndPercentage, which put a number next to each of the
-# three indicators -- three numbers permanently in the bar, for values that are
-# also readable by looking at the slider in the panel behind this button. The
-# audio and brightness panel behind the Settings button already has working
-# sliders, so the numbers were duplicating what one click away already showed.
-audio_indicator_format = "Icon"
-brightness_indicator_format = "Icon"
-battery_format = "Icon"
+# The audio/brightness/battery indicators were asked to become icon-only, and
+# ashell 0.10 cannot do that. Its SettingsFormat enum is exactly:
+#
+#   Value, Percentage, IconAndPercentage, IconAndValue, IconAndTime, IconAndName
+#
+# There is no bare "Icon". Naming one does not error -- it silently falls back to
+# ashell's own default of IconAndPercentage, which is why an earlier attempt at
+# "Icon" left the 100% sitting there and looked like the change had not applied.
+# "Percentage" is accepted but still shows the icon.
+#
+# Every remaining value pairs the icon with a number, so the only way to get the
+# percentages out of the bar is to drop the indicators from it. That is not done
+# here on purpose: the Settings button's panel already opens with working volume
+# and brightness sliders one click away, so these are redundant rather than
+# broken, and removing them loses at-a-glance battery state.
+#
+# To get a bar with no numbers, delete entries from the indicators list below and
+# the panel keeps its sliders.
+audio_indicator_format = "IconAndPercentage"
+brightness_indicator_format = "IconAndPercentage"
+battery_format = "IconAndPercentage"
 # The same lock command the Hyprland keybind uses.
 lock_cmd = "swaylock -C /home/water/.config/niri/lock.conf -f"
 # The panel's "more" buttons open the real apps.
@@ -168,34 +181,25 @@ text_color = "#f2f2f2"
 workspace_colors = [ "#f2f2f2" ]
 
 [appearance.bar]
-# solid, not transparent. This is what makes the bar one continuous filled
-# rectangle instead of a row of separate capsules: with surface = "transparent"
-# the bar window paints nothing and only each module's own capsule is visible, so
-# the gaps between modules read as breaks in the bar. surface = "solid" fills the
-# whole bar with background_color.base, giving the single long rectangle that
-# waybar drew with its own window background.
+# surface and radius are left at ashell's defaults on purpose.
 #
-# radius and margin reproduce waybar's window#waybar block from
-# config/waybar/style.css, which is the look being matched. Quoting the brace,
-# since this template is an f-string and a bare one would end it:
+# surface = "solid" was tried, to fill the whole bar into one rectangle the way
+# waybar's window background did. It has no effect: with an identical config
+# except surface transparent vs solid, the two screenshots came out byte
+# identical (md5 7fa909f2f27b both times). ashell 0.10 draws the bar window
+# transparent regardless, and the capsules you see are painted per module, so
+# there is no config key that merges them into one filled shape.
 #
-#   "window#waybar"           ->   [appearance.bar]
-#     background: transparent      surface  = "solid"   (see note above)
-#     border-radius: 10px          radius   = 10
-#     margin: 0px                  margin   = 0
-#     min-height: 26px
-#     padding: 2px 6px
+# radius wants a px suffix -- a bare `radius = 10` is rejected with "did not
+# match any variant of untagged enum CssShorthand", and ashell accepts the
+# literal token `10px`. But since radius only rounds the (invisible) bar window,
+# setting it changes nothing either. It is left unset so the config does not
+# carry a key that does nothing.
 #
-# margin = 0 matters as much as the radius: ashell insets the whole bar from the
-# screen edge by the margin, so any non-zero value leaves a gap down each side and
-# splits the bar into floating pieces again. waybar's margin was 0.
-#
-# waybar's 26px min-height has no ashell equivalent -- the bar's height comes from
-# the font size times scale_factor above -- so scale_factor is the only lever
-# there.
-surface = "solid"
-radius = 10
-margin = 0
+# waybar's 26px min-height has no ashell equivalent -- bar height comes from the
+# font size times scale_factor above -- so scale_factor is the only lever there,
+# and that one does work.
+surface = "transparent"
 
 [appearance.background_color]
 base = "#1a1a1a"
