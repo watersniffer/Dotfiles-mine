@@ -19,3 +19,11 @@ config/btop/btop.log
 
 # Machine-local symlink into ~/.themes (not portable)
 config/gtk-4.0/assets
+
+# Credential-shaped files, whatever puts them here. ~/.config/quickshell is a
+# symlink into this checkout and the repo is pushed to GitHub, so a cookie or
+# Netscape-format jar dropped anywhere in the tree would otherwise be committed
+# and published. Kept generic rather than tied to one feature.
+*.cookie
+cookie.txt
+cookies.txt

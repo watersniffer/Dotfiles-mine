@@ -3,21 +3,24 @@
 # Open the wallpaper picker on the folder that belongs to a theme.
 #
 #   wallpaper-switcher            the current theme's folder
-#   wallpaper-switcher all        the ALL folder, every wallpaper
 #   wallpaper-switcher <slug>     that theme's folder, without switching to it
+#
+# There is no "every wallpaper" mode. The ALL folder it used to fall back to held
+# a mixed collection of 284 files -- most of them theme wallpapers that had been
+# copied into one place -- and was removed, along with its keybind. Each theme
+# folder and any folder you add yourself is picked by naming it explicitly.
 #
 # Each theme names its own folder in themes/<slug>/palette.conf, so the mapping
 # lives beside the palette rather than in a table here. theme-apply prints it:
 # --wallpapers for the theme in use, --wallpapers-for for any other.
 #
-# A theme whose folder is missing or still empty falls back to ALL rather than
-# opening an empty picker, so Super+W keeps working before every folder has been
-# filled in.
+# A theme whose folder is missing or still empty would otherwise open an empty
+# picker, so that is reported rather than silently showing something else. It was
+# a fallback to ALL before that folder was removed.
 
 set -uo pipefail
 
 WALL_ROOT="$HOME/Pictures/Wallpapers"
-ALL_DIR="$WALL_ROOT/ALL"
 
 APPLY="$HOME/.local/bin/theme-apply"
 if [[ ! -x "$APPLY" ]]; then
@@ -42,10 +45,8 @@ if [[ -z $target ]]; then
     folder=$("$APPLY" --wallpapers)
     if [[ -z $folder ]]; then
         echo "wallpaper-switcher: the current theme names no wallpaper folder" >&2
-        folder=ALL
+        exit 1
     fi
-elif [[ $target == all ]]; then
-    folder=ALL
 else
     folder=$("$APPLY" --wallpapers-for "$target")
     if [[ -z $folder ]]; then
@@ -56,19 +57,11 @@ fi
 
 dir="$WALL_ROOT/$folder"
 
-# Fall back to ALL when the theme's folder is missing or has nothing in it yet.
 if [[ ! -d $dir ]] || [[ $(count_images "$dir") -eq 0 ]]; then
     reason="does not exist"
     [[ -d $dir ]] && reason="has no images in it yet"
-    if [[ -d $ALL_DIR ]]; then
-        notify-send --app-name=wallpaper-switcher --icon=folder \
-            "No wallpapers in '$folder'" \
-            "That folder $reason, so showing ALL instead."
-        dir=$ALL_DIR
-    else
-        echo "wallpaper-switcher: '$folder' $reason, and there is no ALL folder" >&2
-        exit 1
-    fi
+    echo "wallpaper-switcher: '$folder' $reason" >&2
+    exit 1
 fi
 
 exec matuwall --directory "$dir"

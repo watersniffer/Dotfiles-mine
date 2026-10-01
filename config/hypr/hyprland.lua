@@ -157,43 +157,66 @@ hl.config({
     },
 })
 
--- Default curves and animations, see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Animations/
-hl.curve("easeOutQuint",   { type = "bezier", points = { {0.23, 1},    {0.32, 1}    } })
-hl.curve("easeInOutCubic", { type = "bezier", points = { {0.65, 0.05}, {0.36, 1}    } })
-hl.curve("linear",         { type = "bezier", points = { {0, 0},       {1, 1}       } })
-hl.curve("almostLinear",   { type = "bezier", points = { {0.5, 0.5},   {0.75, 1}    } })
-hl.curve("quick",          { type = "bezier", points = { {0.15, 0},    {0.1, 1}     } })
+-- Animations, from end-4/dots-hyprland (dots/.config/hypr/hyprland/general.lua,
+-- the "Curves" and "Configs" sections). The most widely copied Hyprland motion
+-- set, and the reason it reads better than the previous set here is not any one
+-- curve: it is that almost everything decelerates on the SAME curve,
+-- emphasizedDecel, so a window opening, a layer appearing and a special
+-- workspace sliding all have one consistent weight to them. The previous set gave
+-- each leaf its own curve, which is what made the motion feel scattered.
+--
+-- Named curves rather than inline bezier points, so a leaf can be retuned
+-- centrally. Six of end-4's nine curves are here: his three expressive* spatial
+-- curves are not, because nothing references them, in his config or this one.
+--
+-- Verified on 0.56.2 before writing this: windowsMove and the two
+-- specialWorkspace leaves are accepted, and a deliberately misspelled leaf does
+-- fail (`no such animation leaf`), so this was tested rather than assumed.
+hl.curve("emphasizedDecel",        { type = "bezier", points = { {0.05, 0.7},  {0.1, 1}    } })
+hl.curve("emphasizedAccel",        { type = "bezier", points = { {0.3, 0},     {0.8, 0.15} } })
+hl.curve("standardDecel",          { type = "bezier", points = { {0, 0},       {1, 1}      } })
+hl.curve("menu_decel",             { type = "bezier", points = { {0.1, 1},     {0, 1}      } })
+hl.curve("menu_accel",             { type = "bezier", points = { {0.52, 0.03}, {0.72, 0.08} } })
+hl.curve("stall",                  { type = "bezier", points = { {1, -0.1},    {0.7, 0.85} } })
 
--- Default springs
-hl.curve("easy",           { type = "spring", mass = 1, stiffness = 238.1191, dampening = 24.21279333 })
+hl.animation({ leaf = "global",     enabled = true, speed = 10,  bezier = "emphasizedDecel" })
 
-hl.animation({ leaf = "global",        enabled = true,  speed = 10,   bezier = "default" })
-hl.animation({ leaf = "border",        enabled = true,  speed = 5.39, bezier = "easeOutQuint" })
-hl.animation({ leaf = "windows",       enabled = true,  speed = 4.79, spring = "easy" })
-hl.animation({ leaf = "windowsIn",     enabled = true,  speed = 4.1,  spring = "easy",         style = "popin 87%" })
-hl.animation({ leaf = "windowsOut",    enabled = true,  speed = 1.49, bezier = "linear",       style = "popin 87%" })
-hl.animation({ leaf = "fadeIn",        enabled = true,  speed = 1.73, bezier = "almostLinear" })
-hl.animation({ leaf = "fadeOut",       enabled = true,  speed = 1.46, bezier = "almostLinear" })
-hl.animation({ leaf = "fade",          enabled = true,  speed = 3.03, bezier = "quick" })
-hl.animation({ leaf = "layers",        enabled = true,  speed = 3.81, bezier = "easeOutQuint" })
-hl.animation({ leaf = "layersIn",      enabled = true,  speed = 4,    bezier = "easeOutQuint", style = "fade" })
-hl.animation({ leaf = "layersOut",     enabled = true,  speed = 1.5,  bezier = "linear",       style = "fade" })
-hl.animation({ leaf = "fadeLayersIn",  enabled = true,  speed = 1.79, bezier = "almostLinear" })
-hl.animation({ leaf = "fadeLayersOut", enabled = true,  speed = 1.39, bezier = "almostLinear" })
--- The three workspace leaves are the only animations that differ from the stock
--- file, and they differ in one field: style, from "fade" to "slide", so changing
--- workspace slides rather than cross-fades. The speeds and the curve are
--- Hyprland's own, untouched.
+-- Windows. In and out deliberately use different curves: the old set used
+-- "linear" to close a window, which is why closing read as dead weight next to
+-- the springy open.
+hl.animation({ leaf = "windowsIn",  enabled = true, speed = 3, bezier = "emphasizedDecel", style = "popin 80%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "emphasizedDecel", style = "popin 90%" })
+hl.animation({ leaf = "fadeIn",     enabled = true, speed = 3, bezier = "emphasizedDecel" })
+hl.animation({ leaf = "fadeOut",    enabled = true, speed = 2, bezier = "emphasizedDecel" })
+-- windowsMove is the slide a window does while being dragged between tiles.
+-- Nothing set this before, so tiled drags were teleporting.
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 3, bezier = "emphasizedDecel", style = "slide" })
+hl.animation({ leaf = "border",     enabled = true, speed = 10, bezier = "emphasizedDecel" })
+
+-- Layers: the bar and the ashell dropdowns.
+hl.animation({ leaf = "layersIn",   enabled = true, speed = 2.7, bezier = "emphasizedDecel", style = "popin 93%" })
+hl.animation({ leaf = "layersOut",  enabled = true, speed = 2.4, bezier = "menu_accel",      style = "popin 94%" })
+hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 0.5, bezier = "menu_decel" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 2.7, bezier = "stall" })
+
+-- Workspaces. This is the change you will notice most: speed 7 on a snappy
+-- menu_decel, against 1.94 on almostLinear before. That is 3.6x faster and it is
+-- why switching felt unhurried.
 --
 -- Note the lua spelling rather than the hyprlang one. The hyprlang form is
---   animation = workspaces, 1, 1.94, almostLinear, slide
+--   animation = workspace, 7, 7, menu_decel, slide
 -- and this file is lua, so the same setting is the hl.animation table below.
--- "slide" moves a full screen width; appending a percentage, as in
--- style = "slide 20%", glides only that fraction of it.
-hl.animation({ leaf = "workspaces",    enabled = true,  speed = 1.94, bezier = "almostLinear", style = "slide" })
-hl.animation({ leaf = "workspacesIn",  enabled = true,  speed = 1.21, bezier = "almostLinear", style = "slide" })
-hl.animation({ leaf = "workspacesOut", enabled = true,  speed = 1.94, bezier = "almostLinear", style = "slide" })
-hl.animation({ leaf = "zoomFactor",    enabled = true,  speed = 7,    bezier = "quick" })
+-- Only "workspaces" is set, not workspacesIn/workspacesOut: end-4 does the same,
+-- and setting all three separately fights the single global slide.
+hl.animation({ leaf = "workspaces", enabled = true, speed = 7, bezier = "menu_decel", style = "slide" })
+
+-- Special workspaces: nothing currently opens one (no togglespecialworkspace
+-- bind), so these two are inert until something does. end-4 sets them and they
+-- cost nothing; leaving them out would be a decision to revisit later.
+hl.animation({ leaf = "specialWorkspaceIn",  enabled = true, speed = 2.8, bezier = "emphasizedDecel", style = "slidevert" })
+hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 1.2, bezier = "emphasizedAccel", style = "slidevert" })
+
+hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3, bezier = "standardDecel" })
 
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 -- "Smart gaps" / "No gaps when only"
@@ -380,9 +403,12 @@ end
 -- --- the ~/.local/bin helpers: theme, wallpaper, clipboard, power, lock ---
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("/home/water/.local/bin/themesw"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("/home/water/.local/bin/wallpaper-switcher"))
-hl.bind(mainMod .. " + CTRL + W",
-    hl.dsp.exec_cmd("/home/water/.local/bin/wallpaper-switcher all"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-waybar"))
+-- The Luscious album folder. wallpaper-switcher only resolves folders that a
+-- theme names in themes/<slug>/palette.conf, and Luscious is not a theme, so
+-- matuwall is called with --directory directly rather than faking one.
+hl.bind(mainMod .. " + N",
+    hl.dsp.exec_cmd("matuwall --directory /home/water/Pictures/Wallpapers/Luscious"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("/home/water/.local/bin/powerprofile"))
 hl.bind(mainMod .. " + U", hl.dsp.exec_cmd("wlogout"))
 -- The clipboard: the wl-paste watcher in autostart records history into

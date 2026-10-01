@@ -1,15 +1,41 @@
 #!/usr/bin/env bash
+#
+# Toggle the session's bar. The name is now a misnomer -- in Hyprland the bar
+# is ashell, not waybar -- but config/niri/config.kdl and
+# config/hypr/hyprland.lua both bind Mod+Shift+W to this script, so it
+# dispatches on the session rather than being renamed. Renaming it to
+# toggle-bar and updating both configs is a reasonable follow-up.
+#
+#   Hyprland            `ashell msg toggle-visibility`, which hides and shows
+#                       the bar in place. Killing and restarting it would be
+#                       slower and would lose the notification history it now
+#                       holds, ashell having taken the
+#                       org.freedesktop.Notifications bus name from mako.
+#   niri                waybar, killed and restarted, as before.
+#   WAYBAR_CONFIG set   forces the waybar path whatever the session.
+#
 set -euo pipefail
+
+desktop=${XDG_CURRENT_DESKTOP:-}
+session=${desktop,,}
+
+if [[ -z "${WAYBAR_CONFIG:-}" ]] \
+   && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" || "$session" == hyprland* ]]; then
+    if ! pgrep -x ashell >/dev/null 2>&1; then
+        echo "toggle-waybar: ashell is not running; nothing to hide" >&2
+        exit 1
+    fi
+    exec ashell msg toggle-visibility
+fi
 
 if pgrep -x waybar >/dev/null 2>&1; then
     pkill -x waybar
 else
-    desktop=${XDG_CURRENT_DESKTOP:-}
     if [[ -n "${WAYBAR_CONFIG:-}" ]]; then
         waybar_config=$WAYBAR_CONFIG
-    elif [[ -n "${NIRI_SOCKET:-}" || "${desktop,,}" == niri* ]]; then
+    elif [[ -n "${NIRI_SOCKET:-}" || "$session" == niri* ]]; then
         waybar_config="$HOME/.config/waybar/config-niri.jsonc"
-    elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" || "${desktop,,}" == hyprland* ]]; then
+    elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" || "$session" == hyprland* ]]; then
         waybar_config="$HOME/.config/waybar/config-hypr.jsonc"
     else
         # Nothing matched, so guessing a name would only produce a bar that

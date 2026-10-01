@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+#
+# luscious-fetch -- download the images from one luscious.net album into a folder
+# under ~/Pictures/Wallpapers, so wallpaper-switcher and matuwall can pick from
+# them like any other wallpaper.
+#
+#   luscious-fetch <album-url> <folder-name> [count]
+#
+# Examples:
+#   luscious-fetch https://www.luscious.net/albums/ecchi-wallpapers_415885/ Luscious
+#   luscious-fetch https://www.luscious.net/albums/<slug>_<id>/ MyAlbum 40
+#
+# How this works, and why each part is what it is:
+#
+#   Pagination      the album page itself only carries the first ~67 images, so
+#                   the album is walked with ?page=N until a page adds nothing new.
+#                   /page/2/ returns nothing; the query parameter is the one that
+#                   works.
+#
+#   Image URLs      thumbnails look like .../<name>.315x0.jpg -- that trailing
+#                   ".<w>x<h>" is the size. Dropping it gives the full-size image,
+#                   which is served from the same host and needs no login. Verified:
+#                   thumbnail 13 KB, full 1.1 MB, both HTTP 200 anonymously.
+#
+#   Dedup           the same image appears more than once across pages (banners,
+#                   avatars, the odd repeat), so full-size paths are deduplicated
+#                   before anything is downloaded.
+#
+#   Filenames       "<album id>_<index>.<ext>". The album id keeps a file
+#                   recognisable and unique; the index keeps them in album order,
+#                   which matters for a wallpaper folder because matuwall lists
+#                   them alphabetically.
+#
+#   Partial runs    a file that already exists and is non-empty is skipped, so an
+#                 interrupted run resumes instead of starting over. Downloads land
+#                 on ".part" and are only renamed once complete, so a killed run
+#                 never leaves a truncated image that looks valid.
+
+set -uo pipefail
+
+SELF=$(basename "$0")
+UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+CURL_TIMEOUT=60
+JOBS=4
+MAX_PAGES=40
+DEBUG=${DEBUG:-0}
+
+WALL_ROOT="$HOME/Pictures/Wallpapers"
+
+say()  { printf '%s: %s\n' "$SELF" "$*" >&2; }
+die()  { say "$*"; exit 1; }
+
+usage() {
+    sed -n '2,30p' "$0" | sed 's/^# \?//' >&2
+}
+
+[[ $# -ge 2 ]] || { usage; exit 2; }
+
+album_url=${1%/}
+folder=${2:?folder name required}
+limit=${3:-0}          # 0 means the whole album
+
+# The album id is the trailing number in the URL, used in filenames and to make
+# sure a re-run targets the same album.
+album_id=$(grep -oE '_[0-9]+/?$' <<<"$album_url" | tr -d '/_' || true)
+[[ -n $album_id ]] || album_id="album"
+
+case $folder in
+    */*|.|..) die "folder name must be a single name, not a path" ;;
+esac
+
+dest="$WALL_ROOT/$folder"
+mkdir -p "$dest" || die "could not create $dest"
+
+say "album:  $album_url"
+say "folder: $dest"
+
+# ------------------------------------------------------------- collect URLs --
+
+# One image path per line, deduplicated, album order preserved.
+#
+# The stopping condition is "the page yielded no URLs at all", not "the page
+# yielded nothing new". Every page repeats 12 of the site's own header/footer
+# images, so page 4 of a 4-page album contains only those 12 and adds nothing --
+# yet the album ends after page 3. Stopping on "nothing new" therefore truncates
+# the album, which is exactly what it did when first written: 61 images instead
+# of 151.
+collect() {
+    local page url html found
+    for ((page = 1; page <= MAX_PAGES; page++)); do
+        url="$album_url/?page=$page"
+        html=$(curl -sS --max-time "$CURL_TIMEOUT" -A "$UA" "$url" 2>/dev/null) || {
+            say "page $page: fetch failed, stopping"
+            break
+        }
+        # Strip the ".<w>x<h>" size suffix to get the full-size URL.
+        found=$(grep -oE 'https://ah-img\.luscious\.net/[^"'"'"' ]+\.[0-9]+x[0-9]+\.jpg' <<<"$html" \
+                | sed 's/\.[0-9]*x[0-9]*\.jpg$/.jpg/' | sort -u)
+        if [[ -z $found ]]; then
+            say "page $page: no images, album ends after $((page - 1)) pages"
+            break
+        fi
+        printf '%s\n' "$found"
+        (( DEBUG )) && say "page $page: $(wc -l <<<"$found") images" >&2
+    done
+}
+
+list=$(collect | awk '!seen[$0]++')
+
+total=$(wc -l <<<"$list")
+if (( total == 0 )); then
+    die "no image URLs found. The album may be private, renamed, or the layout may have changed."
+fi
+say "found $total images in the album"
+
+if (( limit > 0 && limit < total )); then
+    list=$(head -n "$limit" <<<"$list")
+    say "taking the first $limit"
+fi
+
+wanted=$(wc -l <<<"$list")
+
+# ------------------------------------------------------------------ download --
+
+# fetch_one <url> <dest>
+fetch_one() {
+    local url=$1 out=$2 ext
+    # Extension from the URL, validated. A booru can serve anything, and a file
+    # named .jpg that is actually HTML breaks the wallpaper picker later and much
+    # less clearly than it would here.
+    case $url in
+        *.png)  ext=png  ;;
+        *.webp) ext=webp ;;
+        *.gif)  ext=gif  ;;
+        *)      ext=jpg  ;;
+    esac
+    local final="$out.$ext"
+
+    if [[ -s $final ]]; then
+        printf 'skip\n'
+        return 0
+    fi
+
+    if curl -sS --max-time "$CURL_TIMEOUT" -A "$UA" -o "$final.part" "$url" 2>/dev/null \
+       && [[ -s $final.part ]] \
+       && file -b --mime-type "$final.part" | grep -q '^image/'; then
+        mv -f "$final.part" "$final"
+        printf 'ok\n'
+    else
+        rm -f "$final.part"
+        printf 'fail\n'
+    fi
+}
+export -f fetch_one
+export UA CURL_TIMEOUT
+
+# xargs -0 keeps a URL containing odd characters from splitting an argument, and
+# -n1 feeds the whole line to one fetch_one. Each line is "url<TAB>dest".
+n=0
+i=0
+while IFS= read -r url; do
+    i=$((i + 1))
+    printf '%s\t%s/%s_%04d\n' "$url" "$dest" "$album_id" "$i"
+done <<<"$list" > /tmp/luscious-fetch-jobs.$$
+
+if (( $(wc -l < /tmp/luscious-fetch-jobs.$$) == 0 )); then
+    rm -f /tmp/luscious-fetch-jobs.$$
+    die "nothing to download"
+fi
+
+# xargs runs the jobs; each prints ok/skip/fail, tallied afterwards.
+tr '\n' '\0' < /tmp/luscious-fetch-jobs.$$ \
+    | xargs -0 -P "$JOBS" -I{} bash -c '
+        line="{}"
+        url=${line%%	*}
+        out=${line#*	}
+        fetch_one "$url" "$out"' \
+    | sort | uniq -c | while read -r count result; do
+        printf '  %-5s %s\n' "$result" "$count" >&2
+    done
+rm -f /tmp/luscious-fetch-jobs.$$
+
+got=$(find "$dest" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.png' \
+        -o -iname '*.webp' -o -iname '*.gif' \) | wc -l)
+size=$(du -sh "$dest" 2>/dev/null | cut -f1)
+
+say "done: $got images in $dest ($size), asked for $wanted"
+
+if (( got == 0 )); then
+    die "no images were downloaded. Check the album URL and that the album is public."
+fi
+
+printf '%s\n' "$dest"
+exit 0
