@@ -1,92 +1,103 @@
-/* Zeibytes/most-racist-rice waybar styling, adapted to this machine's theme engine.
- *
- * The structure is theirs: a square-edged full-width bar (border-radius 0, no
- * margin, no padding), workspace buttons that only gain a 2px underline when
- * active, hover tinting, and warning/critical backgrounds on the battery.
- *
- * The colours are NOT theirs. Upstream hardcodes #C4A7E7, #141221, #5b4950 and
- * the rest in this file, which is what makes it monochrome-looking but not
- * monochrome. Here they come from colors.css, which theme-apply generates from
- * themes/<slug>/palette.conf, so Super+T restyles the bar and there is one
- * source of truth for colour across the desktop.
- *
- * The active-workspace underline therefore follows palette accent rather than
- * being fixed, which under the Greyscale theme is the brightest grey.
- */
-
 @import url("colors.css");
 
 * {
-    font-family: "Iosevka", "JetBrainsMono Nerd Font", monospace;
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
     font-weight: 800;
-    font-size: 11px;
+    font-size: 10px;
     color: @fg;
 }
 
-/* Full-width square bar: the look upstream is for. Their window#waybar sets
-   border-radius 0, margin 0 and padding 0, and that combination is what makes it
-   read as a bar rather than a floating island. */
+/* Make main bar transparent so empty spaces disappear */
 window#waybar {
-    background: @base;
-    border-radius: 0;
+    background: transparent;
+    border-radius: 10px;
+    border: 0px;
     margin: 0px;
-    padding: 0px;
+    padding: 2px 6px;
+    min-height: 26px;
 }
 
-/* WORKSPACES
-   Idle buttons are dim text with no fill; the active one is distinguished only
-   by a 2px underline, which is upstream's whole approach and needs no capsule
-   behind it. */
+/* Apply translucent background specifically to the widget sections, so the
+   gaps between them show the wallpaper. Catppuccin mantle with alpha rather
+   than the pure black this used to be.
+
+   .modules-center is deliberately NOT in this list. A module group with
+   nothing in it still paints its own padding, so styling it left an empty
+   capsule in the middle of the bar whenever nothing was playing. The media
+   module carries its own pill instead, via hide-empty-text. */
+.modules-left,
+.modules-right,
+#custom-media {
+    background: @island;
+    border-radius: 8px;
+    padding: 2px 8px;
+    margin: 2px 4px;
+}
+
+/* WORKSPACES */
+
 #workspaces button {
     padding: 0px 1px;
-    margin: 3px 2px;
+    /* No vertical margin. It was 2px, and that alone is what pushed the bar to
+       39px: waybar's bar height is max(requested, what the modules need), and
+       the margin plus the 2px active underline under it added 4px over the
+       requested 35. Measured -- stripping only this margin drops the bar to
+       exactly 35 with the underline kept. The underline is the active-workspace
+       marker, so it stays. */
+    margin: 0px 1px;
     border-radius: 0;
     background: transparent;
-    color: @overlay0;
+    color: @ws_inactive;
 }
 
+/* active workspace */
 #workspaces button.active {
-    color: @fg;
     border-bottom: 2px solid @ws_active;
 }
 
+/* hover */
 #workspaces button:hover {
-    background: @bg1;
-    color: @fg;
+    background: @hover;
 }
 
+/* urgent */
 #workspaces button.urgent {
     background: @urgent;
-    color: @bg1;
 }
 
-#mpris {
+/* Niri exposes the focused workspace separately from the active one. */
+#workspaces button.active,
+#workspaces button.focused {
+    border-bottom: 2px solid @ws_active;
+}
+
+#custom-media {
     font-weight: 700;
-    padding: 0 2px;
 }
 
-/* RIGHT SIDE STATES
-   Warning and critical get a tinted background rather than a different colour,
-   which keeps the greyscale palette greyscale. */
+/* RIGHT SIDE STATES */
+
 #battery.warning {
-    background: rgba(200, 200, 200, 0.15);
-    padding: 1px 4px;
+    background: rgba(170, 170, 170, 0.12);
+    color: @battery_warn;
+    padding: 1px 3px;
 }
 
 #battery.critical {
-    background: @urgent;
-    color: @bg1;
-    padding: 1px 4px;
+    background: rgba(221, 221, 221, 0.2);
+    color: @battery_crit;
+    padding: 1px 3px;
 }
 
 #wireplumber.muted {
     opacity: 0.6;
 }
 
-/* TOOLTIP */
+/*  TOOLTIP  */
+
 tooltip {
-    background: @bg1;
-    border: 1px solid @bg3;
+    background: @tooltip_bg;
+    border: 1px solid @tooltip_border;
 }
 
 tooltip label {
@@ -94,3 +105,14 @@ tooltip label {
     font-size: 11px;
 }
 
+#custom-launcher {
+}
+
+#custom-cpucat {
+  font-family: "Waycat", monospace;
+  font-size: 17px;
+  font-weight: bold;
+  color: @cpucat;
+  padding-left: 4px;
+  padding-right: 6px;
+}

@@ -12,7 +12,7 @@ hl.config({
             enabled = false,
         },
         inactive_opacity = 1.0,
-        rounding = 14,
+        rounding = 0,
         shadow = {
             color = "0xee1a1a1a",
             enabled = true,
