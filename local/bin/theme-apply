@@ -530,12 +530,34 @@ text_color = "{p['fg0']}"
 workspace_colors = [ "{p['accent']}" ]
 
 [appearance.bar]
-surface = "transparent"
-# Roundness of the bar's own ends. Was unset, so this was ashell's default, which
-# is noticeably rounder than wanted. 4 matches the workspace corner rounding used
-# elsewhere in this config and reads as a bar rather than a pill.
-radius = 4
-margin = 4
+# solid, not transparent. This is what makes the bar one continuous filled
+# rectangle instead of a row of separate capsules: with surface = "transparent"
+# the bar window paints nothing and only each module's own capsule is visible, so
+# the gaps between modules read as breaks in the bar. surface = "solid" fills the
+# whole bar with background_color.base, giving the single long rectangle that
+# waybar drew with its own window background.
+#
+# radius and margin reproduce waybar's window#waybar block from
+# config/waybar/style.css, which is the look being matched. Quoting the brace,
+# since this template is an f-string and a bare one would end it:
+#
+#   "window#waybar"           ->   [appearance.bar]
+#     background: transparent      surface  = "solid"   (see note above)
+#     border-radius: 10px          radius   = 10
+#     margin: 0px                  margin   = 0
+#     min-height: 26px
+#     padding: 2px 6px
+#
+# margin = 0 matters as much as the radius: ashell insets the whole bar from the
+# screen edge by the margin, so any non-zero value leaves a gap down each side and
+# splits the bar into floating pieces again. waybar's margin was 0.
+#
+# waybar's 26px min-height has no ashell equivalent -- the bar's height comes from
+# the font size times scale_factor above -- so scale_factor is the only lever
+# there.
+surface = "solid"
+radius = 10
+margin = 0
 
 [appearance.background_color]
 base = "{p['bg2']}"
