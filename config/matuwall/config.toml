@@ -45,8 +45,8 @@ width = 260
 height = 146
 
 [colors]
-tile = "#2e3440ff"
-border = "#434c5eff"
-shadow = "#2e344099"
-ring = "#88c0d0ff"
-spinner = "#8fbcbbff"
+tile = "#0d0d0dff"
+border = "#262626ff"
+shadow = "#0d0d0d99"
+ring = "#f2f2f2ff"
+spinner = "#b2b2b2ff"
