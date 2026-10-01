@@ -401,13 +401,13 @@ for i = 1, 10 do
 end
 
 -- --- the ~/.local/bin helpers: theme, wallpaper, clipboard, power, lock ---
-hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("/home/water/.local/bin/themesw"))
 -- Super+W opens the picker on ~/Pictures/Wallpapers. wallpaper-switcher no longer
 -- maps folders through themes/<slug>/palette.conf: it points at that one folder,
 -- which is where hand-picked wallpapers go.
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("/home/water/.local/bin/wallpaper-switcher"))
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-waybar"))
-hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("/home/water/.local/bin/powerprofile"))
+-- SIGUSR1 is waybar's own show/hide signal (on-sigusr1 defaults to toggle,
+-- checked in its man page rather than assumed), so the bar hides without a script.
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("pkill -USR1 -x waybar"))
 hl.bind(mainMod .. " + U", hl.dsp.exec_cmd("wlogout"))
 -- The clipboard: the wl-paste watcher in autostart records history into
 -- cliphist, rofi picks an entry, and it goes back onto the clipboard.
@@ -415,7 +415,7 @@ hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(
     "cliphist list | rofi -dmenu -theme /home/water/.config/rofi/config.rasi"
     .. " | cliphist decode | wl-copy"))
 hl.bind("SUPER + ALT + L",
-    hl.dsp.exec_cmd("swaylock -C /home/water/.config/niri/lock.conf -f"))
+    hl.dsp.exec_cmd("swaylock -f"))
 
 -- --- drag and resize with the mouse ---
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
@@ -444,9 +444,9 @@ hl.bind("XF86AudioMute",
 hl.bind("XF86AudioMicMute",
     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), { locked = true })
 hl.bind("XF86MonBrightnessUp",
-    hl.dsp.exec_cmd("/home/water/.local/bin/brightness-step up"), { locked = true, repeating = true })
+    hl.dsp.exec_cmd("brightnessctl set 5%+"), { locked = true, repeating = true })
 hl.bind("XF86MonBrightnessDown",
-    hl.dsp.exec_cmd("/home/water/.local/bin/brightness-step down"), { locked = true, repeating = true })
+    hl.dsp.exec_cmd("brightnessctl set 5%-"), { locked = true, repeating = true })
 hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
@@ -477,14 +477,12 @@ hl.on("hyprland.start", function()
     -- starts, which makes the bar self-healing. Separated by ';' rather than
     -- '&&' on purpose: if the repair fails for any reason, ashell must still
     -- come up, because no bar at all is worse than a stale-coloured one.
-    hl.exec_cmd("/home/water/.local/bin/theme-apply --ashell-only >/dev/null 2>&1")
-    -- the bar is waybar since the rice switch; --config picks the session's
+        -- the bar is waybar since the rice switch; --config picks the session's
     -- file, and SIGUSR2 restyles without dropping the layer under niri.
     hl.exec_cmd("waybar -c /home/water/.config/waybar/config-hypr.jsonc -s /home/water/.config/waybar/style.css")
     -- hyprpaper paints the wallpaper and renders animated ones, which awww
     -- and matuwall's own backends do not.
     hl.exec_cmd("hyprpaper")
-    hl.exec_cmd("/home/water/.local/bin/at_startup")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("awww restore")
     hl.exec_cmd("nm-applet")

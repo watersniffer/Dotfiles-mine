@@ -1,8 +1,18 @@
+// Launcher, dmenu and clipboard entry point.
+//
+// The theme is Zeibytes/most-racist-rice's rofi theme, which had hardcoded
+// purple/indigo hex values. Those were swapped for @bg0/@bg3/@accent, which
+// config/rofi/colors.rasi defines -- so it renders in the greyscale the bar
+// uses rather than introducing the one colour the palette removed.
+//
+// The old theme-engine config (colors.rasi-driven, rounded, translucent) is
+// gone with the engine; this is what Super+rofi and the clipboard picker use.
+
+
 configuration {
     modes: "drun";
     sorting-method: "normal";
     show-icons: true;
-    icon-theme: "Papirus";
     matching: "regex";
     drun-match-fields: "name";
     display-run: "menu:";
@@ -11,10 +21,8 @@ configuration {
 
 @theme "tokyo"
 
-@import "colors.rasi"
-
 * {
-    font: "JetBrainsMono Nerd Font 10";
+    font: "Iosevka Nerd Font 11";
     background-color: transparent;
     text-color: @fg0;
 
@@ -29,27 +37,25 @@ window {
     width: 500;
     y-offset: -20;
 
-    /* The rounded corners only show because every container inside is
-       transparent and the window itself is the translucent one. */
-    border-radius: 10px;
+    border-radius: 0px;
     border: 2px;
-    border-color: @bg3;
+    border-color: @accent;
 
-    background-color: @windowBg;
+    background-color: rgba(30, 30, 46, 0.92);
 }
 
 /* ===== Main container ===== */
 mainbox {
     padding: 0px;
-    background-color: transparent;
+    background-color: @bg0;
 }
 
 /* ===== Input bar ===== */
 inputbar {
-    background-color: @surfaceBg;
-    border-radius: 8px;
+    background-color: @bg3;
+    border-radius: 1px;
     border: 1px;
-    border-color: @borderSoft;
+    border-color: rgba(90, 79, 111, 0.8);
 
     padding: 8px 16px;
     spacing: 8px;
@@ -69,7 +75,7 @@ entry {
 
 /* ===== List ===== */
 listview {
-    background-color: transparent;
+    background-color: @bg0;
     margin: 10px 0 0;
 
     columns: 1;
@@ -81,38 +87,22 @@ listview {
 element {
     padding: 10px 6px;
     spacing: 6px;
-    border-radius: 8px;
+    border-radius: 1px;
 
-    background-color: transparent;
+    background-color: @bg0;
 }
 
-element normal.normal,
-element alternate.normal {
-    background-color: transparent;
-    text-color: @fg0;
+element normal urgent {
+    text-color: @red;
 }
 
-element normal.active,
-element alternate.active {
-    background-color: @surfaceBg;
-    text-color: @fg0;
+element normal active {
+    text-color: @blue;
 }
 
-element normal.urgent,
-element alternate.urgent {
-    background-color: transparent;
-    text-color: @urgent;
-}
-
-element selected.normal,
-element selected.active {
-    background-color: @selectedBg;
-    text-color: @onSelected;
-}
-
-element selected.urgent {
-    background-color: @urgent;
-    text-color: @onUrgent;
+element selected normal,
+element selected active {
+    background-color: rgba(138, 120, 170, 0.22);
 }
 
 /* ===== Icons & text ===== */
@@ -129,14 +119,15 @@ element-text {
 /* ===== Message box ===== */
 message {
     margin: 12px 0 0;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px;
-    border-color: @borderSoft;
+    border-color: rgba(90, 79, 111, 0.8);
 
-    background-color: @surfaceBg;
+    background-color: rgba(17, 19, 24, 0.9);
 }
 
 textbox {
     padding: 8px 24px;
-    background-color: @surfaceBg;
+    background-color: rgba(17, 19, 24, 0.9);
 }
+
