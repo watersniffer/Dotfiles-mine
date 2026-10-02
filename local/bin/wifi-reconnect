@@ -8,23 +8,34 @@
 # Why this exists rather than just "nmcli con up": the saved profile on this
 # machine had become unusable and nmcli could not repair it in place.
 #
-# What was actually wrong, in order:
+# What was actually wrong
+# ----------------------
+# Two things, and the first one is the whole story:
 #
-# 1. No secrets agent was running. NetworkManager keeps WiFi passwords in the
-#    keyring, and with no agent listening it could not retrieve the saved one --
-#    "Secrets were required, but not provided" -- so every attempt failed at
-#    authentication, which iwd reports as deauthentication reason 23
-#    (IEEE 802.1X auth failed) with from_ap: true. The router was not at fault;
-#    it was rejecting a client that could not produce a password.
+# 1. Adapter power save was ON. That is the classic cause of a link that
+#    associates, runs for a while, and is then dropped by the AP -- the repeating
+#    connect/disconnect cycle this started with. It is now disabled system-wide
+#    in /etc/NetworkManager/conf.d/99-wifi-powersave.conf rather than per-profile,
+#    because the profile is what got recreated during the flapping, taking its own
+#    settings with it. Measured: rx bitrate went from 6.0 MBit/s while flapping to
+#    390-433 MBit/s stable.
 #
-# 2. The profile itself had been recreated during the earlier flapping and came
-#    back without a usable secret, and without the DNS override that had been on
-#    it.
+# 2. That profile recreation also lost the password. NetworkManager keeps the PSK
+#    in the profile file (root-only, mode 600), so with the profile rebuilt empty
+#    every reconnection failed with "Secrets were required, but not provided" and
+#    iwd reported deauthentication reason 23 -- IEEE 802.1X auth failed -- with
+#    from_ap: true, which reads like the router rejecting the client and is the
+#    opposite of what was happening.
 #
-# 3. Adapter power save was ON. That is the classic cause of a link that
-#    associates, runs for a while, and is then dropped by the AP -- which is
-#    what the repeated connect/disconnect cycle was. It is disabled here, both on
-#    the interface and in the profile, so it survives a reconnect.
+# No secrets agent was involved. gnome-keyring is present on this machine only as a
+# Mailspring dependency, and WiFi does not use it: the PSK lives in the profile, not
+# in the keyring. An earlier diagnosis blamed the missing agent for the
+# "Secrets were required" error, which was wrong -- that error just means the
+# profile has no password in it.
+#
+# So the fix is to re-enter the password, which this script does, and to stop the
+# flapping that loses it in the first place.
+
 set -euo pipefail
 
 ssid=${1:?usage: wifi-reconnect <ssid> <password>}
