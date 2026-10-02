@@ -542,6 +542,19 @@ hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"),       { locked = true })
 
+-- Power mode, Super+P: performance -> balanced -> power-saver -> performance.
+--
+-- The script rather than a bare `powerprofilesctl` because that tool has no `next`
+-- -- it only takes an explicit name -- and because the order is this config's
+-- choice to make, not the daemon's. It also notifies, since a power mode you
+-- cannot see is one you will not trust to be in the state you left it.
+--
+-- The powerprofile script in local/bin does something similar but is written for
+-- asusctl, which is not installed and would not drive this Dell anyway.
+-- power-profiles-daemon is what is actually running here, over intel_pstate.
+hl.bind(mainMod .. " + P",
+    hl.dsp.exec_cmd("/home/water/.local/bin/power-mode"))
+
 ------------------------
 ---- AUTOSTART ---------
 ------------------------
