@@ -1,10 +1,16 @@
   # Matuwall configuration.
 #
 # Deliberately has NO [hooks] section: the OS palette does NOT follow the
-# wallpaper. Changing the wallpaper only swaps the background image.
+# wallpaper. Changing the wallpaper only swaps the background image, and the
+# desktop keeps the E-ink colours below.
 #
-# The colours below are repainted by theme-apply along with everything else,
-# so they follow the desktop theme even though the wallpaper does not.
+# These values are hand-set and committed, matching the E-ink palette that
+# config/waybar/colors.css and config/rofi/colors.rasi also carry: bg0 #0d0d0d for
+# the window behind the grid, bg1 #000000 for the tiles, bg3 #262626 for borders,
+# fg0 #f2f2f2 for the selection ring, fg2 #a0a0a0 for the spinner. Nothing
+# repaints them -- the previous [window] background was still Catppuccin Mocha's
+# #1e1e2e, left over from when theme-apply rendered this file and only ever
+# patched [colors].
 
 [general]
 directory = "~/Pictures/Wallpapers"
@@ -17,7 +23,7 @@ backend = "awww"
 preview = false
 close_on_focus_loss = false
 position = "center"
-background = "#1e1e2e"
+background = "#0d0d0d"
 margin = 34
 edge_margin = 24
 radius = 24

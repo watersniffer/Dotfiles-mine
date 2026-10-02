@@ -26,10 +26,21 @@
 -- config/waybar/config-hypr.jsonc, because its workspace module is
 -- compositor-specific.
 --
--- There is no palette block and no hyprland branch in theme-apply, on purpose.
--- Super+T still works here: themesw recolours the bar, rofi, kitty and the rest
--- from themes/<slug>/palette.conf, and all of those are visible in this session.
--- What it deliberately does not touch is the compositor's own colours.
+-- The desktop theme is fixed, not derived from anything. The colours in
+-- config/waybar/colors.css, config/rofi/colors.rasi, config/kitty/current-theme.conf
+-- and config/mako/config are E-ink: a dark greyscale palette, every accent a grey,
+-- stepped so the shades still separate in a terminal. They are committed files, not
+-- generated, so nothing regenerates them and changing the wallpaper does not
+-- recolour anything.
+--
+-- That was not always so. There was a theme switcher (Super+T) over seven palettes
+-- in themes/, and later the wallpaper became the theme via matugen. Both are gone;
+-- what is left is the palette written out once. E-ink's palette is still in
+-- themes/e-ink/palette.conf as the record of where the values came from, but
+-- nothing reads it.
+--
+-- The compositor's own colours are deliberately not themed either: the frame,
+-- borders and shadows are set below and stay as they are.
 --
 -- Modifiers are all caps throughout. The lua parser reads lowercase "alt" as an
 -- unknown keysym and drops the bind silently, with no warning.
@@ -286,8 +297,44 @@ hl.config({
         sensitivity = 0, -- -1.0 - 1.0, 0 means no modification.
 
         touchpad = {
-            natural_scroll = false,
+            -- natural_scroll = true is what most people expect on a touchpad: the
+            -- content moves the same way as on a phone, so pushing up scrolls
+            -- down. It was explicitly false here, which is mouse-like behaviour
+            -- and the single most common reason a touchpad feels wrong on a
+            -- desktop.
+            natural_scroll = true,
+
+            -- Tapping to click. Without this a tap does nothing and you have to
+            -- physically press, which is both slower and the reason people decide
+            -- a touchpad is broken.
+            tap_to_click = true,
+
+            -- Do not scroll while typing. The palm resting on the trackpad
+            -- otherwise scrolls whatever is under the cursor, and the cursor
+            -- jumps somewhere else at the same time.
+            disable_while_typing = true,
+
+            -- Scroll speed. Flat, because this build has no per-finger factors
+            -- (see below), so there is no way to make three-finger scrolling
+            -- faster than two-finger without also making ordinary scrolling
+            -- faster. The three-finger workspace swipe below is therefore the same
+            -- speed as everything else.
+            scroll_factor = 1.0,
         },
+        -- Not set, because Hyprland 0.56.2 has no such options -- each of these
+        -- is rejected as an unknown key, verified with
+        -- `hyprctl getoption input:touchpad:<name>`:
+        --
+        --   tap_to_click_right       no such option
+        --   middle_click_emulation   no such option
+        --   clickfinger              no such option
+        --   palm_detection           no such option
+        --   scroll_2fg / scroll_3fg  no such option
+        --
+        -- So there is no trackpad right-click or middle-click here. Right-click
+        -- works from the touchpad, but only through what the pad itself reports;
+        -- middle-click emulation, which is what makes paste work in a browser
+        -- without a physical middle button, is not available in this build.
     },
 })
 
@@ -308,7 +355,6 @@ hl.device({
 ---------------------
 ---- KEYBINDINGS ----
 ---------------------
-
 
 
 -- The stock config above sets XCURSOR_SIZE to 24. These are the rest of niri's
@@ -359,15 +405,52 @@ local stepH = 76
 
 -- --- launchers; the app launcher is Super+Space, as in niri ---
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + E",     hl.dsp.exec_cmd("kitty --class yazi -e yazi"))
+-- Super+E opens the file manager and Super+Alt+E the terminal file browser.
+-- They were the other way round, and Super+E was yazi.
+--
+-- yazi runs inside kitty rather than in a terminal emulator of its own choice, so
+-- the class is set: that is what makes the window group with the other kitty
+-- windows instead of standing alone, and it is what the Alt-Tab switcher matches
+-- on.
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("nemo"))
+hl.bind(mainMod .. " + ALT + E",
+        hl.dsp.exec_cmd("kitty --class yazi -e yazi"))
+
+-- The app launcher is rofi. It had been pushed onto Super+O as a fallback behind
+-- the Quickshell launcher, which is gone, and it is back on Super+Space. Its
+-- colours come from config/rofi/colors.rasi.
+--
+-- The bind below was lost at some point during the shell-swap work and the comment
+-- outlived it, so the launcher simply did nothing. If it goes missing again, check
+-- that this hl.bind is actually present rather than just this comment.
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("rofi -show drun"))
+
+-- Super+W is the wallpaper picker. It used to be theme-aware -- wallpaper-switcher
+-- asked theme-apply which folder the current palette named -- but there are no
+-- palettes now, so there is nothing for it to ask and the theme follows whichever
+-- wallpaper is set rather than the other way round. It falls back to the wallpapers
+-- root when a theme's own folder is empty, and only Tokyo Night has images in it.
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("/home/water/.local/bin/wallpaper-switcher"))
+
+-- Super+Shift+W hides/shows the bar. toggle-waybar came back with the rest of
+-- local/bin; waybar's own SIGUSR1 would do the same thing.
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-waybar"))
+
 hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("smile"))
-hl.bind(mainMod .. " + B",     hl.dsp.exec_cmd("firefox"))
-hl.bind(mainMod .. " + D",     hl.dsp.exec_cmd("nemo"))
+-- Zen Browser. This said "firefox", which is not installed on this machine, so
+-- the bind was dead. zen-browser is what is actually used and what is running.
+hl.bind(mainMod .. " + B",     hl.dsp.exec_cmd("zen-browser"))
+-- Super+D is the calendar. It was nemo, which is now on Super+E.
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("dcal"))
 
 -- --- window management ---
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+-- Float toggle. Was Super+V, which is now the clipboard picker -- Super+V is the
+-- natural key for a clipboard and no amount of wanting it elsewhere makes that
+-- feel right. Super+Alt+F rather than a bare other letter because plain F is
+-- fullscreen just below and the two are related enough to want the same hand
+-- position with one extra modifier.
+hl.bind(mainMod .. " + ALT + F", hl.dsp.window.float({ action = "toggle" }))
 -- internal and client are integers, not the strings the error message suggests:
 -- 0 none, 1 fullscreen, 2 maximise. With no action given it toggles, which is
 -- what niri's fullscreen-window does.
@@ -400,24 +483,32 @@ for i = 1, 10 do
     hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
--- --- the ~/.local/bin helpers: theme, wallpaper, clipboard, power, lock ---
-hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("/home/water/.local/bin/themesw"))
-hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("/home/water/.local/bin/wallpaper-switcher"))
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-waybar"))
--- The Luscious album folder. wallpaper-switcher only resolves folders that a
--- theme names in themes/<slug>/palette.conf, and Luscious is not a theme, so
--- matuwall is called with --directory directly rather than faking one.
-hl.bind(mainMod .. " + N",
-    hl.dsp.exec_cmd("matuwall --directory /home/water/Pictures/Wallpapers/Luscious"))
-hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("/home/water/.local/bin/powerprofile"))
+
+-- because it is the faster of the two for just cycling through; this one has the
 hl.bind(mainMod .. " + U", hl.dsp.exec_cmd("wlogout"))
--- The clipboard: the wl-paste watcher in autostart records history into
--- cliphist, rofi picks an entry, and it goes back onto the clipboard.
-hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(
-    "cliphist list | rofi -dmenu -theme /home/water/.config/rofi/config.rasi"
-    .. " | cliphist decode | wl-copy"))
+-- The clipboard. Super+V, because that is the muscle memory and Super+C was
+-- never a good use of the key.
+--
+-- This used to be a one-line pipeline inline in the bind, and it wiped the
+-- clipboard every time it was cancelled:
+--
+--     cliphist list | rofi -dmenu -dmenu | cliphist decode | wl-copy
+--
+-- Escape in rofi is not a failure, it is how you change your mind, and the
+-- pipeline did not treat it as one -- rofi printed nothing, cliphist decode read
+-- nothing and exited 1, and wl-copy was handed empty stdin, which is how you
+-- clear a clipboard. Measured: a clipboard holding BEFORE-CANCEL-TEST came back
+-- empty after a single Escape. It read as "the clipboard is not saving things".
+-- local/bin/clipboard-history checks the selection instead of the exit status,
+-- because rofi exits 0 when cancelled.
+--
+-- The other half of this feature was broken too and for a different reason: the
+-- wl-paste --watch feeder in the autostart block had died and nothing restarted
+-- it, so nothing was reaching cliphist at all. That is local/bin/clipboard-watcher.
+hl.bind(mainMod .. " + V",
+    hl.dsp.exec_cmd("/home/water/.local/bin/clipboard-history"))
 hl.bind("SUPER + ALT + L",
-    hl.dsp.exec_cmd("swaylock -C /home/water/.config/niri/lock.conf -f"))
+    hl.dsp.exec_cmd("swaylock -f"))
 
 -- --- drag and resize with the mouse ---
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
@@ -445,10 +536,6 @@ hl.bind("XF86AudioMute",
     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
 hl.bind("XF86AudioMicMute",
     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), { locked = true })
-hl.bind("XF86MonBrightnessUp",
-    hl.dsp.exec_cmd("/home/water/.local/bin/brightness-step up"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",
-    hl.dsp.exec_cmd("/home/water/.local/bin/brightness-step down"), { locked = true, repeating = true })
 hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
@@ -463,28 +550,61 @@ hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"),       { locked = tr
 -- itself, so there is no Hyprland-specific bar config to point it at.
 hl.on("hyprland.start", function()
     hl.exec_cmd("pkill -x dunst 2>/dev/null; true")
-    -- mako is deliberately not started here. It used to be, but there is only
-    -- one org.freedesktop.Notifications bus name and ashell needs it for the
-    -- notification dropdown in the bar. Launching both means ashell logs
-    -- "Bus name already owned" and silently receives no notifications, so the
-    -- dropdown stays empty while mako does the popping -- the two features are
-    -- mutually exclusive, not additive. ashell does both jobs now, toasts
-    -- included. Verified: with mako running, ashell never gets the name; with
-    -- mako stopped, mako then fails with "Failed to acquire service name".
     hl.exec_cmd("systemctl --user restart xdg-desktop-portal.service")
-    -- ashell's palette lives in the [appearance] section of a config.toml that
+
+    -- The bar is waybar again, in place of silere. Started explicitly rather than
+    -- left to the compositor so it comes up in a defined order.
+    --
+    -- Its stylesheet draws it as a floating island. Note that layer-shell surfaces
+    -- always span the full output width, so the inset is applied to an inner
+    -- container box in style.css, not to the bar window itself: margin on
+    -- window#waybar is silently ignored.
+    hl.exec_cmd("waybar -c /home/water/.config/waybar/config-hypr.jsonc -s /home/water/.config/waybar/style.css")
+
+    -- mako owns notifications. Waybar has no notification daemon of its own and
+    -- silere used to hold this bus name; exactly one daemon may own it, so this
+    -- must not run alongside anything else that registers for notifications.
+    hl.exec_cmd("mako")
+
+    -- 20-20-20 eye strain reminder. safeeyes is an AUR package; its own default
+    -- rule is already 20 minutes / 20 seconds / 20 feet, and that is written out
+    -- explicitly in ~/.config/safeeyes/safeeyes.json rather than left to whatever
+    -- its first run decides. Started after mako on purpose: safeeyes raises its
+    -- own full-screen overlay, and mako owning the notification bus first means
+    -- the two are not competing when the break prompt appears.
+    hl.exec_cmd("safeeyes")
     -- is also hand-edited and committed, so anything that rewrites that file
     -- silently reverts the bar's colours while every other app keeps the new
     -- palette. Re-derive it from the theme in the state file before the bar
     -- starts, which makes the bar self-healing. Separated by ';' rather than
     -- '&&' on purpose: if the repair fails for any reason, ashell must still
     -- come up, because no bar at all is worse than a stale-coloured one.
-    hl.exec_cmd("/home/water/.local/bin/theme-apply --ashell-only >/dev/null 2>&1; ashell")
-    hl.exec_cmd("/home/water/.local/bin/at_startup")
+
+    -- The wallpaper backend. Silere does not draw a wallpaper, so awww stays.
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("awww restore")
+
+
+    -- Clipboard history. This watcher lived in ~/.local/bin/at_startup until the
+    -- wipe, so nothing was populating cliphist and the picker had nothing to
+    -- show; it was then run directly from here as `wl-paste --watch cliphist
+    -- store`, which also failed, for a different reason.
+    --
+    -- wl-paste --watch exits by itself in ordinary situations -- an app taking the
+    -- clipboard with no text, or a cleared selection. Launched with a single exec
+    -- and never supervised, the first such exit ended clipboard history for the
+    -- rest of the session. That is the state it was found in: this autostart
+    -- block was working (mako, awww, nm-applet and kitty were all up from it),
+    -- the session was 28 hours old, wl-paste was gone, and a wl-copy test
+    -- round-tripped to cliphist without recording a single entry.
+    --
+    -- clipboard-watcher restarts it instead, and takes a lock so a second copy
+    -- cannot race on the database. Restarts are safe: cliphist collapses a store
+    -- that repeats the previous entry, so it will not fill up with duplicates.
+    hl.exec_cmd("/home/water/.local/bin/clipboard-watcher")
+
+    -- Session services.
     hl.exec_cmd("nm-applet")
-    hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1")
     hl.exec_cmd("kitty")
 end)
@@ -537,6 +657,65 @@ hl.window_rule({
     move  = "20 monitor_h-120",
     float = true,
 })
+
+-- Scratchpad, on Super+S.
+--
+-- Hyprland has no scratchpad of its own, so this is the usual construction: a
+-- window with no border, no rounding, no shadow and no blur, floating, so it looks
+-- like a bare terminal sitting on the wallpaper and nothing else.
+--
+-- Only fields the Lua API actually exposes are used. The obvious names are all
+-- rejected at load with "unknown field", checked against the other rules in this
+-- file rather than assumed:
+--
+--   float, border_size, rounding, no_shadow, no_blur, move, pin   accepted
+--   border, shadow, gaps_in_inner, gaps_out_outer, no_anim,
+--   stay_on_workspace, focus_on_activate                          unknown
+--
+-- So two things a scratchpad normally does are unavailable here. Per-window gaps
+-- and per-window animation suppression are not in the API, so the window keeps the
+-- global gap and the global open animation. And there is no stay-on-workspace, so
+-- it is left floating, which keeps it on the workspace it was opened from rather
+-- than dragging it along.
+hl.window_rule({
+    name  = "scratchpad-plain",
+    match = { class = "^scratchpad$" },
+
+    float       = true,
+    border_size = 0,
+    rounding    = 0,
+    no_shadow   = true,
+    no_blur     = true,
+
+    -- Drops in from above rather than popping. The global windowsIn is
+    -- "popin 80%", so without this the scratchpad would scale up from the
+    -- middle of the screen like every other window; slidevert with a negative
+    -- offset slides it down out of the top edge, which is the direction a
+    -- scratchpad is expected to come from.
+    --
+    -- The field is a string, not a table: the lua API rejects a table here with
+    -- "string type requires a string", though it accepts a bare style name, a
+    -- style with an offset, or the full four-part form. The four-part form is
+    -- style, offset, speed, bezier -- 4 is a deliberately quick slide so it does
+    -- not get in the way of a key you press often, and menu_decel is the curve
+    -- the workspace switch already uses, so the two feel like the same desktop.
+    animation   = "slidevert -60, 4, 70, menu_decel",
+})
+
+-- The bind runs a script rather than a bare kitty, because the same key has to both
+-- open the window and close it again -- and nothing outside the window can close
+-- it on this Hyprland. Every dispatch route is broken here: `hyprctl dispatch
+-- killwindow` expands to invalid Lua, and `hyprctl eval 'return
+-- hl.dsp.window.close()'` answers "ok" and leaves the window open. All three were
+-- tried against a real window of this class.
+--
+-- So local/bin/toggle-scratchpad checks whether the window exists and, if it does,
+-- drops a flag file instead of closing anything.
+-- local/bin/scratchpad-session is what kitty runs as the window's command, and it
+-- leaves a watcher on that flag which kills the terminal. Killing kitty rather than
+-- exiting the shell is deliberate: `nvim` in the scratchpad and then Super+S would
+-- otherwise leave nvim running with no window.
+hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-scratchpad"))
 
 -- kitty is excluded from blur rather than relying on decoration.blur being off
 -- globally. That setting lives in config/hypr/hyprland-gui.lua, which hyprmod

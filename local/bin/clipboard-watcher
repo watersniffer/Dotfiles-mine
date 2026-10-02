@@ -1,0 +1,55 @@
+#!/bin/sh
+# clipboard-watcher -- keep cliphist fed, for as long as the session lasts.
+#
+# Started from the autostart block in config/hypr/hyprland.lua.
+#
+# Why this is a loop and not a bare `wl-paste --watch cliphist store`
+# ------------------------------------------------------------------
+# That bare command was the whole implementation until now, launched with one
+# exec and never supervised. It works right up until wl-paste exits, and then
+# clipboard history is dead for the rest of the session with nothing to notice
+# and nothing to restart it. That is exactly the state it was found in: the
+# autostart block itself was fine -- mako, awww, nm-applet and kitty were all
+# running from the same block -- but wl-paste had been gone since some unknown
+# point in a 28-hour-old session, and a wl-copy test round-tripped to cliphist
+# without recording anything.
+#
+# wl-paste --watch does exit on its own in ordinary situations: when an
+# application takes the clipboard and offers no text, and when the selection is
+# cleared. Neither is an error, and neither should cost you the history, so this
+# restarts it instead.
+#
+# Restarting is safe to do blindly. cliphist collapses a store call that repeats
+# the previous entry, so a watcher that exits and immediately re-watches does not
+# fill the database with duplicates.
+#
+# Only one watcher may run: two would race on the same database. The lock is a
+# directory rather than a file because mkdir is atomic on every filesystem that
+# matters here, whereas `touch` is not -- two watchers starting at once would
+# both succeed with touch and both write.
+
+set -u
+
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/clipboard-watcher.lock"
+
+# Stale-lock handling: if the recorded pid is gone, take the lock over rather than
+# refusing to start, because that is precisely the failure this script exists to
+# repair.
+if ! mkdir "$LOCK" 2>/dev/null; then
+    old=$(cat "$LOCK/pid" 2>/dev/null || echo "")
+    if [ -n "$old" ] && kill -0 "$old" 2>/dev/null; then
+        echo "clipboard-watcher: already running as pid $old" >&2
+        exit 0
+    fi
+    rm -rf "$LOCK"
+    mkdir "$LOCK" 2>/dev/null || exit 1
+fi
+echo $$ > "$LOCK/pid"
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# wl-paste exits 1 when there is nothing on the clipboard to watch yet, which is
+# normal at login before anything has been copied. Either way, keep going.
+while :; do
+    wl-paste --watch cliphist store >/dev/null 2>&1
+    sleep 1
+done

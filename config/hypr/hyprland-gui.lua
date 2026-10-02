@@ -10,6 +10,8 @@ hl.config({
         active_opacity = 1.0,
         blur = {
             enabled = false,
+            passes = 2,
+            size = 1,
         },
         inactive_opacity = 1.0,
         rounding = 14,
@@ -27,7 +29,7 @@ hl.config({
                 angle = 54,
             },
         },
-        gaps_out = 7,
-        layout = "master",
+        gaps_out = 5,
+        layout = "dwindle",
     },
 })

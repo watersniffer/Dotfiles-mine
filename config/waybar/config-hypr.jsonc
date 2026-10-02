@@ -8,9 +8,15 @@
 //   2. its format token {value} -> {id}, which is what hyprland/workspaces
 //      interpolates
 //
-// The custom modules (cpucat, media) and everything else are untouched: none of
+// The remaining custom module (media) and everything else are untouched: none of
 // them talk to compositor IPC, and style.css never names a module, so the same
 // stylesheet styles both bars.
+//
+// custom/cpucat, the animated cat, was removed from modules-left and its
+// #custom-cpucat rule deleted from style.css. The script and its Waycat font are
+// still in the repo -- config/waybar/scripts/catloop.sh and
+// config/waybar/scripts/fonts/Waycat.ttf -- so putting it back is a one-line
+// change to modules-left plus the exec block, if it is ever wanted.
 {
   // Off deliberately. It reloads the bar's style whenever style.css changes,
   // and under niri that style reload drops the bar onto the Bottom layer,
@@ -23,9 +29,19 @@
   // Attached to the top edge: no floating margins, and a real 34px height
   // (it used to be 1 here, with the visible height coming from the CSS
   // min-height instead).
-  "height": 35,
+  "height": 33,  // 33 is the SURFACE: 3px above + the 30px island + 0px below.
+               // The bottom is 0 because the surface's bottom edge is where
+               // windows are told to start -- its full height is the exclusive
+               // zone -- so bottom margin is transparent gap between the bar
+               // and the first window. Do not put any back without moving this
+               // number to match, or the bar is clipped.
 
-  "modules-left": ["hyprland/workspaces", "custom/cpucat"],
+  // the app running on each workspace in place of its number, and
+  // hyprland/workspaces can only format {id}, which is a number. The icon arrives
+  // as a background-image because a custom waybar module cannot put an image in
+  // its label -- see scripts/workspace-icons for how the owning app is chosen,
+  // and scripts/ws-icons-map.py for the stylesheet that draws it.
+  "modules-left": ["hyprland/workspaces"],
   // custom/media rather than mpris: the mpris module always renders a label,
   // so its island pill showed up as an empty capsule whenever nothing was
   // playing. hide-empty-text removes the module instead, so the pill only
@@ -38,23 +54,75 @@
     "battery",
     "clock"
   ],
+
+  // Dots, not numbers. The numbers were here because the earlier attempt to put
+  // per-workspace app icons in the bar was reverted -- but that attempt and this
+  // one use different mechanisms, so its failure says nothing about this.
+  //
+  // format-icons is supported here after all, and is the documented way to do it.
+  // man5/waybar-hyprland-workspaces lists it for this module, with state keys
+  // alongside the per-workspace-id ones: "default" is used "when no string match is
+  // found and none of the below conditions have defined icons", and the conditions
+  // are active, special, empty, visible and persistent. Earlier in this repo it was
+  // recorded as unsupported, but that was checked by trying "format": "{icon}"
+  // with no format-icons block at all -- with nothing to match, the {icon}
+  // placeholder fell through and waybar drew the icon's path as literal text. The
+  // key was never absent from the module, only from the config that tested it.
+  //
+  // Every state gets the same glyph and the difference is made in CSS instead, by
+  // colour and size. That is deliberate: the module supplies the states, the
+  // stylesheet supplies the contrast, and there is one place to change a dot
+  // rather than one per state. U+25CF is a filled circle in every font GTK is
+  // likely to pick, so it does not fall back to a tofu box the way an unassigned
+  // Nerd Font glyph would.
+  //
+  // Still not possible, unchanged: workspace-taskbar, the mode that draws window
+  // icons instead of text. It is documented and inert in the packaged 0.15.0-3 --
+  // it produces no log line and no change even from a config containing nothing
+  // else. And a custom module still cannot do it either: its JSON is one object
+  // per module rather than an array, and it has no "icon" key.
   "hyprland/workspaces": {
-    "format": "{id}"
+    "format": "{icon}",
+    // Diamonds. Filled for the active workspace, hollow for everything else, so
+    // the active one is distinguished by shape as well as by the brightness and
+    // size that style.css applies -- three signals rather than one, which matters
+    // on a greyscale palette where "brighter" is the only contrast available.
+    //
+    // Hollow rather than small-and-filled because these are diamonds, not dots: a
+    // shrunken filled diamond stops reading as a diamond and starts reading as
+    // dust, whereas a hollow one stays a diamond at any size.
+    //
+    // Neither glyph is in JetBrainsMono Nerd Font, the bar's first font. Both fall
+    // back to Noto Sans CJK, which is the same fallback the circles were already
+    // using -- checked with `fc-list :charset=25c6` and `:charset=25c7` -- so this
+    // is not a new font dependency, it is the existing one.
+    "format-icons": {
+      "active": "◆",       // filled
+      "visible": "◇",      // hollow
+      "persistent": "◇",   // hollow
+      "special": "◇",      // hollow
+      "empty": "◇",        // hollow
+      "default": "◇"       // hollow
+    }
   },
+
 
   "custom/media": {
     "exec": "bash ~/.config/waybar/scripts/media-title.sh",
     "interval": 2,
     "hide-empty-text": true,
-    "max-length": 40
+    "max-length": 40,
+    // Escape the title as Pango markup entities. Without this a track with an
+    // ampersand in it -- "JEE Wallah - BINOMIAL THEOREM ... Concepts & PYQs" --
+    // makes waybar log "Entity did not end with a semicolon" every two seconds and
+    // draw nothing, because the raw & reaches Pango as the start of an entity. Any
+    // title containing &, < or > breaks it, so this is not a one-song problem.
+    "escape": true
   },
 
   "tray": {
     "icon-size": 14,
     "spacing": 4
-  },
-  "custom/cpucat": {
-    "exec": "bash ~/.config/waybar/scripts/catloop.sh"
   },
   "wireplumber": {
     "scroll-step": 5,

@@ -91,20 +91,31 @@ Niri is the only session. The installer registers it with SDDM as
 **Niri (Dotfiles)** and makes it the default; select it at login.
 
 The session uses the Kitty terminal, Rofi launcher, Waybar, Mako
-notifications, the Matuwall/awww wallpaper picker and Wlogout. The palette is a
-palette is defined once per theme in `themes/<slug>/palette.conf` and shared
-by the bar, terminal, launcher, GTK/Qt apps, nvim/lualine, fastfetch, the lock
-screen, the wallpaper picker and notifications; changing the wallpaper does not
-recolour anything. Press `Super+T` (**themesw**) to switch: it opens a rofi
-picker listing every theme with the active one marked, re-renders all of those
-files, and reloads the bar, mako and niri. **VS Code follows too**: every theme generates a
-theme file under `~/.config/Code/User/themes/` and points `workbench.colorTheme` at it, so
-the editor matches whatever else is active. Kitty, nvim, btop and any open
-GTK/Qt app need a restart to follow. `themesw <slug>` switches without the
-picker, and adding a theme means adding one more `palette.conf`. Waybar is a floating island bar: the bar itself is
-transparent and the left, centre (mpris) and right groups are separate rounded
-pills with gaps between them, 35px tall. Windows get 10px rounded corners, no
-border, an x-ray blur and spring animations. `swaylock` is Niri's lock-screen backend; the Sway
+notifications, the Matuwall/awww wallpaper picker and Wlogout.
+
+**The theme is fixed.** The colours in the bar, launcher, terminal and notification
+daemon are E-ink: a dark greyscale palette where every accent is a grey, stepped so
+the shades still separate in a terminal and in diffs. `urgent` is pushed to pure
+white rather than a red, because a red on an e-ink panel comes out mid-grey and
+reads as nothing. They are committed files under `config/`, not generated, so
+changing the wallpaper does not recolour anything and nothing needs to run at
+login to keep them.
+
+There is no theme picker. There was once a `Super+T` switcher over seven palettes
+in `themes/`, and later the wallpaper became the theme via matugen. Neither is
+here. `themes/e-ink/palette.conf` survives as the record of where the values came
+from; nothing reads it.
+
+Neovim, Obsidian, VS Code and btop are not themed from the palette. They were, from
+the same `themes/<slug>/palette.conf`, and that is gone with everything else -- so
+those apps keep whatever theme they ship with or set themselves.
+
+Waybar is a floating island bar: the bar surface is transparent and a single inner
+box paints the island, 70% of the screen width, 3px below the top edge. The inset
+is on the inner box rather than the window because a layer-shell surface always
+spans the full output and `margin` on `window#waybar` is silently ignored.
+Windows get 10px rounded corners, no border, an x-ray blur and spring animations.
+`swaylock` is Niri's lock-screen backend; the Sway
 compositor itself is not installed. Niri's native lid-close event starts the
 lock screen, while the system logind policy handles suspend.
 

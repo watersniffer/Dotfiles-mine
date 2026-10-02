@@ -1,5 +1,7 @@
 @import url("colors.css");
 
+
+
 * {
     font-family: "JetBrainsMono Nerd Font", sans-serif;
     font-weight: 800;
@@ -8,13 +10,61 @@
 }
 
 /* Make main bar transparent so empty spaces disappear */
+/* The island: a floating rounded bar, centred, 70% of the screen width.
+ *
+ * This is drawn on an inner container box, NOT on window#waybar, and that is not
+ * a style preference. A Wayland layer-shell surface always spans the full output
+ * width, so `margin` on the bar window is silently ignored. That was measured,
+ * not assumed: with a magenta background and margin 8px, x=2, x=9, x=1362 and y=1
+ * all still painted magenta, i.e. the bar sat hard against all four edges. The
+ * direct child box is an ordinary widget, and it does honour margin -- verified
+ * with the same probe, which is what produced this.
+ *
+ * The 70% width, 8px radius and 28px content height are taken from the Silere
+ * bar this replaces, so the two look like the same desktop.
+ *
+ * The surface is still 46px tall, because the 8px inset is *inside* it: the
+ * island gets 46 - 16 = 30px of visible bar. */
 window#waybar {
     background: transparent;
-    border-radius: 10px;
+    border-radius: 0;
     border: 0px;
     margin: 0px;
-    padding: 2px 6px;
-    min-height: 26px;
+    padding: 0px;
+    min-height: 0px;
+}
+
+window#waybar > box {
+    background: @island;
+    border-radius: 8px;
+    border: 1px solid @bg3;
+    /* Horizontal inset centres the island. Vertically it is asymmetric: 3px of
+       lift off the top edge, but 0px below.
+     *
+     * The bottom margin is zero on purpose. The bar's layer-shell surface always
+     * spans the full output width and reserves its whole height as an exclusive
+     * zone, so the surface's bottom edge is exactly where windows are told to
+     * start. Any bottom margin is therefore transparent padding between the island
+     * and the windows, which reads as the bar floating too high. Measured on the
+     * real screen: with 3px below, the island ended at y=32, the surface at
+     * y=35, and the first window did not begin until y=41 -- an 8px gap, of which
+     * only the first 3px are ours to remove. The remaining 5px is Hyprland's own
+     * window gap, which is a compositor setting and not this file's business.
+     *
+     * The top edge keeps its 3px: that gap is against the screen edge, not
+     * against a window, so there is nothing to close it against.
+     *
+     * Horizontal inset centres the island.
+     *
+     * 205px is not arbitrary: it is what 70% of this panel's 1366px width leaves on
+     * each side ((1366 - 956) / 2), matching Silere's barWidth of 0.7. GTK's CSS
+     * will not take a percentage here -- `margin: 8px 15%` is a parse error and
+     * waybar refuses to start, so the value has to be spelled out in px.
+     *
+     * It is therefore tied to this screen's width. config/hypr/hyprland.lua
+     * already hardcodes a panel-derived constant (stepW) for the same reason. */
+    margin: 3px 205px 0px;
+    padding: 0px 8px;
 }
 
 /* Apply translucent background specifically to the widget sections, so the
@@ -25,28 +75,114 @@ window#waybar {
    nothing in it still paints its own padding, so styling it left an empty
    capsule in the middle of the bar whenever nothing was playing. The media
    module carries its own pill instead, via hide-empty-text. */
+/* Module groups are layout only now.
+ *
+ * They each painted their own island-coloured pill with an 8px radius and 2px
+ * vertical padding, which is what made the bar read as several separate floating
+ * capsules rather than one bar -- and that padding is also what forced the bar
+ * to 39px. With the background on the container box above, these must stay
+ * transparent or they would repaint over it and split the island back into
+ * pieces. Horizontal padding only, to keep the modules off each other.
+ *
+ * .modules-center is deliberately absent, as before: a group with nothing in it
+ * still paints its own padding, so styling it left an empty capsule in the
+ * middle of the bar whenever nothing was playing. The media module carries its
+ * own pill instead, via hide-empty-text. */
 .modules-left,
+.modules-center,
 .modules-right,
 #custom-media {
-    background: @island;
-    border-radius: 8px;
-    padding: 2px 8px;
-    margin: 2px 4px;
+    background: transparent;
+    border-radius: 0;
+    padding: 0px 8px;
+    margin: 0px;
 }
 
-/* WORKSPACES */
-
+/* WORKSPACES
+ *
+ * Diamonds rather than numbers. The module is hyprland/workspaces, so its id is
+ * "workspaces" and these name the module rather than a class -- GTK's CSS cannot
+ * say "any of these ids".
+ *
+ * COLOUR AND SIZE GO ON `label`, NOT ON `button`
+ * ----------------------------------------------
+ * This is the whole trick and it was measured, not guessed. On this GTK/waybar,
+ * `color` and `font-size` set on `#workspaces button` are silently ignored: a probe
+ * appended as the very last rule in this file, with the button set to #ff0000 at
+ * 20px and .active to #0000ff at 40px, left all three marks at #f2f2f2 and 7px
+ * tall. `background` and `border-bottom` on the very same selector did apply, so
+ * the selector matches -- it is specifically the two text properties that are
+ * dropped, because a GtkButton does not draw its own text. The text lives on a
+ * child GtkLabel, and the same properties written as `#workspaces button label`
+ * did take effect immediately.
+ *
+ * So the two levels have separate jobs, and both are needed:
+ *
+ *   #workspaces button        geometry -- padding, margin, background, border
+ *   #workspaces button label  appearance -- colour, size and transition
+ *
+ * @overlay2 for the inactive mark, not @ws_inactive and not @overlay0.
+ * @ws_inactive is #262626 -- the same value as @bg3 -- which is legible as a
+ * two-character number and effectively invisible at this size on an island whose
+ * measured interior luminance is about 3/255. @overlay0 (#767676) was the first
+ * attempt and measured back at only #545454, because a hollow diamond at this size
+ * is thin anti-aliased strokes and most pixels never reach the nominal colour.
+ * @overlay2 is #a0a0a0, which lands the visible strokes near where @overlay0
+ * nominally was while staying clearly behind the active mark's #f2f2f2.
+ *
+ * ANIMATION
+ * ---------
+ * Waybar has no animation of its own -- it is not a compositor and it does not
+ * tween between workspace states, so there is no way to make the indicator slide
+ * or spring from one workspace to the next. What GTK's CSS does support is
+ * `transition` on properties that change on a widget that stays alive, and that is
+ * exactly the workspace case: switching workspaces moves the `active` class from
+ * one button to another, so two labels change colour and size on widgets that
+ * persist. Each one therefore grows or shrinks over 200ms instead of snapping,
+ * which reads as the marks rearranging rather than being replaced.
+ *
+ * The transition is declared on the label because that is where the properties
+ * that actually change live; putting it on the button would only ever animate
+ * `background`, which is the hover state and not the workspace change.
+ *
+ * `font-size` is in the transition list even though GTK3 may not be able to
+ * interpolate a length here, in which case it snaps and nothing is lost. Colour
+ * definitely interpolates, and colour is the difference that carries.
+ *
+ * Spacing is deliberately tight: 2px of margin and a 6px minimum, so the marks sit
+ * close enough to read as one indicator. The earlier 4px/12px was sized for
+ * two-digit numbers and left visible daylight between them at diamond size.
+ *
+ * border-bottom: none is explicit because the numbers this replaces marked the
+ * active workspace with an underline, and an underline under a diamond reads as a
+ * stray line rather than as part of the marker.
+ */
 #workspaces button {
-    padding: 0px 1px;
-    margin: 2px 1px;
+    padding: 0px;
+    margin: 0px 1px;
     border-radius: 0;
     background: transparent;
-    color: @ws_inactive;
+    border-bottom: none;
+    /* Sized for the ACTIVE diamond (12px of ink at font-size 20), not the
+     * inactive one (7px at font-size 12). See ANIMATION below for why the box
+     * has to be big enough for the larger state. */
+    min-width: 12px;
+    transition: background-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* active workspace */
-#workspaces button.active {
-    border-bottom: 2px solid @ws_active;
+#workspaces button label {
+    color: @overlay2;
+    font-size: 12px;
+    transition: color 260ms cubic-bezier(0.4, 0, 0.2, 1),
+                font-size 260ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* active workspace. Niri exposes a focused workspace separately from the active
+ * one, and this stylesheet is shared with config-niri.jsonc, so both count. */
+#workspaces button.active label,
+#workspaces button.focused label {
+    color: @ws_active;
+    font-size: 20px;
 }
 
 /* hover */
@@ -57,12 +193,6 @@ window#waybar {
 /* urgent */
 #workspaces button.urgent {
     background: @urgent;
-}
-
-/* Niri exposes the focused workspace separately from the active one. */
-#workspaces button.active,
-#workspaces button.focused {
-    border-bottom: 2px solid @ws_active;
 }
 
 #custom-media {
@@ -100,13 +230,4 @@ tooltip label {
 }
 
 #custom-launcher {
-}
-
-#custom-cpucat {
-  font-family: "Waycat", monospace;
-  font-size: 17px;
-  font-weight: bold;
-  color: @cpucat;
-  padding-left: 4px;
-  padding-right: 6px;
 }

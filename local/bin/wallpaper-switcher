@@ -1,66 +1,54 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# wallpaper-switcher -- open the wallpaper picker.
 #
-# Open the wallpaper picker on the folder that belongs to a theme.
+# Bound to Super+W. Opens matuwall on the wallpapers folder. Picking an image sets
+# it through awww, which is the whole of what happens: the theme is fixed, so
+# nothing needs regenerating afterwards.
 #
-#   wallpaper-switcher            the current theme's folder
-#   wallpaper-switcher <slug>     that theme's folder, without switching to it
+# What used to be here
+# --------------------
+# This was theme-aware twice over. First it asked theme-apply which folder the
+# current palette named and opened that, so switching theme also switched which
+# pictures the picker offered. Later the wallpaper became the theme and a
+# theme-wallpaper-watch regenerated everything on each change. Both are gone; the
+# theme is a fixed palette and this just opens a folder.
 #
-# There is no "every wallpaper" mode. The ALL folder it used to fall back to held
-# a mixed collection of 284 files -- most of them theme wallpapers that had been
-# copied into one place -- and was removed, along with its keybind. Each theme
-# folder and any folder you add yourself is picked by naming it explicitly.
+# An argument is still accepted and used as the folder name, so
 #
-# Each theme names its own folder in themes/<slug>/palette.conf, so the mapping
-# lives beside the palette rather than in a table here. theme-apply prints it:
-# --wallpapers for the theme in use, --wallpapers-for for any other.
+#     wallpaper-switcher "Tokyo Night"
 #
-# A theme whose folder is missing or still empty would otherwise open an empty
-# picker, so that is reported rather than silently showing something else. It was
-# a fallback to ALL before that folder was removed.
+# opens the picker on one theme's folder directly.
 
 set -uo pipefail
 
 WALL_ROOT="$HOME/Pictures/Wallpapers"
 
-APPLY="$HOME/.local/bin/theme-apply"
-if [[ ! -x "$APPLY" ]]; then
-    # running straight out of the repo, before install.sh has copied it
-    APPLY="$(dirname "$(realpath "$0")")/theme-apply"
+folder=${1:-}
+
+# An absolute or relative path is taken as-is; anything else is a folder name under
+# the wallpapers root.
+if [[ -n $folder ]]; then
+    if [[ $folder == /* ]]; then
+        dir=$folder
+    else
+        dir="$WALL_ROOT/$folder"
+    fi
+else
+    dir=$WALL_ROOT
 fi
-if [[ ! -x "$APPLY" ]]; then
-    echo "wallpaper-switcher: theme-apply not found" >&2
+
+if [[ ! -d $dir ]]; then
+    echo "wallpaper-switcher: '$dir' does not exist" >&2
     exit 1
 fi
 
-count_images() {
-    find "$1" -maxdepth 1 -type f \
-        \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' \
-           -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.avif' \) \
-        2>/dev/null | wc -l
-}
+images=$(find "$dir" -maxdepth 1 -type f \
+    \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' \
+       -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.avif' \) \
+    2>/dev/null | wc -l)
 
-target=${1:-}
-
-if [[ -z $target ]]; then
-    folder=$("$APPLY" --wallpapers)
-    if [[ -z $folder ]]; then
-        echo "wallpaper-switcher: the current theme names no wallpaper folder" >&2
-        exit 1
-    fi
-else
-    folder=$("$APPLY" --wallpapers-for "$target")
-    if [[ -z $folder ]]; then
-        echo "wallpaper-switcher: no wallpaper folder for '$target'" >&2
-        exit 1
-    fi
-fi
-
-dir="$WALL_ROOT/$folder"
-
-if [[ ! -d $dir ]] || [[ $(count_images "$dir") -eq 0 ]]; then
-    reason="does not exist"
-    [[ -d $dir ]] && reason="has no images in it yet"
-    echo "wallpaper-switcher: '$folder' $reason" >&2
+if [[ $images -eq 0 ]]; then
+    echo "wallpaper-switcher: no images in $dir" >&2
     exit 1
 fi
 

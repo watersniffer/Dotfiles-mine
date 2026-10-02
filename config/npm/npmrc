@@ -1,3 +1,0 @@
-prefix=${HOME}/.local
-cache=${HOME}/.cache/npm
-logs-dir=${HOME}/.local/state/npm/logs
