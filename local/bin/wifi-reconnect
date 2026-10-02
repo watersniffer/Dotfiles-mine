@@ -41,14 +41,6 @@ set -euo pipefail
 ssid=${1:?usage: wifi-reconnect <ssid> <password>}
 pass=${2:?usage: wifi-reconnect <ssid> <password>}
 dev=${3:-wlan0}
-
-# gnome-keyring has to be up before NetworkManager tries to save anything, or the
-# password is dropped again and this has to be run twice.
-if ! pgrep -f gnome-keyring-daemon >/dev/null 2>&1; then
-    eval "$(printf '\n' | gnome-keyring-daemon --start --components=secrets)"
-    sleep 2
-fi
-
 echo "  joining $ssid on $dev"
 sudo nmcli device wifi connect "$ssid" password "$pass" ifname "$dev"
 
