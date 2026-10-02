@@ -83,16 +83,22 @@ running_pid() {
 
 request_close() {
     : > "$CLOSE"
-    # Give the supervisor a moment to act so the key does not feel dead, and so
-    # two quick presses cannot race into "close" then "open" of the same window.
+    # Give the supervisor a moment so the key does not feel dead, and so two quick
+    # presses cannot race into "close" then "open" of the same window.
     i=0
     while [ "$i" -lt 20 ]; do
-        running_pid >/dev/null 2>&1 || return 0
+        if ! running_pid >/dev/null 2>&1; then
+            # Gone. The pid file is cleaned here rather than by the watcher,
+            # because the watcher is in the process group it kills and so does not
+            # reliably reach its own cleanup.
+            rm -f "$PIDFILE"
+            return 0
+        fi
         sleep 0.1
         i=$((i + 1))
     done
-    # Still alive after 2s. Clear the stale pid so the next press starts fresh
-    # rather than being swallowed trying to close something that ignored us.
+    # Still alive after 2s, so it ignored the request. Clear the stale pid so the
+    # next press starts fresh rather than being swallowed retrying a close.
     rm -f "$PIDFILE"
 }
 
@@ -132,18 +138,56 @@ launch() {
 # makes `kill -- -$$` below mean "everything this scratchpad started", including
 # anything the app forked.
 supervise() {
-    shift
-    echo $$ > "$PIDFILE"
+    # Deliberately no `shift` here. The caller has already consumed --supervise,
+    # and shifting a second time is what broke this: `scratchpad sleep 60` reached
+    # this function as "sleep 60" and left it as "60", so it ran `exec 60`, died
+    # immediately with "60: not found", and the EXIT trap below deleted the pid
+    # file on the way out. The symptom was a scratchpad that did nothing at all
+    # and an empty state directory.
+    if [ $# -eq 0 ]; then
+        echo "scratchpad: --supervise needs a command to run" >&2
+        exit 2
+    fi
+
+    # Create the state dir here too, not only in launch, so this mode works when
+    # invoked directly rather than only through launch.
+    mkdir -p "$STATE" 2>/dev/null || true
+    if ! echo $$ > "$PIDFILE" 2>/dev/null; then
+        echo "scratchpad: cannot write $PIDFILE" >&2
+        exit 1
+    fi
+
     trap 'rm -f "$PIDFILE"' EXIT INT TERM
+
+    # Remember who we are before the exec, because after it $$ is still the same
+    # pid but the shell is gone -- and the watcher below needs to be able to ask
+    # "is the app I am watching still there?".
+    leader=$$
+
     (
-        while [ ! -e "$CLOSE" ]; do
+        # Ignore TERM so the watcher survives long enough to tidy up. It is in the
+        # same process group as the app it is about to kill, so without this it
+        # receives its own signal first and dies mid-cleanup.
+        trap '' TERM INT
+        while :; do
+            if [ -e "$CLOSE" ]; then
+                rm -f "$CLOSE"
+                rm -f "$PIDFILE"
+                kill -TERM -- "-$$" 2>/dev/null
+                sleep 0.4
+                kill -KILL -- "-$$" 2>/dev/null
+                break
+            fi
+            # If the app exited on its own -- `exit` in the shell, or the app
+            # crashed -- stop polling. Checking only for the close flag leaks: a
+            # watcher whose app is already gone would sit in this loop for the
+            # rest of the session, and a burst of those adds up.
+            if ! kill -0 "$leader" 2>/dev/null; then
+                rm -f "$PIDFILE"
+                break
+            fi
             sleep 0.3
         done
-        rm -f "$CLOSE"
-        # The whole group, so nvim-in-a-terminal or a GUI app's helpers go too.
-        kill -TERM -$$ 2>/dev/null
-        sleep 0.4
-        kill -KILL -$$ 2>/dev/null
     ) &
     exec "$@"
 }

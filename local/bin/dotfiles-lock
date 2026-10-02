@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
-# Lock the session. Niri is the only session, so this is always swaylock.
+# Lock the session.
+#
+# Was `swaylock -C ~/.config/niri/lock.conf -f`. swaylock and swaylock-effects are
+# uninstalled and hyprlock took over the Super+L bind, so calling swaylock here
+# would only fail. The niri lock config went with it: hyprlock reads hyprlock.conf
+# and has working defaults without one.
 set -euo pipefail
-exec swaylock -C "$HOME/.config/niri/lock.conf" -f
+exec hyprlock

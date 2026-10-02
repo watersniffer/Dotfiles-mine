@@ -507,8 +507,17 @@ hl.bind(mainMod .. " + U", hl.dsp.exec_cmd("wlogout"))
 -- it, so nothing was reaching cliphist at all. That is local/bin/clipboard-watcher.
 hl.bind(mainMod .. " + V",
     hl.dsp.exec_cmd("/home/water/.local/bin/clipboard-history"))
-hl.bind("SUPER + ALT + L",
-    hl.dsp.exec_cmd("swaylock -f"))
+-- Lock the session. Super+L, not Super+U: U is wlogout, and that is the key that
+-- belongs there.
+--
+-- This was `swaylock -f` on Super+Alt+L. swaylock and swaylock-effects are both
+-- uninstalled, so the bind and the package went together rather than leaving a
+-- bind pointing at a binary that is no longer there. hyprlock was already
+-- installed, just unused.
+--
+-- hyprlock has no -f and needs none: it backgrounds itself, and Super+Enter
+-- dismisses it, which is its default and is not overridden here.
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 
 -- --- drag and resize with the mouse ---
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
@@ -647,6 +656,12 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("nm-applet")
     hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1")
     hl.exec_cmd("kitty")
+
+    -- Idle handling: 15 minutes of no input turns the panel off, and the first
+    -- input after that brings up hyprlock. hypridle was already installed but was
+    -- never started, so nothing locked the session on its own before this.
+    -- The timing and both actions live in config/hypr/hypridle.conf.
+    hl.exec_cmd("hypridle")
 end)
 
 ---- WINDOWS AND WORKSPACES ----

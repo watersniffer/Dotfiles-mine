@@ -8,9 +8,10 @@ chosen=$(printf '%s\n' "${options[@]}" | rofi -dmenu -p "Power" -theme "$theme")
 case "$chosen" in
     "Shutdown") systemctl poweroff ;;
     "Reboot")   systemctl reboot ;;
-    # Niri is the only session: swaylock with the niri lock config, and
-    # `niri msg action quit` to end the session.
-    "Lock")     swaylock -C "$HOME/.config/niri/lock.conf" -f ;;
+    # hyprlock, since swaylock and swaylock-effects are uninstalled. The
+    # `-C "$HOME/.config/niri/lock.conf"` that used to be here would have failed on
+    # both counts: no such binary, and no niri in this session.
+    "Lock")     hyprlock ;;
     "Suspend")  systemctl suspend ;;
     "Logout")   niri msg action quit skip-confirmation=true ;;
 esac
