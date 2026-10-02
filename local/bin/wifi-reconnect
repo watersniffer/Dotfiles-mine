@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# wifi-reconnect -- rejoin a WPA2 network by password, and set it up so it stops
+# flapping afterwards.
+#
+#   wifi-reconnect <ssid> <password>
+#
+# Why this exists rather than just "nmcli con up": the saved profile on this
+# machine had become unusable and nmcli could not repair it in place.
+#
+# What was actually wrong, in order:
+#
+# 1. No secrets agent was running. NetworkManager keeps WiFi passwords in the
+#    keyring, and with no agent listening it could not retrieve the saved one --
+#    "Secrets were required, but not provided" -- so every attempt failed at
+#    authentication, which iwd reports as deauthentication reason 23
+#    (IEEE 802.1X auth failed) with from_ap: true. The router was not at fault;
+#    it was rejecting a client that could not produce a password.
+#
+# 2. The profile itself had been recreated during the earlier flapping and came
+#    back without a usable secret, and without the DNS override that had been on
+#    it.
+#
+# 3. Adapter power save was ON. That is the classic cause of a link that
+#    associates, runs for a while, and is then dropped by the AP -- which is
+#    what the repeated connect/disconnect cycle was. It is disabled here, both on
+#    the interface and in the profile, so it survives a reconnect.
+set -euo pipefail
+
+ssid=${1:?usage: wifi-reconnect <ssid> <password>}
+pass=${2:?usage: wifi-reconnect <ssid> <password>}
+dev=${3:-wlan0}
+
+# gnome-keyring has to be up before NetworkManager tries to save anything, or the
+# password is dropped again and this has to be run twice.
+if ! pgrep -f gnome-keyring-daemon >/dev/null 2>&1; then
+    eval "$(printf '\n' | gnome-keyring-daemon --start --components=secrets)"
+    sleep 2
+fi
+
+echo "  joining $ssid on $dev"
+sudo nmcli device wifi connect "$ssid" password "$pass" ifname "$dev"
+
+# Persist the anti-flapping setting in the profile, not just on the interface.
+sudo nmcli con mod "$ssid" 802-11-wireless.powersave 2
+sudo iw dev "$dev" set power_save off 2>/dev/null || true
+
+# Put the DNS override back, which was lost when the profile was recreated:
+# 127.0.0.1 is dnsmasq, which serves the blocklist and forwards to Cloudflare.
+sudo nmcli con mod "$ssid" ipv4.dns "127.0.0.1" ipv4.ignore-auto-dns yes
+sudo nmcli con mod "$ssid" ipv6.ignore-auto-dns yes
+sudo nmcli dev reapply "$dev" >/dev/null 2>&1 || true
+
+sleep 3
+state=$(nmcli -t -f DEVICE,STATE dev status | awk -F: -v d="$dev" '$1==d{print $2}')
+echo "  $dev is now: $state"
+iw dev "$dev" link 2>/dev/null | tr '\n' ' ' | sed 's/^/  /' || true
+echo
+echo "  verify: getent hosts pmvhaven.com   (expect 0.0.0.0)"
