@@ -1,166 +1,127 @@
 # Dotfiles
 
-My personal Arch Linux dotfiles: **Niri** (Wayland), **Bash + Starship**, **Kitty**, **Neovim** (lazy.nvim), **Waybar**, **Rofi**, **Mako** and **Matuwall**, all on a swappable palette: **Catppuccin Mocha**, **Gruvbox Dark**, **Tokyo Night**, **Rosé Pine**, **Everforest Dark**, **Nord Dark**, **E-ink**.
+My personal Arch Linux dotfiles. **Hyprland**, **Bash + Starship**, **Kitty**,
+**Neovim**, **Waybar**, **Rofi**, **Mako**, **Matuwall** and **Fastfetch**, on a
+single fixed greyscale palette: **E-ink**.
+
+This repository is **config only**. There is no installer and no package list —
+nothing here runs, patches or provisions your system. Copy or symlink what you want.
 
 ## Contents
 
 ```
 .
-├── install.sh                    # Main install script
-├── packages.txt                  # Official repo packages (pacman)
-├── packages-aur.txt              # AUR packages (via yay)
-├── packages-flatpak.txt          # Flatpak apps
-├── home/                         # Dotfiles linked to $HOME
+├── config/                    # ~/.config/*
+│   ├── hypr/                   # Hyprland: hyprland.lua, hyprlock.conf,
+│   │                           #   hypridle.conf, hyprpaper.conf
+│   ├── waybar/                 # Status bar: config-hypr.jsonc, style.css, colors.css
+│   ├── kitty/                  # Terminal
+│   ├── rofi/                   # Launcher
+│   ├── mako/                   # Notifications
+│   ├── matuwall/               # Wallpaper picker
+│   ├── fastfetch/  btop/       # System fetch, process viewer
+│   └── gtk-3.0/ gtk-4.0/ qt6ct/  # App colours
+├── local/bin/                  # Scripts on $PATH, plus its own README
+├── home/                       # Dotfiles linked to $HOME
 │   ├── .bashrc / .bash_profile / .bash_logout
-│   ├── .tmux.conf  .vimrc
-│   └── .vim/                     # colorschemes (monochrome.vim, the fallback)
-├── config/                       # Configs for ~/.config/ (symlinked)
-│   ├── niri/                     # Niri session
-│   ├── kitty/                    # Terminal
-│   ├── waybar/                   # Status bar (+ Waycat/Skulltype cat/skull fonts)
-│   ├── nvim/                     # Neovim (real dir, copy-if-missing)
-│   ├── rofi/                     # Launcher
-│   ├── mako/                     # Notifications
-│   ├── fastfetch/                # System fetch
-│   ├── matuwall/                 # Wallpaper picker (no theming hooks)
-│   ├── gtk-3.0/ gtk-4.0/         # GTK theme settings (Kripton)
-│   ├── btop/ Kvantum/ qt6ct/     # App themes
-│   ├── xsettingsd/               # GTK icon/theme propagation
-│   └── ...
-├── local/bin/                    # Custom scripts (startup/, powermenu, ...)
-├── systemd/user/                 # User systemd units
-└── system/etc/                   # System-wide configs (SDDM, cpu-performance)
+│   ├── .tmux.conf  .inputrc  .gtkrc-2.0
+│   ├── .vimrc  .vim/           # monochrome.vim, the fallback colourscheme
+│   └── .config/xdg-terminal-exec.conf
+├── systemd/user/               # A user unit
+├── themes/e-ink/               # palette.conf — provenance only, nothing reads it
+└── README.md
 ```
 
-## Requirements
+`config/hypr`, `config/waybar`, `config/rofi`, `config/kitty`, `config/mako`,
+`config/matuwall` and `config/fastfetch` are symlinked into `~/.config`, so editing
+them here changes the running session. The rest are real directories copied in both
+directions.
 
-- **Arch Linux** (fresh install recommended)
-- Working internet connection
-- `base`, `base-devel`, `linux`, `linux-firmware`, `sudo` already present
-- The target machine is expected to be an **Intel/AMD hybrid-graphics laptop** (backlight, battery, performance governor etc. are tuned for one)
+## The theme is fixed
 
-## Usage
+There is no theme switcher and no palette generator. The e-ink greys are committed
+directly as static values in `waybar/colors.css`, `rofi/colors.rasi`,
+`kitty/themes/e-ink.conf`, `qt6ct/colors/Eink.conf` and `mako/config.toml`.
 
-```bash
-# Clone the repo (edit to your fork)
-git clone https://github.com/watersniffer/Dotfiles-mine.git && cd Dotfiles-mine
+`themes/e-ink/palette.conf` is kept only as the record of where those values came
+from. Nothing reads it.
 
-chmod +x install.sh
-./install.sh               # Full install (packages + configs)
-./install.sh --skip-pkgs   # Skip packages; still apply configs/system settings
-```
+## Waybar
 
-## What the installer does
+The bar is drawn as a **floating island**, not a full-width strip. Two things about
+that are not obvious and are commented in the files themselves:
 
-1. **Leaves multilib configuration unchanged** (no multilib-only packages are required)
-2. **Installs official packages** from `packages.txt` via `pacman -S --needed`
-3. **Installs yay** from source if missing
-4. **Installs AUR packages** from `packages-aur.txt` (Graphite GTK, Kripton, Kvantum, smile, ...)
-5. **Installs Flatpak apps** from `packages-flatpak.txt` (adds Flathub)
-6. **Installs TPM** (tmux plugin manager)
-7. **Links configs** (old files backed up to `~/.dotfiles-backup/`); nvim and qt6ct stay real dirs (copy-if-missing); `local/bin` is **merged**, never
-   wiped, so machine-local tools (uv, tree-sitter, uv shims) survive
-8. **Applies system configs** (SDDM conf + a pinned, root-owned greeter theme clone,
-   cpu-performance.service, zram) and enables services
-9. **Sets up user services** (pipewire, wireplumber)
-10. **Sets the GTK/icon/cursor theme in dconf** (GNOME + Cinnamon/Nemo:
-    Kripton / Papirus / Bibata-Modern-Classic)
-11. **Sets bash as default shell**
+- The inset goes on an inner container box, **not** on `window#waybar`. A layer-shell
+  surface always spans the full output width, so `margin` on the bar window is
+  silently ignored. This was measured, not assumed.
+- Workspaces render as **diamonds** — filled for the active one, hollow otherwise.
+  Colour and `font-size` are set on `#workspaces button label`, not on the button:
+  GTK ignores both on a `GtkButton`, because it does not draw its own text. This was
+  also measured, with a probe appended as the last rule in the stylesheet.
 
-Re-running the installer is safe: already-correct symlinks are left untouched.
+## Keybinds
 
-## Post-install steps
-
-1. Log out and back in (wayland + bash).
-2. The installer copies the tracked wallpapers to `~/Pictures/Wallpapers/`; add more there if desired, then press `Super+W` to pick one — the picker opens whichever folder belongs to the theme in use, and `Super+N` opens `Luscious`. Wallpapers live in one folder per theme under `~/Pictures/Wallpapers/`, named by each `themes/<slug>/palette.conf`; a theme's folder that is missing or still empty is reported rather than opening an empty picker. The **Catppuccin Mocha** palette is fixed and does not change with it; edit `config/waybar/colors.css` (and the matching `colors.rasi` / `current-theme.conf` / GTK `colors.css`) to recolour the desktop. SDDM remains static and root-owned. At login, choose **Niri (Dotfiles)**.
-3. First `nvim` launch installs all plugins automatically (lazy.nvim).
-4. `starship config` tweaks the prompt.
-5. First `tmux` launch installs plugins via TPM (prefix `C-Space`, then `I`).
-6. SDDM greeter theme (GitHub-only, not in AUR) is pinned and installed root-owned automatically; its Qt6 virtual keyboard dependencies come from `packages.txt`.
-
-### Not managed by the installer (machine-local)
-
-- **uv** (`curl -LsSf https://astral.sh/uv/install.sh | sh`) and its tools
-- **tree-sitter CLI** at `~/.local/bin/tree-sitter`
-- Browser profiles (Zen `zen-themes.json` + Transparent Zen mod + Zen Internet,
-  Firefox): themed in place on this machine, not shipped in the repo
-
-## Session
-
-Niri is the only session. The installer registers it with SDDM as
-**Niri (Dotfiles)** and makes it the default; select it at login.
-
-The session uses the Kitty terminal, Rofi launcher, Waybar, Mako
-notifications, the Matuwall/awww wallpaper picker and Wlogout.
-
-**The theme is fixed.** The colours in the bar, launcher, terminal and notification
-daemon are E-ink: a dark greyscale palette where every accent is a grey, stepped so
-the shades still separate in a terminal and in diffs. `urgent` is pushed to pure
-white rather than a red, because a red on an e-ink panel comes out mid-grey and
-reads as nothing. They are committed files under `config/`, not generated, so
-changing the wallpaper does not recolour anything and nothing needs to run at
-login to keep them.
-
-There is no theme picker. There was once a `Super+T` switcher over seven palettes
-in `themes/`, and later the wallpaper became the theme via matugen. Neither is
-here. `themes/e-ink/palette.conf` survives as the record of where the values came
-from; nothing reads it.
-
-Neovim, Obsidian, VS Code and btop are not themed from the palette. They were, from
-the same `themes/<slug>/palette.conf`, and that is gone with everything else -- so
-those apps keep whatever theme they ship with or set themselves.
-
-Waybar is a floating island bar: the bar surface is transparent and a single inner
-box paints the island, 70% of the screen width, 3px below the top edge. The inset
-is on the inner box rather than the window because a layer-shell surface always
-spans the full output and `margin` on `window#waybar` is silently ignored.
-Windows get 10px rounded corners, no border, an x-ray blur and spring animations.
-`swaylock` is Niri's lock-screen backend; the Sway
-compositor itself is not installed. Niri's native lid-close event starts the
-lock screen, while the system logind policy handles suspend.
-
-Niri's layout is scrollable and its workspace model is dynamic, so `Super+S`
-opens Niri's overview; numbered workspaces are dynamic and start at 1.
-
-## Session backups
-
-The `backup/*` branches have been deleted from this repository. They were
-per-change snapshots, and keeping them cost more than they were worth: 14
-branches locally and on the remote, two of which held the only copy of anything
-unique. Those two commits are preserved as tags so nothing becomes unreachable:
-
-- `backup-keep/niri-setup` — the tuned Niri session (exact `1366x768@60.016`
-  panel mode, touchpad workspace scrolling, hot-key overlay titles, hot corner)
-- `backup-keep/hyprland-setup` — an old Hyprland setup, kept for reference only.
-  Hyprland is installed from the Arch package and left stock again: its config
-  lives in `/usr/share/hypr/hyprland.lua` and this repo keeps no `config/hypr`.
-
-Full history is in `main`; any earlier state can be recovered by commit hash
-from there.
-
-## Keybinds (extra)
-
-The binds below are mirrored in the Niri session where the equivalent Niri
-command exists.
-
-| Bind | Action |
-|------|--------|
-| `Super+E` | yazi file manager in kitty |
-| `Super+B` | Firefox |
-| `Super+D` | nemo |
-| `Super+,` | smile emoji picker (floating, centered) |
-| `Super+C` | clipboard history via rofi (cliphist) |
-| `Super+W` | matuwall wallpaper picker |
-| `Super+Shift+W` | hide/show Waybar |
-| `XF86MonBrightnessUp/Down` | adjust screen brightness |
-| Waybar backlight module | toggle Night Light |
-| `Super+P` | wlogout |
+| Key | Action |
+|---|---|
 | `Super+Space` | rofi launcher |
+| `Super+Return` | terminal |
+| `Super+E` | nemo |
+| `Super+Alt+E` | yazi |
+| `Super+D` | dankcalendar |
+| `Super+B` | zen-browser |
+| `Super+comma` | smile |
+| `Super+S` | scratchpad (slides down from the top; empty shell by default) |
+| `Super+V` | clipboard history |
+| `Super+P` | power mode: performance → balanced → power saver |
+| `Super+L` | hyprlock |
+| `Super+U` | wlogout |
+| `Super+F` | fullscreen |
+| `Super+Alt+F` | float / unfloat |
+| `Super+Q` | close window |
+| `Super+W` | wallpaper picker (matuwall) |
+| `Super+Shift+W` | hide / show the bar |
+| `Super+1`…`9`, `Super+0` | switch workspace |
+| `Super+Shift+1`…`9` | move the window to that workspace |
+| `Super+←↑↓→` | move focus |
+| `Super+Shift+←↑↓→` | resize the window |
+| `XF86MonBrightness*` | backlight |
+| `XF86Audio*` | volume and media |
+| `Print` / `Ctrl+Print` / `Alt+Print` | screenshot, full screen, focused window |
+| 3-finger horizontal swipe | change workspace |
 
-## Day-to-day
+## Locking and idling
 
-- `update` — pacman update + stale desktop-file cleanup + orphan removal + reboot prompt
-- `all-update` — pacman + AUR (yay) + flatpak in one go
-- `wlogout` (`Super+P`) — shutdown/reboot/lock/suspend/logout
-- Startup scripts run once per login via `at_startup`
-  (`~/.local/bin/startup/*.sh`: auto-caffeine, bluetooth reconnect, keyboard backlight, …)
+`hyprlock` on `Super+L`, and `hypridle` turns the panel off after 15 minutes with the
+first input after that raising the lock screen. Both are in `config/hypr/`.
+
+hyprlock has no usable defaults — it exits 1 with `Config path error` if no config
+exists, which is why `hyprlock.conf` is here. Its options were found by running it:
+colours are `rgba(r,g,b,a)` and **not** hex, and the background colour key is `color`.
+
+To check that file without locking the screen:
+
+```sh
+WAYLAND_DISPLAY=definitely-not-a-socket hyprlock -c ~/.config/hypr/hyprlock.conf
+```
+
+Do not test it by running `hyprlock`. It daemonises, so killing the foreground
+process leaves the real locker holding the session lock.
+
+## Clipboard
+
+`Super+V` opens a rofi list of `cliphist` history. Two separate bugs lived here and
+both are described in `local/bin/clipboard-history` and `clipboard-watcher`: the
+feeder had died unsupervised, and pressing Escape in the picker used to **wipe** the
+clipboard.
+
+## Host-based blocking
+
+Not in this repository, because it cannot be: the list is deliberately unreadable by
+your own account. It lives in `/etc/dnsmasq-blocklist` (`root:dnsmasq`, mode 640) and
+is served by dnsmasq on `127.0.0.1`, which also makes Cloudflare the upstream resolver.
+
+`/etc/hosts` cannot be used for this. Making it mode 600 does not hide the list, it
+removes it from service — glibc cannot open the file and falls through to DNS, and
+every blocked domain resolves again.
+
+Regenerate with `sudo update-hosts-blocklist`, which is `local/bin/update-hosts-blocklist`.
