@@ -542,6 +542,33 @@ hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"),       { locked = true })
 
+-- The brightness function keys. These had no bind at all, which is the whole
+-- reason the Fn-row brightness buttons did nothing: the section above covers
+-- XF86Audio* only, and XF86MonBrightness* was simply never bound.
+--
+-- They send plain XF86MonBrightnessUp / XF86MonBrightnessDown (keycodes I232 and
+-- I233 in the inet keymap), so they are bound as bare key names with no modifier,
+-- the same shape as the volume keys above.
+--
+-- brightness-step rather than brightnessctl directly, because on this panel the
+-- LCD still emits light at 0 -- the backlight is off while the display stays lit,
+-- so plain `brightnessctl s 0` gives a lit-but-black screen rather than a dark
+-- one. brightness-step is what joins 0 up to a real panel-off.
+--
+-- What that buys here is only the stepping. Its panel-off path goes through
+-- `niri msg action power-off-monitors`, which is guarded and no-ops outside niri,
+-- so at 0% this panel stays faintly lit. That is the same limitation already
+-- recorded above the utilities block, and it is not fixable from here: Hyprland
+-- 0.56 has no DPMS dispatcher.
+--
+-- repeating so a held key ramps instead of stepping once, matching the volume
+-- keys. locked is deliberately not set: the lock screen draws its own brightness
+-- handling and has no backlight to step once the panel is down.
+hl.bind("XF86MonBrightnessUp",
+    hl.dsp.exec_cmd("brightness-step up"), { repeating = true })
+hl.bind("XF86MonBrightnessDown",
+    hl.dsp.exec_cmd("brightness-step down"), { repeating = true })
+
 -- Power mode, Super+P: performance -> balanced -> power-saver -> performance.
 --
 -- The script rather than a bare `powerprofilesctl` because that tool has no `next`
@@ -715,20 +742,21 @@ hl.window_rule({
     animation   = "slidevert -60, 4, 70, menu_decel",
 })
 
--- The bind runs a script rather than a bare kitty, because the same key has to both
+-- The bind runs a script rather than a bare app because the same key has to both
 -- open the window and close it again -- and nothing outside the window can close
 -- it on this Hyprland. Every dispatch route is broken here: `hyprctl dispatch
 -- killwindow` expands to invalid Lua, and `hyprctl eval 'return
 -- hl.dsp.window.close()'` answers "ok" and leaves the window open. All three were
 -- tried against a real window of this class.
 --
--- So local/bin/toggle-scratchpad checks whether the window exists and, if it does,
--- drops a flag file instead of closing anything.
--- local/bin/scratchpad-session is what kitty runs as the window's command, and it
--- leaves a watcher on that flag which kills the terminal. Killing kitty rather than
--- exiting the shell is deliberate: `nvim` in the scratchpad and then Super+S would
--- otherwise leave nvim running with no window.
-hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("/home/water/.local/bin/toggle-scratchpad"))
+-- So local/bin/scratchpad drops a flag file and the window closes itself.
+--
+-- It also decides *what* to run. This used to end in `exec kitty --class
+-- scratchpad -e ...`, which made the scratchpad a terminal whatever you wanted in
+-- it. The app is now configuration -- `scratchpad set <cmd>`, or `scratchpad
+-- pick` to be asked each time -- and the first press of Super+S with nothing
+-- configured asks once and remembers.
+hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("/home/water/.local/bin/scratchpad"))
 
 -- kitty is excluded from blur rather than relying on decoration.blur being off
 -- globally. That setting lives in config/hypr/hyprland-gui.lua, which hyprmod
