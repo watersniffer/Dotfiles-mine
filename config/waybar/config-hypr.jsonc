@@ -55,6 +55,15 @@
     "clock"
   ],
 
+
+  "modules-right": [
+    "tray",
+    "wireplumber",
+    "backlight",
+    "battery",
+    "clock"
+  ],
+
   // Dots, not numbers. The numbers were here because the earlier attempt to put
   // per-workspace app icons in the bar was reverted -- but that attempt and this
   // one use different mechanisms, so its failure says nothing about this.
