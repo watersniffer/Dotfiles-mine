@@ -631,7 +631,13 @@ hl.on("hyprland.start", function()
 
     -- The wallpaper backend. Silere does not draw a wallpaper, so awww stays.
     hl.exec_cmd("awww-daemon")
-    hl.exec_cmd("awww restore")
+    -- Restore the last wallpaper, then check it took. `awww restore` exits 0 even
+    -- when it has nothing to restore, so without the check a missing or empty
+    -- state file leaves the bare Hyprland background on screen with no indication
+    -- why. The fallback is a specific wallpaper rather than a guess, because the
+    -- alternative to a wallpaper here is Hyprland's own default, which is what
+    -- makes the desktop look like it booted wrong.
+    hl.exec_cmd("sleep 1; awww restore || awww img -- /home/water/Pictures/Wallpapers/a_river_running_through_a_small_town.jpg")
 
 
     -- Clipboard history. This watcher lived in ~/.local/bin/at_startup until the

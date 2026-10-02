@@ -35,6 +35,7 @@ best effort: anything that goes wrong falls back to an instant change.
 import os
 import re
 import shutil
+import json
 import subprocess
 import sys
 import tempfile
@@ -116,21 +117,28 @@ def load_gtk():
     return Gtk, GdkPixbuf, GLib, GtkLayerShell
 
 
-def screen_size():
-    """The output size, asked of the compositor.
+    def screen_size():
+        """The output size, asked of the compositor.
 
-    GdkScreen's dimensions are not reliable on Wayland, so niri is the source
-    of truth here. Returns None if it cannot be determined.
-    """
-    try:
-        result = subprocess.run(["niri", "msg", "outputs"],
-                                capture_output=True, text=True, timeout=5)
-        match = re.search(r"Logical size:\s*(\d+)x(\d+)", result.stdout)
-        if match:
-            return int(match.group(1)), int(match.group(2))
-    except (OSError, subprocess.SubprocessError):
-        pass
-    return None
+        GdkScreen's dimensions are not reliable on Wayland, so the compositor is
+        the source of truth. Returns None if it cannot be determined.
+
+        This used to ask `niri msg outputs` and parse "Logical size: WxH". Niri is
+        uninstalled, so the subprocess raised OSError on every call and this
+        silently returned None every time. It reads hyprctl's JSON now, which also
+        means the focused output is picked rather than assuming there is only one.
+        """
+        try:
+            result = subprocess.run(["hyprctl", "-j", "monitors"],
+                                    capture_output=True, text=True, timeout=5)
+            monitors = json.loads(result.stdout)
+            if not monitors:
+                return None
+            focused = [m for m in monitors if m.get("focused")]
+            mon = (focused or monitors)[0]
+            return int(mon["width"]), int(mon["height"])
+        except (OSError, subprocess.SubprocessError, ValueError, KeyError):
+            return None
 
 
 def cover_fit(pixbuf, width: int, height: int, GdkPixbuf):

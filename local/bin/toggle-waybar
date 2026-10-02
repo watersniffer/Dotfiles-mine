@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 #
-# Toggle the session's bar. Bound to Super+Shift+W in both
-# config/hypr/hyprland.lua and config/niri/config.kdl.
+# Toggle the session's bar. Bound to Super+Shift+W in config/hypr/hyprland.lua.
 #
-#   ashell running   `ashell msg toggle-visibility`, which hides and shows the
-#                    bar in place. Kept for the niri setup, which still uses it.
-#                    Hiding it in place is better than a restart: a restart is
-#                    slower and throws away the notification history.
 #   waybar running   killed, and started again on the next press.
 #   neither          started.
+#
+# There used to be two branches here, one of which picked config-niri.jsonc when
+# it saw a niri session. Niri is uninstalled, so that branch would have chosen a
+# config file that no longer exists.
 #
 # Why it checks for ashell before deciding
 # ----------------------------------------
@@ -46,14 +45,12 @@ fi
 # waybar's workspace module is compositor-specific; the stylesheet is shared.
 if [[ -n "${WAYBAR_CONFIG:-}" ]]; then
     waybar_config=$WAYBAR_CONFIG
-elif [[ -n "${NIRI_SOCKET:-}" || "$session" == niri* ]]; then
-    waybar_config="$HOME/.config/waybar/config-niri.jsonc"
 elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" || "$session" == hyprland* ]]; then
     waybar_config="$HOME/.config/waybar/config-hypr.jsonc"
 else
     # Rather than guessing a filename and producing a bar that fails to start,
     # say what is missing. An existing bar is never taken down on a guess.
-    echo "toggle-waybar: not a niri or hyprland session (XDG_CURRENT_DESKTOP=${desktop:-unset});" >&2
+    echo "toggle-waybar: not a hyprland session (XDG_CURRENT_DESKTOP=${desktop:-unset});" >&2
     echo "  set WAYBAR_CONFIG to a config file to override" >&2
     exit 1
 fi
