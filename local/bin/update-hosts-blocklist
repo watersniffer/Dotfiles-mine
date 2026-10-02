@@ -1,0 +1,76 @@
+#!/bin/bash
+# update-hosts-blocklist -- regenerate the blocklist and reload the resolver.
+#
+# Reports counts only. It does not print, log, or otherwise surface any blocked
+# domain name, and it cannot: the list it writes is mode 600 root:root and this
+# script is not setuid.
+#
+# WHERE THE LIST LIVES, AND WHY NOT /etc/hosts
+# --------------------------------------------
+# /etc/dnsmasq-blocklist, root:dnsmasq mode 640, served by dnsmasq on 127.0.0.1.
+#
+# It used to be /etc/hosts, which cannot be hidden from the user account at all.
+# Making it mode 600 does not hide the list, it takes the list out of service:
+# glibc cannot open the file, so it silently falls through to DNS and every
+# blocked domain starts resolving again. Measured on this machine:
+#
+#   /etc/hosts 644 -> pmvhaven.com = 0.0.0.0       (blocked)
+#   /etc/hosts 600 -> pmvhaven.com = 80.79.7.135   (not blocked)
+#
+# localhost kept resolving in both cases, so nothing announces that anything broke.
+set -euo pipefail
+
+LIST=/etc/dnsmasq-blocklist
+URL='https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts'
+
+[ "$(id -u)" -eq 0 ] || { echo "run as root: sudo $0" >&2; exit 1; }
+command -v curl >/dev/null || { echo "curl not installed" >&2; exit 1; }
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+echo "  fetching $URL"
+curl -fsSL --retry 3 -o "$tmp/list" "$URL"
+
+# StevenBlack's format is "0.0.0.0 domain" after a comment header. Entries
+# containing an underscore are kept: they are invalid per RFC 952 but glibc
+# accepts them and they appear upstream.
+awk '$1 == "0.0.0.0" && NF >= 2 { print tolower($2) }' "$tmp/list" > "$tmp/domains"
+
+# Added by hand and kept regardless of what upstream does, so that dropping or
+# renaming a domain upstream cannot silently unblock it.
+printf '%s\n' pmvhaven.com www.pmvhaven.com >> "$tmp/domains"
+
+{
+    sort -u "$tmp/domains" | awk '{ printf "0.0.0.0\t%s\n", $0 }'
+} > "$tmp/new"
+
+count=$(grep -c . "$tmp/new")
+echo "  blocklist entries: $count"
+
+# Ownership matters more than it looks. dnsmasq's systemd unit runs it as
+# `--user=dnsmasq`, so a file that only root can read is a file dnsmasq cannot
+# read either, and it fails at startup with:
+#
+#   dnsmasq: failed to load names from /etc/dnsmasq-blocklist: Permission denied
+#
+# That failure is silent from the outside: dnsmasq stays up and serves DNS perfectly
+# well, it just has no blocklist, so every blocked domain resolves again and nothing
+# looks wrong. Hence root:dnsmasq mode 640 rather than root:root 600 -- readable by
+# the daemon, invisible to your account, which is not in the dnsmasq group.
+install -o root -g dnsmasq -m 640 "$tmp/new" "$LIST"
+echo "  wrote $LIST ($(stat -c%s "$LIST") bytes, root:dnsmasq 640)"
+
+# A reload is not enough. dnsmasq holds addn-hosts in memory and re-reads that file
+# only at startup, so `systemctl reload` clears the cache and changes nothing --
+# it left this machine resolving pmvhaven.com again while reporting success. It
+# has to be restarted.
+systemctl restart dnsmasq.service
+sleep 1
+echo "  dnsmasq restarted, $(pgrep -xc dnsmasq) process(es)"
+# Confirm the list was actually taken, rather than trusting the exit status. This
+# is the check that would have caught the ownership bug above.
+loaded=$(journalctl -u dnsmasq.service --since '30 seconds ago' --no-pager 2>/dev/null \
+         | grep -oE 'read [^ ]+ - [0-9]+ names' | tail -1)
+echo "  dnsmasq reports: ${loaded:-DID NOT REPORT READING THE LIST}"
+echo "  verify with: getent hosts pmvhaven.com   (expect 0.0.0.0)"
